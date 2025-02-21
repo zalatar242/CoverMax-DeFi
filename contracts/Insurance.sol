@@ -160,7 +160,7 @@ contract SplitInsurance {
         IAaveLendingpool(x).deposit(c, balance_c / 2, me, 0);
 
         // Protocol Y: Compound
-        cToken.approve(cy, balance_c / 2);  // Approve spending for Compound
+        cToken.approve(cy, balance_c / 2); // Approve spending for Compound
         require(
             IcDAI(cy).mint(balance_c / 2) == 0,
             "split: error while minting cDai"
@@ -192,14 +192,14 @@ contract SplitInsurance {
         uint256 balance_cx = cxToken.balanceOf(me);
         uint256 balance_cy = cyToken.balanceOf(me);
         require(
-            balance_cx > 0 || balance_cy > 0,
+            balance_cx > 0 && balance_cy > 0,
             "split: unable to redeem tokens"
         );
         uint256 interest;
 
         // Protocol X: Aave
         uint256 balance_c = cToken.balanceOf(me);
-        IAaveLendingpool(x).withdraw(cx, balance_cx, me);
+        IAaveLendingpool(x).withdraw(c, balance_cx, me);
         uint256 withdrawn_x = cToken.balanceOf(me) - balance_c;
         if (withdrawn_x > halfOfTranches) {
             interest += withdrawn_x - halfOfTranches;
@@ -405,7 +405,10 @@ contract SplitInsurance {
 
         if (payout_c > 0) {
             uint256 available = IERC20(c).balanceOf(address(this));
-            require(payout_c <= available, "split: insufficient underlying funds");
+            require(
+                payout_c <= available,
+                "split: insufficient underlying funds"
+            );
             IERC20(c).transfer(msg.sender, payout_c);
         }
 
