@@ -102,7 +102,7 @@ function withdraw(uint256 shares, uint8 trancheId) external;
 
 - Hardhat for development/testing
 - Ethers.js for testing
-- Solidity 0.8.17+
+- Solidity 0.8.28+
 
 ---
 
