@@ -23,6 +23,12 @@ interface ILendingAdapter {
     /// @param asset The address of the asset to check
     /// @return The current balance
     function getBalance(address asset) external view returns (uint256);
+
+    /// @notice Handles errors that may occur during deposit or withdraw
+    /// @param asset The address of the asset
+    /// @param amount The amount to deposit or withdraw
+    /// @param errorCode A code representing the error that occurred
+    function handleLendingError(address asset, uint256 amount, uint256 errorCode) external;
 }
 ```
 
@@ -31,78 +37,70 @@ interface ILendingAdapter {
 ### Tranche Token Contracts
 
 - Modify existing Tranche.sol to support three levels (A, B, C)
-- Each tranche gets equal allocation (33.33%)
+- Each tranche gets a fixed equal allocation (33.33%)
 - Simple ERC20 tokens representing shares in the protocol
 
-## 3. Core Contract Design
+## 3. USDC Integration
 
-### InsuranceCore.sol
-
-```solidity
-struct Platform {
-    ILendingAdapter adapter;
-    uint256 currentBalance;    // Current deposited amount
-}
-
-// Fixed platforms
-ILendingAdapter public aaveAdapter;
-ILendingAdapter public moonwellAdapter;
-ILendingAdapter public fluidAdapter;
-```
-
-### Key Functions
-
-```solidity
-// Deposit/Withdrawal
-function deposit(uint256 amount, uint8 trancheId) external;
-function withdraw(uint256 shares, uint8 trancheId) external;
-```
+-   Replace all instances of DAI with USDC throughout the contracts.
+-   Update the `deposit` and `withdraw` functions to use USDC.
+-   Ensure that the contract interacts correctly with the USDC contract.
 
 ## 4. Implementation Sequence
 
 ### Phase 1: Core Infrastructure
 
-1. Create ILendingAdapter interface
-2. Modify Tranche contract for three tranches
-3. Create base InsuranceCore contract
-4. Add USDC integration
+1.  Create ILendingAdapter interface
+2.  Modify Tranche contract for three tranches with fixed allocation
+3.  Create base InsuranceCore contract
+4.  Add USDC integration
 
 ### Phase 2: Platform Integration
 
-1. Implement AaveAdapter
-2. Implement MoonwellAdapter
-3. Implement FluidAdapter
+1.  Implement AaveAdapter (Targeting Aave v3)
+2.  Implement MoonwellAdapter (Targeting Moonwell on Moonbeam)
+3.  Implement FluidAdapter (Targeting Fluid Protocol)
 
 ### Phase 3: Testing
 
-1. Unit tests for each component
-2. Integration tests for platform interactions
-3. Basic operation tests
+1.  Unit tests for each component
+2.  Integration tests for platform interactions
+3.  Basic operation tests
+4.  Error handling tests
 
 ## 5. Key Considerations
 
 ### Gas Optimization
 
-- Batch operations where possible
-- Optimize storage usage
-- Use efficient data structures
+-   Batch operations where possible
+-   Optimize storage usage
+-   Use efficient data structures
 
 ### Security Measures
 
-- Basic access control for admin functions
+-   Basic access control for admin functions
+-   Implement circuit breakers for emergency withdrawals
+
+### Error Handling
+
+-   Implement error handling in the lending adapters to manage failures when interacting with external platforms.
+-   Use `handleLendingError` to revert transactions if needed.
 
 ## 6. Dependencies
 
 ### External Contracts
 
-- OpenZeppelin for base contracts
-- Platform-specific contracts (Aave, Moonwell, Fluid)
+-   OpenZeppelin for base contracts
+-   Aave v3 contracts
+-   Moonwell contracts
+-   Fluid Protocol contracts
+-   USDC contract
 
 ### Development Tools
 
-- Hardhat for development/testing
-- Ethers.js for testing
-- Solidity 0.8.28+
+-   Hardhat for development/testing
+-   Ethers.js for testing
+-   Solidity 0.8.28+
 
 ---
 

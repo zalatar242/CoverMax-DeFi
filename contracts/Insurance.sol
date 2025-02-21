@@ -1,417 +1,296 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.28;
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Tranche.sol";
 import "./ITranche.sol";
+import "./ILendingAdapter.sol";
 
-interface IAaveLendingpool {
-    function deposit(
-        address asset,
-        uint256 amount,
-        address onBehalfOf,
-        uint16 referralCode
-    ) external;
-
-    function withdraw(
-        address asset,
-        uint256 amount,
-        address to
-    ) external returns (uint256);
-}
-
-interface IcDAI is IERC20 {
-    function mint(uint256 mintAmount) external returns (uint256);
-
-    function redeem(uint256 redeemTokens) external returns (uint256);
-}
-
-/*
-For variable descriptions, see paper.
-c = Dai (Maker DAI)
-x = Aave protocol (cx = aDAI)
-y = Compound protocol (cy = cDAI)
-*/
-
-/// @title SplitInsurance - A decentralized DeFi insurance protocol
-/// @author Matthias Nadler, Felix Bekemeier, Fabian Schär
-/// @notice Deposited funds are invested into Aave and Compound.
-///         Redeeming rights are split into two tranches with different seniority
-contract SplitInsurance {
-    /* Internal and external contract addresses  */
+/// @title MultiTranche Insurance - A decentralized DeFi insurance protocol
+/// @notice Deposited funds are managed through lending adapters with three-tranche risk allocation
+contract Insurance is Ownable {
+    /* Internal and external contract addresses */
     address public A; // Tranche A token contract
-    address public B; // Tranche A token contract
+    address public B; // Tranche B token contract
+    address public C; // Tranche C token contract
 
-    address public c; // Maker DAI token
-    address public x; // Aave v2 lending pool
-    address public cx; // Aave v2 interest bearing DAI (aDAI)
-    address public cy; // Compound interest bearing DAI (cDAI)
+    address public immutable usdc; // USDC token
+    ILendingAdapter[] public lendingAdapters; // Array of platform adapters
 
     /* Math helper for decimal numbers */
     uint256 constant RAY = 1e27; // Used for floating point math
+    uint256 constant TRANCHE_ALLOCATION = RAY / 3; // Equal 33.33% allocation per tranche
 
-    /*
-      Time controls
-      - UNIX timestamps
-      - Can be defined globally (here) or relative to deployment time (constructor)
-    */
-    uint256 public immutable S;
-    uint256 public immutable T1;
-    uint256 public immutable T2;
-    uint256 public immutable T3;
+    /* Time periods */
+    uint256 public immutable S;  // Start/split end
+    uint256 public immutable T1; // Insurance end
+    uint256 public immutable T2; // Claim start
+    uint256 public immutable T3; // Final claim end
 
     /* State tracking */
-    uint256 public totalTranches; // Total A + B tokens
-    bool public isInvested; // True if c has been deposited for cx and cy
-    bool public inLiquidMode; // True: distribute c , False: xc/cy tokens claimable
+    uint256 public totalTranches; // Total A + B + C tokens
+    bool public isInvested; // True if funds have been deposited to platforms
+    bool public inLiquidMode; // True: distribute USDC, False: platform tokens claimable
 
-    /* Liquid mode */
-    uint256 public cPayoutA; // Payout in c tokens per A tranche, after dividing by RAY
-    uint256 public cPayoutB; // Payout in c tokens per B tranche, after dividing by RAY
-
-    /* Fallback mode */
-    uint256 public cxPayout; // Payout in cx tokens per (A or B) tranche, after dividing by RAY
-    uint256 public cyPayout; // Payout in cy tokens per (A or B) tranche, after dividing by RAY
+    /* Liquid mode payouts */
+    uint256 public usdcPayoutA; // Payout in USDC per A tranche
+    uint256 public usdcPayoutB; // Payout in USDC per B tranche
+    uint256 public usdcPayoutC; // Payout in USDC per C tranche
 
     /* Events */
-    event RiskSplit(address indexed splitter, uint256 amount_c);
-    event Invest(
-        uint256 amount_c,
-        uint256 amount_cx,
-        uint256 amount_cy,
-        uint256 amount_c_incentive
-    );
-    event Divest(
-        uint256 amount_c,
-        uint256 amount_cx,
-        uint256 amount_cy,
-        uint256 amount_c_incentive
-    );
+    event RiskSplit(address indexed splitter, uint256 amountUsdc);
+    event Invest(uint256 amountUsdc);
+    event Divest(uint256 amountUsdc);
+    event AdapterAdded(address adapter);
+    event AdapterRemoved(address adapter);
     event Claim(
         address indexed claimant,
-        uint256 amount_A,
-        uint256 amount_B,
-        uint256 amount_c,
-        uint256 amount_cx,
-        uint256 amount_cy
+        uint256 amountA,
+        uint256 amountB,
+        uint256 amountC,
+        uint256 amountUsdc
+    );
+    event LendingError(
+        address indexed adapter,
+        address asset,
+        uint256 amount,
+        uint256 errorCode
     );
 
-    constructor(
-        address _daiToken,
-        address _aaveLendingPool,
-        address _aDAI,
-        address _cDAI
-    ) {
-        A = address(new Tranche("Tranche A", "A"));
-        B = address(new Tranche("Tranche B", "B"));
+    constructor(address _usdc) Ownable(msg.sender) {
+        usdc = _usdc;
 
-        // Set protocol addresses
-        c = _daiToken;
-        x = _aaveLendingPool;
-        cx = _aDAI;
-        cy = _cDAI;
+        // Create tranche tokens
+        A = address(new Tranche("Tranche A", "TA"));
+        B = address(new Tranche("Tranche B", "TB"));
+        C = address(new Tranche("Tranche C", "TC"));
 
         // Set time periods
-        S = block.timestamp + 3600 * 24 * 7; // +7 days
-        T1 = S + 3600 * 24 * 28; // +28 days
-        T2 = T1 + 3600 * 24 * 1; // +1 day
-        T3 = T2 + 3600 * 24 * 3; // +3days
+        S = block.timestamp + 7 days;
+        T1 = S + 28 days;
+        T2 = T1 + 1 days;
+        T3 = T2 + 3 days;
     }
 
-    /// @notice Deposit Dai into the protocol. Receive equal amounts of A and B tranches.
-    /// @dev    Requires approval for Dai
-    /// @param  amount_c The amount of Dai to invest into the protocol
-    function splitRisk(uint256 amount_c) public {
-        require(block.timestamp < S, "split: no longer in issuance period");
-        require(amount_c > 1, "split: amount_c too low");
+    /// @notice Add a new lending adapter
+    /// @param adapter The address of the lending adapter to add
+    function addLendingAdapter(address adapter) external onlyOwner {
+        require(block.timestamp < S, "Insurance: past issuance period");
+        require(adapter != address(0), "Insurance: invalid adapter");
+        lendingAdapters.push(ILendingAdapter(adapter));
+        emit AdapterAdded(adapter);
+    }
 
-        if (amount_c % 2 != 0) {
-            // Only accept even denominations
-            amount_c -= 1;
+    /// @notice Remove a lending adapter
+    /// @param index The index of the adapter to remove
+    function removeLendingAdapter(uint256 index) external {
+        require(block.timestamp < S, "Insurance: past issuance period");
+        require(index < lendingAdapters.length, "Insurance: invalid index");
+        emit AdapterRemoved(address(lendingAdapters[index]));
+        lendingAdapters[index] = lendingAdapters[lendingAdapters.length - 1];
+        lendingAdapters.pop();
+    }
+
+    /// @notice Deposit USDC into the protocol. Receive equal amounts of A, B and C tranches.
+    /// @dev Requires approval for USDC
+    /// @param amountUsdc The amount of USDC to invest into the protocol
+    function splitRisk(uint256 amountUsdc) external {
+        require(block.timestamp < S, "Insurance: issuance ended");
+        require(amountUsdc > 2, "Insurance: amount too low");
+        require(amountUsdc % 3 == 0, "Insurance: amount must be divisible by 3");
+
+        require(
+            IERC20(usdc).transferFrom(msg.sender, address(this), amountUsdc),
+            "Insurance: USDC transfer failed"
+        );
+
+        uint256 trancheAmount = amountUsdc / 3;
+        ITranche(A).mint(msg.sender, trancheAmount);
+        ITranche(B).mint(msg.sender, trancheAmount);
+        ITranche(C).mint(msg.sender, trancheAmount);
+
+        emit RiskSplit(msg.sender, amountUsdc);
+    }
+
+    /// @notice Invest deposited funds across lending platforms
+    function invest() external {
+        require(!isInvested, "Insurance: already invested");
+        require(block.timestamp >= S, "Insurance: still in issuance");
+        require(block.timestamp < T1, "Insurance: past insurance period");
+        require(lendingAdapters.length > 0, "Insurance: no adapters");
+
+        IERC20 usdcToken = IERC20(usdc);
+        uint256 balance = usdcToken.balanceOf(address(this));
+        require(balance > 0, "Insurance: no USDC");
+
+        totalTranches = ITranche(A).totalSupply() * 3;
+        uint256 amountPerAdapter = balance / lendingAdapters.length;
+
+        for (uint i = 0; i < lendingAdapters.length; i++) {
+            // Approve the adapter to spend USDC
+            require(
+                IERC20(usdc).approve(address(lendingAdapters[i]), amountPerAdapter),
+                "Insurance: USDC approval failed"
+            );
+
+            try lendingAdapters[i].deposit(usdc, amountPerAdapter) returns (uint256) {
+                // Deposit succeeded
+            } catch Error(string memory) {
+                // Handle deposit error
+                lendingAdapters[i].handleLendingError(usdc, amountPerAdapter, 1);
+                emit LendingError(address(lendingAdapters[i]), usdc, amountPerAdapter, 1);
+                // Reset approval
+                IERC20(usdc).approve(address(lendingAdapters[i]), 0);
+            }
         }
-
-        require(
-            IERC20(c).transferFrom(msg.sender, address(this), amount_c),
-            "split: failed to transfer c tokens"
-        );
-
-        ITranche(A).mint(msg.sender, amount_c / 2);
-        ITranche(B).mint(msg.sender, amount_c / 2);
-
-        emit RiskSplit(msg.sender, amount_c);
-    }
-
-    /// @notice Invest all deposited funds into Aave and Compound, 50:50
-    /// @dev  Should be incentivized for the first successful call
-    function invest() public {
-        require(!isInvested, "split: investment was already performed");
-        require(block.timestamp >= S, "split: still in issuance period");
-        require(block.timestamp < T1, "split: no longer in insurance period");
-
-        address me = address(this);
-        IERC20 cToken = IERC20(c);
-        uint256 balance_c = cToken.balanceOf(me);
-        require(balance_c > 0, "split: no c tokens found");
-        totalTranches = ITranche(A).totalSupply() * 2;
-
-        // Protocol X: Aave
-        cToken.approve(x, balance_c / 2);
-        IAaveLendingpool(x).deposit(c, balance_c / 2, me, 0);
-
-        // Protocol Y: Compound
-        cToken.approve(cy, balance_c / 2); // Approve spending for Compound
-        require(
-            IcDAI(cy).mint(balance_c / 2) == 0,
-            "split: error while minting cDai"
-        );
 
         isInvested = true;
-        emit Invest(
-            balance_c,
-            IERC20(cx).balanceOf(me),
-            IERC20(cy).balanceOf(me),
-            0
-        );
+        emit Invest(balance);
     }
 
-    /// @notice Attempt to withdraw all funds from Aave and Compound.
-    ///         Then calculate the redeem ratios, or enter fallback mode
-    /// @dev    Should be incentivized for the first successful call
-    function divest() public {
-        // Should be incentivized on the first successful call
-        require(block.timestamp >= T1, "split: still in insurance period");
-        require(block.timestamp < T2, "split: already in claim period");
+    /// @notice Withdraw funds from lending platforms and calculate tranche payouts
+    function divest() external {
+        require(block.timestamp >= T1, "Insurance: still in insurance period");
+        require(block.timestamp < T2, "Insurance: in claim period");
 
-        IERC20 cToken = IERC20(c);
-        IERC20 cxToken = IERC20(cx);
-        IcDAI cyToken = IcDAI(cy);
-        address me = address(this);
+        uint256 totalRecovered = 0;
+        uint256 trancheSupply = totalTranches / 3;
 
-        uint256 halfOfTranches = totalTranches / 2;
-        uint256 balance_cx = cxToken.balanceOf(me);
-        uint256 balance_cy = cyToken.balanceOf(me);
-        require(
-            balance_cx > 0 && balance_cy > 0,
-            "split: unable to redeem tokens"
-        );
-        uint256 interest;
-
-        // Protocol X: Aave
-        uint256 balance_c = cToken.balanceOf(me);
-        IAaveLendingpool(x).withdraw(c, balance_cx, me);
-        uint256 withdrawn_x = cToken.balanceOf(me) - balance_c;
-        if (withdrawn_x > halfOfTranches) {
-            interest += withdrawn_x - halfOfTranches;
-        }
-
-        // Protocol Y: Compound
-        require(
-            cyToken.redeem(balance_cy) == 0,
-            "split: unable to redeem cDai"
-        );
-        uint256 withdrawn_y = cToken.balanceOf(me) - balance_c - withdrawn_x;
-        if (withdrawn_y > halfOfTranches) {
-            interest += withdrawn_y - halfOfTranches;
-        }
-
-        require(
-            cxToken.balanceOf(me) == 0 && cyToken.balanceOf(me) == 0,
-            "split: Error while redeeming tokens"
-        );
-
-        // Determine payouts
-        inLiquidMode = true;
-        balance_c = cToken.balanceOf(me);
-        if (balance_c >= totalTranches) {
-            // No losses, equal split of all c among A/B shares
-            cPayoutA = (RAY * balance_c) / totalTranches;
-            cPayoutB = cPayoutA;
-        } else if (balance_c > halfOfTranches) {
-            // Balance covers at least the investment of all A shares
-            cPayoutA = (RAY * interest) / halfOfTranches + RAY; // A tranches fully covered and receive all interest
-            cPayoutB =
-                (RAY * (balance_c - halfOfTranches - interest)) /
-                halfOfTranches;
+        if (!isInvested) {
+            // If never invested, funds are still held by the contract
+            totalRecovered = IERC20(usdc).balanceOf(address(this));
         } else {
-            // Greater or equal than 50% loss
-            cPayoutA = (RAY * balance_c) / halfOfTranches; // Divide recovered assets among A
-            cPayoutB = 0; // Not enough to cover B
-        }
-
-        emit Divest(balance_c, balance_cx, balance_cy, 0);
-    }
-
-    /// @notice Redeem A-tranches for aDai or cDai
-    /// @dev    Only available in fallback mode
-    /// @param  tranches_to_cx The amount of A-tranches that will be redeemed for aDai
-    /// @param  tranches_to_cy The amount of A-tranches that will be redeemed for cDai
-    function claimA(uint256 tranches_to_cx, uint256 tranches_to_cy) public {
-        if (!isInvested && !inLiquidMode && block.timestamp >= T1) {
-            // If invest was never called, activate liquid mode for redemption
-            inLiquidMode = true;
-        }
-        if (inLiquidMode) {
-            // Pay out c directly
-            claim(tranches_to_cx + tranches_to_cy, 0);
-            return;
-        }
-        require(
-            block.timestamp >= T2,
-            "split: claim period for A tranches not active yet"
-        );
-        _claimFallback(tranches_to_cx, tranches_to_cy, A);
-    }
-
-    /// @notice Redeem B-tranches for aDai or cDai
-    /// @dev    Only available in fallback mode, after A-tranches had a window to redeem
-    /// @param  tranches_to_cx The amount of B-tranches that will be redeemed for aDai
-    /// @param  tranches_to_cy The amount of B-tranches that will be redeemed for cDai
-    function claimB(uint256 tranches_to_cx, uint256 tranches_to_cy) public {
-        if (!isInvested && !inLiquidMode && block.timestamp >= T1) {
-            // If invest was never called, activate liquid mode for redemption
-            inLiquidMode = true;
-        }
-        if (inLiquidMode) {
-            // Pay out c directly
-            claim(0, tranches_to_cx + tranches_to_cy);
-            return;
-        }
-        require(
-            block.timestamp >= T3,
-            "split: claim period for B tranches not active yet"
-        );
-        _claimFallback(tranches_to_cx, tranches_to_cy, B);
-    }
-
-    function _claimFallback(
-        uint256 tranches_to_cx,
-        uint256 tranches_to_cy,
-        address trancheAddress
-    ) internal {
-        require(
-            tranches_to_cx > 0 || tranches_to_cy > 0,
-            "split: to_cx or to_cy must be greater than zero"
-        );
-
-        ITranche tranche = ITranche(trancheAddress);
-        require(
-            tranche.balanceOf(msg.sender) >= tranches_to_cx + tranches_to_cy,
-            "split: sender does not hold enough tranche tokens"
-        );
-
-        uint256 amount_A;
-        uint256 amount_B;
-        if (trancheAddress == A) {
-            amount_A = tranches_to_cx + tranches_to_cy;
-        } else if (trancheAddress == B) {
-            amount_B = tranches_to_cx + tranches_to_cy;
-        }
-
-        // Payouts
-        uint256 payout_cx;
-        uint256 payout_cy;
-        if (tranches_to_cx > 0) {
-            IERC20 cxToken = IERC20(cx);
-
-            // Initialize cx split, only on first call
-            if (cxPayout == 0) {
-                cxPayout =
-                    (RAY * cxToken.balanceOf(address(this))) /
-                    totalTranches /
-                    2;
-            }
-
-            tranche.burn(msg.sender, tranches_to_cx);
-            payout_cx = (tranches_to_cx * cxPayout) / RAY;
-            cxToken.transfer(msg.sender, payout_cx);
-        }
-
-        if (tranches_to_cy > 0) {
-            IERC20 cyToken = IERC20(cy);
-
-            // Initialize cy split, only on first call
-            if (cyPayout == 0) {
-                cyPayout =
-                    (RAY * cyToken.balanceOf(address(this))) /
-                    totalTranches /
-                    2;
-            }
-
-            tranche.burn(msg.sender, tranches_to_cy);
-            payout_cy = (tranches_to_cy * cyPayout) / RAY;
-            cyToken.transfer(msg.sender, payout_cy);
-        }
-
-        emit Claim(msg.sender, amount_A, amount_B, 0, payout_cx, payout_cy);
-    }
-
-    /// @notice Redeem **all** owned A- and B-tranches for Dai
-    /// @dev    Only available in liquid mode
-    function claimAll() public {
-        uint256 balance_A = ITranche(A).balanceOf(msg.sender);
-        uint256 balance_B = ITranche(B).balanceOf(msg.sender);
-        require(
-            balance_A > 0 || balance_B > 0,
-            "split: insufficient tranche tokens"
-        );
-        claim(balance_A, balance_B);
-    }
-
-    /// @notice Redeem A- and B-tranches for Dai
-    /// @dev    Only available in liquid mode
-    /// @param  amount_A The amount of A-tranches that will be redeemed for Dai
-    /// @param  amount_B The amount of B-tranches that will be redeemed for Dai
-    function claim(uint256 amount_A, uint256 amount_B) public {
-        if (!inLiquidMode) {
-            if (!isInvested && block.timestamp >= T1) {
-                // If invest was never called, activate liquid mode for redemption
-                inLiquidMode = true;
-            } else {
-                if (block.timestamp < T1) {
-                    revert("split: can not claim during insurance period");
-                } else if (block.timestamp < T2) {
-                    revert("split: call divest() first");
-                } else {
-                    revert("split: use claimA() or claimB() instead");
+            // Withdraw from lending adapters
+            for (uint i = 0; i < lendingAdapters.length; i++) {
+                try lendingAdapters[i].withdraw(usdc, type(uint256).max) returns (uint256 amount) {
+                    totalRecovered += amount;
+                } catch Error(string memory) {
+                    // Handle withdrawal error
+                    lendingAdapters[i].handleLendingError(usdc, type(uint256).max, 2);
+                    emit LendingError(address(lendingAdapters[i]), usdc, type(uint256).max, 2);
                 }
             }
         }
+
+        inLiquidMode = true;
+
+        // Calculate payouts based on losses
+        // Handle not invested case
+        if (!isInvested) {
+            // Return original amounts untouched
+            usdcPayoutA = RAY;
+            usdcPayoutB = RAY;
+            usdcPayoutC = RAY;
+            emit Divest(totalRecovered);
+            return;
+        }
+
+        // For losses, start filling tranches from A to C
+        if (totalRecovered >= totalTranches) {
+            // No losses, equal distribution
+            uint256 payout = (RAY * totalRecovered) / totalTranches;
+            usdcPayoutA = payout;
+            usdcPayoutB = payout;
+            usdcPayoutC = payout;
+        } else {
+            if (totalRecovered >= trancheSupply) {
+                usdcPayoutA = RAY;  // A gets full payment
+                uint256 remaining = totalRecovered - trancheSupply;
+
+                if (remaining >= trancheSupply) {
+                    usdcPayoutB = RAY;  // B gets full payment
+                    remaining -= trancheSupply;
+                    usdcPayoutC = remaining > 0 ? (RAY * remaining) / trancheSupply : 0;
+                } else {
+                    usdcPayoutB = (RAY * remaining) / trancheSupply;  // B gets partial
+                    usdcPayoutC = 0;  // C gets nothing
+                }
+            } else {
+                // Not enough to cover A
+                usdcPayoutA = (RAY * totalRecovered) / trancheSupply;
+                usdcPayoutB = 0;
+                usdcPayoutC = 0;
+            }
+        }
+
+        emit Divest(totalRecovered);
+    }
+
+    /// @notice Internal function to handle claiming USDC for tranche tokens
+    /// @param amountA Amount of A tranche tokens to redeem
+    /// @param amountB Amount of B tranche tokens to redeem
+    /// @param amountC Amount of C tranche tokens to redeem
+    function _claim(uint256 amountA, uint256 amountB, uint256 amountC) internal {
+        // Special case: after T1, if never invested, allow direct claims
+        if (block.timestamp >= T1 && !isInvested && !inLiquidMode) {
+            this.divest();
+        }
+
+        require(inLiquidMode, "Insurance: not in liquid mode");
         require(
-            amount_A > 0 || amount_B > 0,
-            "split: amount_A or amount_B must be greater than zero"
+            amountA > 0 || amountB > 0 || amountC > 0,
+            "Insurance: no amount specified"
         );
-        uint256 payout_c;
 
-        if (amount_A > 0) {
-            ITranche tranche_A = ITranche(A);
+        uint256 payout = 0;
+
+        if (amountA > 0) {
             require(
-                tranche_A.balanceOf(msg.sender) >= amount_A,
-                "split: insufficient tranche A tokens"
+                ITranche(A).balanceOf(msg.sender) >= amountA,
+                "Insurance: insufficient A balance"
             );
-            tranche_A.burn(msg.sender, amount_A);
-            payout_c += (cPayoutA * amount_A) / RAY;
+            ITranche(A).burn(msg.sender, amountA);
+            payout += (usdcPayoutA * amountA) / RAY;
         }
 
-        if (amount_B > 0) {
-            ITranche tranche_B = ITranche(B);
+        if (amountB > 0) {
             require(
-                tranche_B.balanceOf(msg.sender) >= amount_B,
-                "split: insufficient tranche B tokens"
+                ITranche(B).balanceOf(msg.sender) >= amountB,
+                "Insurance: insufficient B balance"
             );
-            tranche_B.burn(msg.sender, amount_B);
-            payout_c += (cPayoutB * amount_B) / RAY;
+            ITranche(B).burn(msg.sender, amountB);
+            payout += (usdcPayoutB * amountB) / RAY;
         }
 
-        if (payout_c > 0) {
-            uint256 available = IERC20(c).balanceOf(address(this));
+        if (amountC > 0) {
             require(
-                payout_c <= available,
-                "split: insufficient underlying funds"
+                ITranche(C).balanceOf(msg.sender) >= amountC,
+                "Insurance: insufficient C balance"
             );
-            IERC20(c).transfer(msg.sender, payout_c);
+            ITranche(C).burn(msg.sender, amountC);
+            payout += (usdcPayoutC * amountC) / RAY;
         }
 
-        emit Claim(msg.sender, amount_A, amount_B, payout_c, 0, 0);
+        if (payout > 0) {
+            require(
+                IERC20(usdc).transfer(msg.sender, payout),
+                "Insurance: USDC transfer failed"
+            );
+        }
+
+        emit Claim(msg.sender, amountA, amountB, amountC, payout);
+    }
+
+    /// @notice Claim USDC for tranche tokens
+    /// @param amountA Amount of A tranche tokens to redeem
+    /// @param amountB Amount of B tranche tokens to redeem
+    /// @param amountC Amount of C tranche tokens to redeem
+    function claim(uint256 amountA, uint256 amountB, uint256 amountC) external {
+        _claim(amountA, amountB, amountC);
+    }
+
+    /// @notice Claim all available tranche tokens
+    function claimAll() external {
+        uint256 balanceA = ITranche(A).balanceOf(msg.sender);
+        uint256 balanceB = ITranche(B).balanceOf(msg.sender);
+        uint256 balanceC = ITranche(C).balanceOf(msg.sender);
+
+        require(
+            balanceA > 0 || balanceB > 0 || balanceC > 0,
+            "Insurance: no balance"
+        );
+
+        _claim(balanceA, balanceB, balanceC);
     }
 }

@@ -11,7 +11,7 @@ contract Tranche is ERC20, Ownable {
     constructor(
         string memory name_,
         string memory symbol_
-    ) ERC20(name_, symbol_) {}
+    ) ERC20(name_, symbol_) Ownable(msg.sender) {}
 
     /// @notice Allows the owner to mint new tranche tokens
     /// @dev The insurance contract should be the immutable owner
