@@ -128,6 +128,11 @@ contract Insurance is Ownable {
         uint256 amountPerAdapter = balance / lendingAdapters.length;
 
         for (uint i = 0; i < lendingAdapters.length; i++) {
+            // Reset any existing approvals
+            require(
+                IERC20(usdc).approve(address(lendingAdapters[i]), 0),
+                "Insurance: USDC approval reset failed"
+            );
             // Approve the adapter to spend USDC
             require(
                 IERC20(usdc).approve(address(lendingAdapters[i]), amountPerAdapter),
@@ -136,12 +141,12 @@ contract Insurance is Ownable {
 
             try lendingAdapters[i].deposit(usdc, amountPerAdapter) returns (uint256) {
                 // Deposit succeeded
-            } catch Error(string memory) {
-                // Handle deposit error
-                lendingAdapters[i].handleLendingError(usdc, amountPerAdapter, 1);
+            } catch Error(string memory reason) {
+                // Log the error and continue to next adapter
                 emit LendingError(address(lendingAdapters[i]), usdc, amountPerAdapter, 1);
                 // Reset approval
                 IERC20(usdc).approve(address(lendingAdapters[i]), 0);
+                continue;
             }
         }
 
@@ -165,10 +170,10 @@ contract Insurance is Ownable {
             for (uint i = 0; i < lendingAdapters.length; i++) {
                 try lendingAdapters[i].withdraw(usdc, type(uint256).max) returns (uint256 amount) {
                     totalRecovered += amount;
-                } catch Error(string memory) {
-                    // Handle withdrawal error
-                    lendingAdapters[i].handleLendingError(usdc, type(uint256).max, 2);
+                } catch Error(string memory reason) {
+                    // Log the error and continue to next adapter
                     emit LendingError(address(lendingAdapters[i]), usdc, type(uint256).max, 2);
+                    continue;
                 }
             }
         }
@@ -176,7 +181,6 @@ contract Insurance is Ownable {
         inLiquidMode = true;
 
         // Calculate payouts based on losses
-        // Handle not invested case
         if (!isInvested) {
             // Return original amounts untouched
             usdcPayoutA = RAY;

@@ -18,7 +18,7 @@ contract MockAaveLendingPool is ILendingAdapter {
     /// @param asset The address of the asset to deposit
     /// @param amount The amount to deposit
     /// @return The amount of shares/tokens received
-    function deposit(address asset, uint256 amount) external override returns (uint256) {
+    function deposit(address asset, uint256 amount) external returns (uint256) {
         if (shouldRevert) {
             revert("MockAaveLendingPool: Deposit failed");
         }
@@ -36,7 +36,7 @@ contract MockAaveLendingPool is ILendingAdapter {
     /// @param asset The address of the asset to withdraw
     /// @param amount The amount to withdraw
     /// @return The amount actually withdrawn
-    function withdraw(address asset, uint256 amount) external override returns (uint256) {
+    function withdraw(address asset, uint256 amount) external returns (uint256) {
         if (shouldRevert) {
             revert("MockAaveLendingPool: Withdraw failed");
         }
@@ -58,21 +58,8 @@ contract MockAaveLendingPool is ILendingAdapter {
     /// @notice Gets the current balance of deposited assets
     /// @param asset The address of the asset to check
     /// @return The current balance
-    function getBalance(address asset) external view override returns (uint256) {
+    function getBalance(address asset) external view returns (uint256) {
         return balances[asset];
-    }
-
-    /// @notice Handles errors that may occur during deposit or withdraw
-    /// @param asset The address of the asset
-    /// @param amount The amount involved
-    /// @param errorCode A code representing the error that occurred
-    function handleLendingError(
-        address asset,
-        uint256 amount,
-        uint256 errorCode
-    ) external override {
-        // In this mock, we just emit an event that can be checked in tests
-        emit LendingError(asset, amount, errorCode);
     }
 
     /// @notice Simulates a loss in the lending pool for testing purposes
@@ -84,6 +71,4 @@ contract MockAaveLendingPool is ILendingAdapter {
         uint256 lossAmount = (currentBalance * lossPercentage) / 100;
         balances[asset] = currentBalance - lossAmount;
     }
-
-    event LendingError(address asset, uint256 amount, uint256 errorCode);
 }

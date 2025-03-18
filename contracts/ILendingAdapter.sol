@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+/// @notice Thrown when deposit/withdraw amount is 0 or negative
+error AmountTooLow();
+
+/// @notice Thrown when deposit operation fails
+error DepositFailed(string reason);
+
+/// @notice Thrown when withdrawal operation fails
+error WithdrawFailed(string reason);
+
+/// @notice Thrown when token approval fails
+error ApprovalFailed(address token, address spender);
+
 interface ILendingAdapter {
     /// @notice Deposits assets into the lending platform
     /// @param asset The address of the asset to deposit (USDC)
@@ -18,16 +30,4 @@ interface ILendingAdapter {
     /// @param asset The address of the asset to check
     /// @return The current balance
     function getBalance(address asset) external view returns (uint256);
-
-    /// @notice Handles errors that may occur during deposit or withdraw
-    /// @param asset The address of the asset
-    /// @param amount The amount to deposit or withdraw
-    /// @param errorCode A code representing the error that occurred
-    function handleLendingError(address asset, uint256 amount, uint256 errorCode) external;
-
-    /// @notice Test helper to toggle revert behavior
-    function setShouldRevert(bool _shouldRevert) external;
-
-    /// @notice Test helper to simulate withdrawal losses
-    function simulateWithdrawLoss(address asset, uint256 lossPercentage) external;
 }

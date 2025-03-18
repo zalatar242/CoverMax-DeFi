@@ -165,10 +165,15 @@ describe("Insurance Contract", function () {
       // Make first adapter fail
       await mockAaveLendingPool.setShouldRevert(true);
 
-      // Investment should still complete
+      // Investment should still complete and emit error from insurance contract
       await expect(insurance.invest())
-        .to.emit(mockAaveLendingPool, "LendingError")
-        .withArgs(await mockUsdc.getAddress(), ethers.parseUnits("300", 6), 1);
+        .to.emit(insurance, "LendingError")
+        .withArgs(
+          await mockAaveLendingPool.getAddress(),
+          await mockUsdc.getAddress(),
+          ethers.parseUnits("300", 6),
+          1
+        );
 
       expect(await insurance.isInvested()).to.be.true;
     });
@@ -179,9 +184,7 @@ describe("Insurance Contract", function () {
       const newInsurance = await Insurance.deploy(await mockUsdc.getAddress());
       await newInsurance.addLendingAdapter(await mockAaveLendingPool.getAddress());
 
-      // Skip to after issuance period
       await advanceTime(ISSUANCE_PERIOD + 1);
-
       await expect(newInsurance.invest())
         .to.be.revertedWith("Insurance: no USDC");
     });
@@ -261,11 +264,6 @@ describe("Insurance Contract", function () {
       expect(beforeBalanceA).to.be.gt(0);
       expect(beforeBalanceB).to.be.gt(0);
       expect(beforeBalanceC).to.be.gt(0);
-
-      // Approve all tranches before claiming
-      await trancheA.connect(user1).approve(await insurance.getAddress(), beforeBalanceA);
-      await trancheB.connect(user1).approve(await insurance.getAddress(), beforeBalanceB);
-      await trancheC.connect(user1).approve(await insurance.getAddress(), beforeBalanceC);
 
       // Claim all tranches
       await insurance.connect(user1).claimAll();
