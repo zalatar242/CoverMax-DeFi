@@ -12,7 +12,7 @@ export const networks = {
         MOONWELL_USDC: "0xEdc817A28E8B93B03976FBd4a3dDBc9f7D176c22",
 
         // Compound
-        COMPOUND_USDC: "0xb125E6687d4313864e53df431d5425969c15Eb2F", // Compound III (Comet) USDC market
+        COMPOUND_USDC_MARKET: "0xb125E6687d4313864e53df431d5425969c15Eb2F", // Compound III (Comet) USDC market
 
         // Base Chain Info
         chainId: 8453,

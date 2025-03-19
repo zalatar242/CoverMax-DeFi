@@ -22,7 +22,7 @@ const config: HardhatUserConfig = {
         url: process.env.NETWORK === 'sepolia'
           ? process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org"
           : process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
-        blockNumber: process.env.NETWORK === 'sepolia' ? 5000000 : 8900000,
+        blockNumber: process.env.NETWORK === 'sepolia' ? 5000000 : 12300000, // More recent block for Base mainnet
         enabled: process.env.FORK_ENABLED === 'true'
       },
       accounts: {
