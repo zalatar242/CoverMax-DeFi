@@ -14,9 +14,11 @@ The project includes lending adapters for Aave V3, Compound III, and Moonwell pr
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
+
 3. Configure environment:
    - Copy `.env.example` to `.env`
    - Fill in required values
@@ -26,7 +28,9 @@ npm install
 The project includes two types of tests:
 
 #### Unit Tests
+
 Run the standard unit tests with mock contracts:
+
 ```bash
 npx hardhat test test/*.test.ts
 ```
@@ -34,9 +38,11 @@ npx hardhat test test/*.test.ts
 These tests use mock contracts to verify the core functionality of the adapters without requiring network access.
 
 #### Mainnet Fork Tests
+
 Test against a fork of the Base mainnet to ensure integration with real protocol states:
 
 1. Configure your `.env` file:
+
 ```
 # RPC URLs (Required)
 BASE_MAINNET_RPC_URL=your_mainnet_rpc_url
@@ -61,11 +67,13 @@ COINMARKETCAP_API_KEY=your_coinmarketcap_api_key
 ```
 
 2. Run the mainnet fork tests:
+
 ```bash
 npx hardhat test test/*.mainnet.test.ts
 ```
 
 The fork tests interact with actual protocol contracts to verify integration with:
+
 - Real token implementations
 - Protocol-specific behaviors
 - Current mainnet state
@@ -79,6 +87,7 @@ npx hardhat run scripts/deploy-adapters.ts --network base
 ```
 
 This will:
+
 1. Deploy all lending adapters
 2. Verify the contracts on Basescan
 3. Output the deployed addresses
@@ -98,11 +107,13 @@ function getBalance(address asset) external returns (uint256);
 - `MoonwellLendingAdapter`: Integrates with Moonwell's mUSDC market
 
 Key features:
+
 - Aave adapter supports multiple assets through Aave V3 pool
 - Compound adapter is optimized for USDC using Compound III (Comet)
 - Moonwell adapter integrates with their mUSDC market
 
 Error Handling:
+
 - Custom errors for specific failure cases
 - Comprehensive try/catch blocks for external calls
 - Detailed error messages for better debugging
@@ -129,12 +140,12 @@ Error Handling:
          │ uses
          ▼
 ┌──────────────────┐    implements     ┌──────────────────┐
-│                  │◄─────────────────►│                  │
-│ ILendingAdapter  │                   │ AaveLendingAdapter│
+│                  │◄──────────────────│                  │
+│ ILendingAdapter  │                   │AaveLendingAdapter│
 │                  │                   │                  │
 └──────────────────┘                   └──────────────────┘
          ▲
-         │ implements                   ┌──────────────────┐
+         │ implements                  ┌──────────────────┐
          ├─────────────────────────────│MoonwellAdapter   │
          │                             │                  │
          │                             └──────────────────┘
@@ -142,5 +153,6 @@ Error Handling:
          │                             ┌──────────────────┐
          │                             │                  │
          └─────────────────────────────│CompoundAdapter   │
-                                      │                  │
-                                      └──────────────────┘
+                                       │                  │
+                                       └──────────────────┘
+```
