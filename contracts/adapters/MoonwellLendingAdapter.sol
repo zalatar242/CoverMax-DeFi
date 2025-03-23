@@ -2,16 +2,18 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "../ILendingAdapter.sol";
 
 interface IMToken {
     function mint(uint256 amount) external returns (uint256);
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256);
     function balanceOf(address owner) external view returns (uint256);
-    function exchangeRateCurrent() external returns (uint256);
+    function exchangeRateStored() external view returns (uint256);
 }
 
 contract MoonwellLendingAdapter is ILendingAdapter {
+    using Strings for uint256;
     address public immutable mToken;
 
     event DepositSuccessful(address asset, uint256 amount);
@@ -25,26 +27,34 @@ contract MoonwellLendingAdapter is ILendingAdapter {
     function deposit(address asset, uint256 amount) external returns (uint256) {
         if (amount == 0) revert AmountTooLow();
 
-        // Reset approval to 0 first for safety
-        try IERC20(asset).approve(mToken, 0) {
-            // Set new approval
-            try IERC20(asset).approve(mToken, amount) {
-                try IMToken(mToken).mint(amount) returns (uint256 errorCode) {
-                    if (errorCode != 0) {
-                        revert DepositFailed("Moonwell mint error code: ");
+        // Transfer tokens from user to adapter first
+        try IERC20(asset).transferFrom(msg.sender, address(this), amount) {
+            // Reset approval to 0 first for safety
+            try IERC20(asset).approve(mToken, 0) {
+                // Set new approval for mToken
+                try IERC20(asset).approve(mToken, amount) {
+                    // Attempt to mint in Moonwell
+                    try IMToken(mToken).mint(amount) returns (uint256 errorCode) {
+                        if (errorCode != 0) {
+                            revert DepositFailed(string.concat("Moonwell mint error code: ", errorCode.toString()));
+                        }
+                        emit DepositSuccessful(asset, amount);
+                        return amount;
+                    } catch Error(string memory reason) {
+                        revert DepositFailed(reason);
+                    } catch {
+                        revert DepositFailed("Moonwell mint failed");
                     }
-                    emit DepositSuccessful(asset, amount);
-                    return amount;
-                } catch Error(string memory reason) {
-                    revert DepositFailed(reason);
                 } catch {
-                    revert DepositFailed("Moonwell mint failed");
+                    revert ApprovalFailed(asset, mToken);
                 }
             } catch {
                 revert ApprovalFailed(asset, mToken);
             }
+        } catch Error(string memory reason) {
+            revert DepositFailed(reason);
         } catch {
-            revert ApprovalFailed(asset, mToken);
+            revert DepositFailed("Failed to transfer tokens to adapter");
         }
     }
 
@@ -53,10 +63,18 @@ contract MoonwellLendingAdapter is ILendingAdapter {
 
         try IMToken(mToken).redeemUnderlying(amount) returns (uint256 errorCode) {
             if (errorCode != 0) {
-                revert WithdrawFailed("Moonwell redeem error code: ");
+                revert WithdrawFailed(string.concat("Moonwell redeem error code: ", errorCode.toString()));
             }
-            emit WithdrawSuccessful(asset, amount);
-            return amount;
+
+            // After successful redeem, transfer the tokens back to the user
+            try IERC20(asset).transfer(msg.sender, amount) {
+                emit WithdrawSuccessful(asset, amount);
+                return amount;
+            } catch Error(string memory reason) {
+                revert WithdrawFailed(string.concat("Transfer failed: ", reason));
+            } catch {
+                revert WithdrawFailed("Transfer to user failed");
+            }
         } catch Error(string memory reason) {
             revert WithdrawFailed(reason);
         } catch {
@@ -65,7 +83,12 @@ contract MoonwellLendingAdapter is ILendingAdapter {
     }
 
     function getBalance(address) external view returns (uint256) {
-        // Return the mToken balance
-        return IMToken(mToken).balanceOf(address(this));
+        // Get mToken balance and stored exchange rate
+        uint256 mTokenBalance = IMToken(mToken).balanceOf(address(this));
+        uint256 exchangeRate = IMToken(mToken).exchangeRateStored();
+
+        // Convert mToken balance to underlying token amount
+        // Exchange rate is scaled by 1e18
+        return (mTokenBalance * exchangeRate) / 1e18;
     }
 }
