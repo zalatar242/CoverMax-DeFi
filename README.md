@@ -1,4 +1,4 @@
-# Decentralized Insurance with Lending Integration
+# CoverMax - DeFi
 
 ## Lending Adapters
 
