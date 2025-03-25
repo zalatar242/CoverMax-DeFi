@@ -15,11 +15,13 @@ import {
   TableHead,
   TableRow
 } from '@mui/material';
-import { ethers } from 'ethers';
-import contracts from '../contracts.json';
+import { useReadContracts, useReadContract } from 'wagmi';
+import { formatUnits } from 'viem';
+import Insurance from '../contracts.json';
+import { formatUSDC, calculatePercentage, ADAPTER_ABI } from '../utils/analytics';
 
 const Analytics = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [analytics, setAnalytics] = useState({
     totalValueLocked: "0",
@@ -35,94 +37,106 @@ const Analytics = () => {
     }
   });
 
-  const loadAnalytics = async () => {
-    if (!window.ethereum) {
-      setError("Please install MetaMask to use this feature");
-      return;
-    }
+  // Get TVL and adapter addresses
+  const { data: mainData } = useReadContracts({
+    contracts: [
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'getTotalValueLocked'
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'AAVE_ADAPTER'
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'COMPOUND_ADAPTER'
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'MOONWELL_ADAPTER'
+      }
+    ]
+  });
 
-    setLoading(true);
-    setError(null);
+  // Get platform-specific TVL once we have adapter addresses
+  const { data: platformData } = useReadContracts({
+    contracts: mainData ? [
+      {
+        address: mainData[1],
+        abi: ADAPTER_ABI,
+        functionName: 'getTotalValueLocked'
+      },
+      {
+        address: mainData[2],
+        abi: ADAPTER_ABI,
+        functionName: 'getTotalValueLocked'
+      },
+      {
+        address: mainData[3],
+        abi: ADAPTER_ABI,
+        functionName: 'getTotalValueLocked'
+      }
+    ] : [],
+    enabled: !!mainData
+  });
 
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-
-      const insurancePool = new ethers.Contract(
-        contracts.InsurancePool.address,
-        contracts.InsurancePool.abi,
-        provider
-      );
-
-      // Get total value locked
-      const tvl = await insurancePool.getTotalValueLocked();
-
-      // Get platform-specific TVL
-      const aaveAdapter = new ethers.Contract(
-        contracts.AaveLendingAdapter.address,
-        contracts.AaveLendingAdapter.abi,
-        provider
-      );
-      const compoundAdapter = new ethers.Contract(
-        contracts.CompoundLendingAdapter.address,
-        contracts.CompoundLendingAdapter.abi,
-        provider
-      );
-      const moonwellAdapter = new ethers.Contract(
-        contracts.MoonwellLendingAdapter.address,
-        contracts.MoonwellLendingAdapter.abi,
-        provider
-      );
-
-      const [aaveTVL, compoundTVL, moonwellTVL] = await Promise.all([
-        aaveAdapter.getTotalValueLocked(),
-        compoundAdapter.getTotalValueLocked(),
-        moonwellAdapter.getTotalValueLocked()
-      ]);
-
-      // Get tranche-specific allocations
-      const trancheATVL = await insurancePool.getTrancheValue(0);
-      const trancheBTVL = await insurancePool.getTrancheValue(1);
-      const trancheCTVL = await insurancePool.getTrancheValue(2);
-
-      setAnalytics({
-        totalValueLocked: ethers.formatUnits(tvl, 6),
-        platformDistribution: {
-          aave: ethers.formatUnits(aaveTVL, 6),
-          compound: ethers.formatUnits(compoundTVL, 6),
-          moonwell: ethers.formatUnits(moonwellTVL, 6)
-        },
-        trancheDistribution: {
-          trancheA: ethers.formatUnits(trancheATVL, 6),
-          trancheB: ethers.formatUnits(trancheBTVL, 6),
-          trancheC: ethers.formatUnits(trancheCTVL, 6)
-        }
-      });
-
-    } catch (err) {
-      console.error("Error loading analytics:", err);
-      setError("Error loading analytics data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Get tranche values
+  const { data: trancheData } = useReadContracts({
+    contracts: [
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'getTrancheValue',
+        args: [0n]
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'getTrancheValue',
+        args: [1n]
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'getTrancheValue',
+        args: [2n]
+      }
+    ]
+  });
 
   useEffect(() => {
-    loadAnalytics();
-  }, []);
+    if (mainData && platformData && trancheData) {
+      try {
+        setError(null);
+        const [tvl] = mainData;
+        const [aaveTVL, compoundTVL, moonwellTVL] = platformData;
+        const [trancheA, trancheB, trancheC] = trancheData;
 
-  const formatUSDC = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
-
-  const calculatePercentage = (value, total) => {
-    if (!total || parseFloat(total) === 0) return "0%";
-    return ((parseFloat(value) / parseFloat(total)) * 100).toFixed(2) + "%";
-  };
+        setAnalytics({
+          totalValueLocked: formatUnits(tvl || 0n, 6),
+          platformDistribution: {
+            aave: formatUnits(aaveTVL || 0n, 6),
+            compound: formatUnits(compoundTVL || 0n, 6),
+            moonwell: formatUnits(moonwellTVL || 0n, 6)
+          },
+          trancheDistribution: {
+            trancheA: formatUnits(trancheA || 0n, 6),
+            trancheB: formatUnits(trancheB || 0n, 6),
+            trancheC: formatUnits(trancheC || 0n, 6)
+          }
+        });
+      } catch (err) {
+        console.error("Error processing analytics data:", err);
+        setError("Error processing analytics data. Please try again.");
+      }
+      setLoading(false);
+    }
+  }, [mainData, platformData, trancheData]);
 
   const StatCard = ({ title, value, subValue }) => (
     <Card>

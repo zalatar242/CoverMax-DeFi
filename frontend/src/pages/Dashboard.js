@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Grid,
@@ -8,44 +9,96 @@ import {
   Button,
   Card,
   CardContent,
+  Alert,
 } from '@mui/material';
 import {
   Timeline,
   AccountBalance,
   Assessment
 } from '@mui/icons-material';
+import { getInsuranceContract, fetchPortfolioData, fetchProtocolStatus } from '../utils/contracts';
+import { useAccount } from 'wagmi';
+import { formatUSDC, calculatePercentage } from '../utils/analytics';
 
 const Dashboard = () => {
-  // Placeholder data - will be replaced with real data from smart contracts
-  const portfolioData = {
-    loading: false,
+  const { address, isConnected } = useAccount();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [portfolioData, setPortfolioData] = useState({
     trancheA: "0",
     trancheB: "0",
     trancheC: "0",
-    protocolStatus: "Deposit Period",
-    timelineDate: "2025-04-23",
     depositedValue: "0"
-  };
+  });
+  const [protocolData, setProtocolData] = useState({
+    status: "Deposit Period",
+    nextPhase: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  });
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!isConnected || !address) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const contract = await getInsuranceContract();
+
+        const [portfolio, protocol] = await Promise.all([
+          fetchPortfolioData(contract, address),
+          fetchProtocolStatus(contract)
+        ]);
+
+        setPortfolioData(portfolio);
+        setProtocolData(protocol);
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
+        setError("Failed to load dashboard data. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [isConnected, address]);
 
   const PortfolioWidget = () => (
     <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <AccountBalance /> Portfolio Overview
       </Typography>
-      {portfolioData.loading ? (
+      {loading ? (
         <Box display="flex" justifyContent="center" my={4}>
           <CircularProgress />
         </Box>
+      ) : !isConnected ? (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Please connect your wallet to view your portfolio
+        </Alert>
       ) : (
         <>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="subtitle1" color="textSecondary" gutterBottom>
+              Total Portfolio Value
+            </Typography>
+            <Typography variant="h4" gutterBottom>
+              {formatUSDC(portfolioData.depositedValue)}
+            </Typography>
+          </Box>
+          <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <Card variant="outlined">
                 <CardContent>
                   <Typography color="textSecondary" gutterBottom>
-                    Tranche A Tokens
+                    Senior Tranche (A)
                   </Typography>
-                  <Typography variant="h5">{portfolioData.trancheA}</Typography>
+                  <Typography variant="h6">{formatUSDC(portfolioData.trancheA)}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {calculatePercentage(portfolioData.trancheA, portfolioData.depositedValue)} of portfolio
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -53,9 +106,12 @@ const Dashboard = () => {
               <Card variant="outlined">
                 <CardContent>
                   <Typography color="textSecondary" gutterBottom>
-                    Tranche B Tokens
+                    Mezzanine Tranche (B)
                   </Typography>
-                  <Typography variant="h5">{portfolioData.trancheB}</Typography>
+                  <Typography variant="h6">{formatUSDC(portfolioData.trancheB)}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {calculatePercentage(portfolioData.trancheB, portfolioData.depositedValue)} of portfolio
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
@@ -63,15 +119,23 @@ const Dashboard = () => {
               <Card variant="outlined">
                 <CardContent>
                   <Typography color="textSecondary" gutterBottom>
-                    Tranche C Tokens
+                    Junior Tranche (C)
                   </Typography>
-                  <Typography variant="h5">{portfolioData.trancheC}</Typography>
+                  <Typography variant="h6">{formatUSDC(portfolioData.trancheC)}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {calculatePercentage(portfolioData.trancheC, portfolioData.depositedValue)} of portfolio
+                  </Typography>
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
           <Box sx={{ mt: 2 }}>
-            <Button variant="contained" color="primary" href="/deposit">
+            <Button
+              variant="contained"
+              color="primary"
+              component={Link}
+              to="/deposit"
+            >
               Deposit USDC
             </Button>
           </Box>
@@ -87,10 +151,10 @@ const Dashboard = () => {
       </Typography>
       <Box sx={{ mt: 2 }}>
         <Typography variant="body1" gutterBottom>
-          Current Period: {portfolioData.protocolStatus}
+          Current Period: {protocolData.status}
         </Typography>
         <Typography variant="body2" color="textSecondary">
-          Next Phase: {portfolioData.timelineDate}
+          Next Phase: {protocolData.nextPhase}
         </Typography>
       </Box>
     </Paper>
@@ -101,14 +165,25 @@ const Dashboard = () => {
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Assessment /> Quick Stats
       </Typography>
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="body1" gutterBottom>
-          Your Deposited Value: ${portfolioData.depositedValue} USDC
-        </Typography>
-        <Button variant="text" color="primary" href="/analytics">
-          View Full Analytics
-        </Button>
-      </Box>
+      {!isConnected ? (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Connect wallet to view analytics
+        </Alert>
+      ) : (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body1" gutterBottom>
+            Your Deposited Value: ${portfolioData.depositedValue} USDC
+          </Typography>
+          <Button
+            variant="text"
+            color="primary"
+            component={Link}
+            to="/analytics"
+          >
+            View Full Analytics
+          </Button>
+        </Box>
+      )}
     </Paper>
   );
 
@@ -117,6 +192,11 @@ const Dashboard = () => {
       <Typography variant="h4" gutterBottom>
         Dashboard
       </Typography>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <PortfolioWidget />

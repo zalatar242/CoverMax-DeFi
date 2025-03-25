@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -6,19 +7,81 @@ import {
   Grid,
   TextField,
   Button,
-  Alert,
   Card,
   CardContent,
   CircularProgress,
+  Alert,
 } from '@mui/material';
-import { ethers } from 'ethers';
-import contracts from '../contracts.json';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSimulateContract } from 'wagmi';
+import { parseUnits } from 'viem';
+import Insurance from '../contracts.json';
 
 const Deposit = () => {
+  const { address, isConnected } = useAccount();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Reset form when wallet disconnects
+    if (!isConnected) {
+      setAmount('');
+      setError(null);
+      setSuccess(false);
+    }
+  }, [isConnected]);
+
+  // Prepare USDC approval
+  const { data: approveSimData, error: approveSimError } = useSimulateContract({
+    address: Insurance.USDC_ADDRESS,
+    abi: ['function approve(address spender, uint256 amount) returns (bool)'],
+    functionName: 'approve',
+    args: amount ? [Insurance.address, parseUnits(amount, 6)] : undefined,
+    enabled: !!amount && validateAmount(amount)
+  });
+
+  const {
+    writeContract: approve,
+    data: approveData,
+    error: approveError
+  } = useWriteContract();
+
+  const {
+    isLoading: isApproving,
+    isSuccess: isApproved
+  } = useWaitForTransactionReceipt({
+    hash: approveData
+  });
+
+  // Prepare deposit
+  const { data: depositSimData, error: depositSimError } = useSimulateContract({
+    address: Insurance.address,
+    abi: Insurance.abi,
+    functionName: 'deposit',
+    args: amount ? [parseUnits(amount, 6), 33n, 33n, 33n] : undefined,
+    enabled: !!amount && validateAmount(amount) && isApproved
+  });
+
+  const {
+    writeContract: deposit,
+    data: depositData,
+    error: depositError
+  } = useWriteContract();
+
+  const {
+    isLoading: isDepositing,
+    isSuccess: isDeposited
+  } = useWaitForTransactionReceipt({
+    hash: depositData
+  });
+
+  useEffect(() => {
+    if (isDeposited) {
+      setSuccess(true);
+    }
+  }, [isDeposited]);
 
   const validateAmount = (value) => {
     if (!value || isNaN(value)) return false;
@@ -39,47 +102,24 @@ const Deposit = () => {
   };
 
   const handleDeposit = async () => {
-    if (!window.ethereum) {
-      setError("Please install MetaMask to use this feature");
+    if (!isConnected) {
+      setError("Please connect your wallet to deposit");
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
+      setLoading(true);
+      setError(null);
 
-      const usdc = new ethers.Contract(
-        contracts.USDC.address,
-        ['function approve(address spender, uint256 amount) returns (bool)'],
-        signer
-      );
+      // First approve
+      if (approveSimData) {
+        await approve?.(approveSimData.request);
+      }
 
-      const insurancePool = new ethers.Contract(
-        contracts.InsurancePool.address,
-        contracts.InsurancePool.abi,
-        signer
-      );
-
-      // Convert amount to proper decimals
-      const depositAmount = ethers.parseUnits(amount, 6); // USDC has 6 decimals
-
-      // First approve USDC spending
-      const approveTx = await usdc.approve(contracts.InsurancePool.address, depositAmount);
-      await approveTx.wait();
-
-      // Then deposit with equal allocation (33% each)
-      const depositTx = await insurancePool.deposit(
-        depositAmount,
-        33,
-        33,
-        33
-      );
-      await depositTx.wait();
-
-      setSuccess(true);
+      // Then deposit after approval
+      if (isApproved && depositSimData) {
+        await deposit?.(depositSimData.request);
+      }
     } catch (err) {
       console.error("Error during deposit:", err);
       setError(err.message || "Error during deposit. Please try again.");
@@ -93,8 +133,8 @@ const Deposit = () => {
       <Grid item xs={12} md={4}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Tranche A (Senior)
+            <Typography variant="subtitle1" gutterBottom>
+              Senior Tranche (A)
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Lowest risk, lowest potential returns. First to be paid out, last to take losses.
@@ -108,8 +148,8 @@ const Deposit = () => {
       <Grid item xs={12} md={4}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Tranche B (Mezzanine)
+            <Typography variant="subtitle1" gutterBottom>
+              Mezzanine Tranche (B)
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Medium risk, medium potential returns. Second to be paid out and take losses.
@@ -123,8 +163,8 @@ const Deposit = () => {
       <Grid item xs={12} md={4}>
         <Card>
           <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Tranche C (Junior)
+            <Typography variant="subtitle1" gutterBottom>
+              Junior Tranche (C)
             </Typography>
             <Typography variant="body2" color="textSecondary">
               Highest risk, highest potential returns. Last to be paid out, first to take losses.
@@ -138,6 +178,19 @@ const Deposit = () => {
     </Grid>
   );
 
+  if (!isConnected) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Deposit USDC
+        </Typography>
+        <Alert severity="info">
+          Please connect your wallet to make a deposit
+        </Alert>
+      </Box>
+    );
+  }
+
   if (success) {
     return (
       <Box>
@@ -146,10 +199,14 @@ const Deposit = () => {
         </Typography>
         <Typography variant="body2" color="textSecondary" gutterBottom sx={{ mb: 2 }}>
           Your deposit has been split equally between all three tranches.
-          You can rebalance your risk allocation in the Portfolio page.
+          You can view your portfolio for details.
         </Typography>
-        <Button variant="contained" href="/portfolio">
-          Go to Portfolio
+        <Button
+          variant="contained"
+          component={Link}
+          to="/"
+        >
+          Back to Dashboard
         </Button>
       </Box>
     );
@@ -179,6 +236,7 @@ const Deposit = () => {
           sx={{ mb: 2 }}
           error={!!amount && !validateAmount(amount)}
           helperText={amount && !validateAmount(amount) ? "Amount must be divisible by 3" : ""}
+          disabled={loading || isApproving || isDepositing}
         />
 
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
@@ -191,10 +249,12 @@ const Deposit = () => {
           <Button
             variant="contained"
             onClick={handleDeposit}
-            disabled={!validateAmount(amount) || loading}
+            disabled={!validateAmount(amount) || loading || isApproving || isDepositing}
           >
-            {loading ? (
+            {isApproving || isDepositing ? (
               <CircularProgress size={24} color="inherit" />
+            ) : isApproved && !isDeposited ? (
+              'Deposit'
             ) : (
               'Approve & Deposit'
             )}

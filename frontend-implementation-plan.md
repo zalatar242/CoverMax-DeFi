@@ -55,7 +55,7 @@ sequenceDiagram
     Frontend->>SmartContract: Split Risk
     SmartContract-->>Frontend: Transaction Result
 
-    User->>Frontend: View Portfolio
+    User->>Frontend: View Dashboard
     Frontend->>SmartContract: Get Balances
     Frontend->>Backend: Get Analytics
     Backend-->>Frontend: Market Data
@@ -69,7 +69,8 @@ sequenceDiagram
 1. **Home/Dashboard**
 
    - Protocol overview
-   - User portfolio summary
+   - Token balances
+   - Performance metrics
    - Quick actions
 
 2. **Deposit Page**
@@ -79,14 +80,7 @@ sequenceDiagram
    - Tranche comparison
    - Transaction flow
 
-3. **Portfolio Management**
-
-   - Token balances
-   - Claim interface
-   - Transaction history
-   - Performance metrics
-
-4. **Analytics**
+3. **Analytics**
    - Protocol statistics
    - Market data
 
@@ -152,12 +146,11 @@ sequenceDiagram
 - Set up project structure and technical stack
 - Implement wallet integration
 - Basic deposit flow
-- Simple portfolio view
+- Dashboard implementation
 - Transaction handling
 
 ### Phase 2: Enhanced Features (Weeks 3-4)
 
-- Complete portfolio management
 - Claim interface
 - Basic analytics
 - Improved UI/UX

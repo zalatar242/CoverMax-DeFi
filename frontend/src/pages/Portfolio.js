@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -6,148 +6,191 @@ import {
   Grid,
   Card,
   CardContent,
-  Button,
-  Alert,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow
+  Alert,
+  Button,
+  Slider,
+  TextField,
 } from '@mui/material';
-import { ethers } from 'ethers';
-import contracts from '../contracts.json';
+import { useAccount, useReadContract, useReadContracts } from 'wagmi';
+import { formatUnits } from 'viem';
+import Insurance from '../contracts.json';
+import { formatUSDC, calculatePercentage } from '../utils/analytics';
 
 const Portfolio = () => {
-  const [loading, setLoading] = useState(false);
+  const { address, isConnected } = useAccount();
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [balances, setBalances] = useState({
+  const [portfolio, setPortfolio] = useState({
+    totalValue: "0",
     trancheA: "0",
     trancheB: "0",
-    trancheC: "0"
-  });
-  const [claimableAmounts, setClaimableAmounts] = useState({
-    trancheA: "0",
-    trancheB: "0",
-    trancheC: "0"
+    trancheC: "0",
+    allocations: {
+      trancheA: 33,
+      trancheB: 33,
+      trancheC: 33
+    }
   });
 
-  const loadBalances = async () => {
-    if (!window.ethereum) {
-      setError("Please install MetaMask to use this feature");
+  // Get balances
+  const { data: balances, isError: balancesError } = useReadContracts({
+    contracts: [
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'balanceOf',
+        args: address ? [address, 0n] : undefined,
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'balanceOf',
+        args: address ? [address, 1n] : undefined,
+      },
+      {
+        address: Insurance.address,
+        abi: Insurance.abi,
+        functionName: 'balanceOf',
+        args: address ? [address, 2n] : undefined,
+      }
+    ],
+    enabled: isConnected && !!address,
+  });
+
+  // Get total value
+  const { data: totalValue, isError: totalValueError } = useReadContract({
+    address: Insurance.address,
+    abi: Insurance.abi,
+    functionName: 'getUserDepositedValue',
+    args: address ? [address] : undefined,
+    enabled: isConnected && !!address,
+  });
+
+  useEffect(() => {
+    if (!isConnected || !address) {
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-      const userAddress = await signer.getAddress();
-
-      const insurancePool = new ethers.Contract(
-        contracts.InsurancePool.address,
-        contracts.InsurancePool.abi,
-        signer
-      );
-
-      // Get tranche token balances
-      const trancheABalance = await insurancePool.balanceOf(userAddress, 0);
-      const trancheBBalance = await insurancePool.balanceOf(userAddress, 1);
-      const trancheCBalance = await insurancePool.balanceOf(userAddress, 2);
-
-      setBalances({
-        trancheA: ethers.formatUnits(trancheABalance, 6),
-        trancheB: ethers.formatUnits(trancheBBalance, 6),
-        trancheC: ethers.formatUnits(trancheCBalance, 6)
-      });
-
-      // Get claimable amounts if in claim period
+    if (balances && totalValue) {
       try {
-        const claimableA = await insurancePool.getClaimableAmount(userAddress, 0);
-        const claimableB = await insurancePool.getClaimableAmount(userAddress, 1);
-        const claimableC = await insurancePool.getClaimableAmount(userAddress, 2);
+        setError(null);
+        const [trancheA, trancheB, trancheC] = balances;
 
-        setClaimableAmounts({
-          trancheA: ethers.formatUnits(claimableA, 6),
-          trancheB: ethers.formatUnits(claimableB, 6),
-          trancheC: ethers.formatUnits(claimableC, 6)
+        setPortfolio({
+          totalValue: formatUnits(totalValue, 6),
+          trancheA: formatUnits(trancheA || 0n, 6),
+          trancheB: formatUnits(trancheB || 0n, 6),
+          trancheC: formatUnits(trancheC || 0n, 6),
+          allocations: {
+            trancheA: Number(formatUnits(trancheA || 0n, 6)) > 0 ? 33 : 0,
+            trancheB: Number(formatUnits(trancheB || 0n, 6)) > 0 ? 33 : 0,
+            trancheC: Number(formatUnits(trancheC || 0n, 6)) > 0 ? 33 : 0
+          }
         });
       } catch (err) {
-        console.log("Not in claim period yet");
+        console.error("Error processing portfolio data:", err);
+        setError("Error processing portfolio data. Please try again.");
       }
+    }
 
-    } catch (err) {
-      console.error("Error loading portfolio:", err);
+    if (balancesError || totalValueError) {
       setError("Error loading portfolio data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClaim = async (trancheId) => {
-    if (!window.ethereum) {
-      setError("Please install MetaMask to use this feature");
-      return;
     }
 
-    setLoading(true);
-    setError(null);
+    setLoading(false);
+  }, [isConnected, address, balances, totalValue, balancesError, totalValueError]);
 
-    try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      const insurancePool = new ethers.Contract(
-        contracts.InsurancePool.address,
-        contracts.InsurancePool.abi,
-        signer
-      );
-
-      // Claim for specific tranche
-      const tx = await insurancePool.claim(trancheId);
-      await tx.wait();
-
-      // Reload balances after successful claim
-      await loadBalances();
-
-    } catch (err) {
-      console.error("Error claiming:", err);
-      setError("Error during claim. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    loadBalances();
-  }, []);
-
-  const TrancheCard = ({ title, balance, claimable, trancheId }) => (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          {title}
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          Balance: {balance} USDC
-        </Typography>
-        <Typography variant="body2" color="textSecondary" gutterBottom>
-          Claimable: {claimable} USDC
-        </Typography>
-        <Button
-          variant="contained"
-          disabled={loading || parseFloat(claimable) <= 0}
-          onClick={() => handleClaim(trancheId)}
-          sx={{ mt: 1 }}
-        >
-          Claim
-        </Button>
-      </CardContent>
-    </Card>
+  const PortfolioSummary = () => (
+    <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Your Portfolio Summary
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography color="textSecondary" gutterBottom>
+                Total Value
+              </Typography>
+              <Typography variant="h4">
+                {formatUSDC(portfolio.totalValue)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Paper>
   );
+
+  const TrancheDetails = () => (
+    <Paper elevation={2} sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Tranche Allocations
+      </Typography>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle1" gutterBottom>
+                Senior Tranche (A)
+              </Typography>
+              <Typography variant="h6">
+                {formatUSDC(portfolio.trancheA)}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {calculatePercentage(portfolio.trancheA, portfolio.totalValue)} of portfolio
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle1" gutterBottom>
+                Mezzanine Tranche (B)
+              </Typography>
+              <Typography variant="h6">
+                {formatUSDC(portfolio.trancheB)}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {calculatePercentage(portfolio.trancheB, portfolio.totalValue)} of portfolio
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="subtitle1" gutterBottom>
+                Junior Tranche (C)
+              </Typography>
+              <Typography variant="h6">
+                {formatUSDC(portfolio.trancheC)}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {calculatePercentage(portfolio.trancheC, portfolio.totalValue)} of portfolio
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Paper>
+  );
+
+  if (!isConnected) {
+    return (
+      <Box>
+        <Typography variant="h4" gutterBottom>
+          Portfolio
+        </Typography>
+        <Alert severity="info">
+          Please connect your wallet to view your portfolio
+        </Alert>
+      </Box>
+    );
+  }
 
   return (
     <Box>
@@ -167,58 +210,8 @@ const Portfolio = () => {
         </Box>
       ) : (
         <>
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
-              <TrancheCard
-                title="Tranche A (Senior)"
-                balance={balances.trancheA}
-                claimable={claimableAmounts.trancheA}
-                trancheId={0}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TrancheCard
-                title="Tranche B (Mezzanine)"
-                balance={balances.trancheB}
-                claimable={claimableAmounts.trancheB}
-                trancheId={1}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TrancheCard
-                title="Tranche C (Junior)"
-                balance={balances.trancheC}
-                claimable={claimableAmounts.trancheC}
-                trancheId={2}
-              />
-            </Grid>
-          </Grid>
-
-          <Paper elevation={2} sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Transaction History
-            </Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Tranche</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={5} align="center">
-                      Transaction history coming soon
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
+          <PortfolioSummary />
+          <TrancheDetails />
         </>
       )}
     </Box>
