@@ -1,16 +1,14 @@
 import { readContract, readContracts } from 'wagmi/actions';
 import { formatUnits } from 'viem';
-import Insurance from '../contracts.json';
+import { getMainConfig, getTranchesConfig } from './contractConfig';
 
 export const getInsuranceContract = async () => {
-  return {
-    address: Insurance.address,
-    abi: Insurance.abi
-  };
+  const { Insurance } = getMainConfig();
+  return Insurance;
 };
 
-export const fetchPortfolioData = async (contract, address) => {
-  if (!contract || !address) {
+export const fetchPortfolioData = async (address) => {
+  if (!address) {
     return {
       trancheA: "0",
       trancheB: "0",
@@ -20,29 +18,32 @@ export const fetchPortfolioData = async (contract, address) => {
   }
 
   try {
+    const insurance = await getInsuranceContract();
+    const tranches = getTranchesConfig();
+
     // Read all balances at once
     const balances = await readContracts({
       contracts: [
         {
-          ...contract,
+          ...tranches.A,
           functionName: 'balanceOf',
-          args: [address, 0n]
+          args: [address]
         },
         {
-          ...contract,
+          ...tranches.B,
           functionName: 'balanceOf',
-          args: [address, 1n]
+          args: [address]
         },
         {
-          ...contract,
+          ...tranches.C,
           functionName: 'balanceOf',
-          args: [address, 2n]
+          args: [address]
         }
       ]
     });
 
     const depositedValue = await readContract({
-      ...contract,
+      ...insurance,
       functionName: 'getUserDepositedValue',
       args: [address]
     });
@@ -59,31 +60,34 @@ export const fetchPortfolioData = async (contract, address) => {
   }
 };
 
-export const fetchProtocolStatus = async (contract) => {
-  if (!contract) {
-    return {
-      status: "Deposit Period",
-      nextPhase: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    };
-  }
+export const fetchProtocolStatus = async () => {
+  const insurance = await getInsuranceContract();
 
   try {
-    const [currentPhase, phaseEndTime] = await readContracts({
+    const [isInvested, inLiquidMode] = await readContracts({
       contracts: [
         {
-          ...contract,
-          functionName: 'getCurrentPhase'
+          ...insurance,
+          functionName: 'isInvested'
         },
         {
-          ...contract,
-          functionName: 'getPhaseEndTime'
+          ...insurance,
+          functionName: 'inLiquidMode'
         }
       ]
     });
 
-    const phases = ["Deposit", "Investment", "Maturity"];
-    const status = phases[Number(currentPhase)] || "Unknown";
-    const nextPhase = new Date(Number(phaseEndTime) * 1000).toISOString().split('T')[0];
+    let status;
+    if (!isInvested) {
+      status = "Deposit Period";
+    } else if (!inLiquidMode) {
+      status = "Investment Period";
+    } else {
+      status = "Claim Period";
+    }
+
+    // Get next phase date - this would need to be calculated based on contract periods
+    const nextPhase = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     return { status, nextPhase };
   } catch (error) {
