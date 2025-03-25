@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { ContractTransactionResponse, parseUnits } from "ethers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { CompoundLendingAdapter, IERC20 } from "../typechain-types";
-import { networks } from "../config/networks";
+import { networks } from "../config/addresses";
 
 describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
     // Get addresses from network config for Base mainnet

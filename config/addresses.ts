@@ -26,7 +26,7 @@ export const networks = {
         AAVE_DATA_PROVIDER: "",
         MOONWELL_COMPTROLLER: "",
         MOONWELL_USDC: "",
-        COMPOUND_USDC: "",
+        COMPOUND_USDC_MARKET: "",
 
         // Base Sepolia Chain Info
         chainId: 84532,

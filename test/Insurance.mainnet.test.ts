@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { Contract } from "ethers";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { Insurance, IERC20, AaveLendingAdapter, Tranche } from "../typechain-types";
-import { networks } from "../config/networks";
+import { networks } from "../config/addresses";
 
 // Rest of the file remains the same
 describe("Insurance (Base Mainnet Fork)", function () {

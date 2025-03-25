@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { parseUnits } from "ethers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { MoonwellLendingAdapter, IERC20 } from "../typechain-types";
-import { networks } from "../config/networks";
+import { networks } from "../config/addresses";
 
 describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
     // Note: This test requires the following environment variables:

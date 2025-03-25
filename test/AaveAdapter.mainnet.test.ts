@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { parseUnits } from "ethers";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { AaveLendingAdapter, IERC20 } from "../typechain-types";
-import { networks } from "../config/networks";
+import { networks } from "../config/addresses";
 
 describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
     // Get addresses from network config
