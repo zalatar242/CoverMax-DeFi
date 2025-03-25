@@ -2,9 +2,13 @@ import contracts from '../contracts.json';
 
 /**
  * Gets the current network from environment variables
- * @returns {string} Current network name ('mainnet' or 'sepolia')
+ * @returns {string} Current network name ('mainnet' or 'hardhat')
  */
 export const getCurrentNetwork = () => {
+  // Check if we're connected to hardhat local network
+  if (window.ethereum?.networkVersion === '31337') {
+    return 'hardhat';
+  }
   return process.env.REACT_APP_DEFAULT_NETWORK || 'mainnet';
 };
 

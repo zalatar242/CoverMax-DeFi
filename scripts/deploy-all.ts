@@ -29,11 +29,10 @@ interface DeployedContracts {
 
 async function main() {
   const isTestNetwork = network.name === "hardhat" || network.name === "localhost";
-  const isMainnet = network.name === "base-mainnet" || (isTestNetwork && process.env.NETWORK !== "sepolia");
-  const networkKey = isMainnet ? "mainnet" : "sepolia";
+  const networkKey = "mainnet"; // Always use mainnet addresses
   const addresses = networks[networkKey];
 
-  console.log(`Deploying contracts on ${network.name} (using ${networkKey} addresses)...`);
+  console.log(`Deploying contracts on ${network.name} (using mainnet addresses)...`);
 
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with account:", deployer.address);
@@ -150,15 +149,17 @@ async function main() {
     const TEST_WALLET = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
     const TRANSFER_AMOUNT = ethers.parseUnits("100", 6); // 100 USDC
 
+    const usdcWhale = "0x6c561B446416E1A00E8E93E221854d6eA4171372"; // Coinbase USDC Whale on Base
+
     // Fund whale with ETH for gas
     await ethers.provider.send("hardhat_setBalance", [
-      process.env.MAINNET_USDC_WHALE,
+      usdcWhale,
       "0x" + (10n ** 18n * 1000n).toString(16) // 1000 ETH
     ]);
 
     // Impersonate whale account
-    await ethers.provider.send("hardhat_impersonateAccount", [process.env.MAINNET_USDC_WHALE]);
-    const whale = await ethers.getSigner(process.env.MAINNET_USDC_WHALE!);
+    await ethers.provider.send("hardhat_impersonateAccount", [usdcWhale]);
+    const whale = await ethers.getSigner(usdcWhale);
 
     // Get USDC contract
     const usdc = await ethers.getContractAt("IERC20", addresses.USDC_ADDRESS);
@@ -175,7 +176,7 @@ async function main() {
     console.log(`Test wallet USDC balance: ${ethers.formatUnits(testWalletBalance, 6)}`);
 
     // Stop impersonating whale
-    await ethers.provider.send("hardhat_stopImpersonatingAccount", [process.env.MAINNET_USDC_WHALE]);
+    await ethers.provider.send("hardhat_stopImpersonatingAccount", [usdcWhale]);
   }
 }
 

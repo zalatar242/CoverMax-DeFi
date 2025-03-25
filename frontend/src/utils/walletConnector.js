@@ -32,8 +32,28 @@ const configuredBaseSepolia = {
   }
 };
 
+// Configure Hardhat local network
+const hardhatLocal = {
+  id: 84531,
+  name: 'Hardhat Local',
+  network: 'hardhat',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: { http: ['http://127.0.0.1:8545'] },
+    public: { http: ['http://127.0.0.1:8545'] },
+  },
+  blockExplorers: {
+    default: { name: 'Local Explorer', url: 'http://localhost:8545' },
+  },
+  testnet: true,
+};
+
 // Define networks
-const networks = [configuredBase, configuredBaseSepolia];
+const networks = [configuredBase, configuredBaseSepolia, hardhatLocal];
 
 // Get projectId from environment variables
 const projectId = process.env.REACT_APP_REOWN_PROJECT_ID;

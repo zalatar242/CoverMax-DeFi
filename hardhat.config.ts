@@ -17,34 +17,30 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: process.env.NETWORK === 'sepolia' ? 84532 : 84531, // Using 84531 for local fork to avoid conflict with Base mainnet
+      chainId: 31337, // Default hardhat chain ID
       forking: {
-        url: process.env.NETWORK === 'sepolia'
-          ? process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org"
-          : process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
-        blockNumber: process.env.NETWORK === 'sepolia' ? 5000000 : 12300000, // More recent block for Base mainnet
+        url: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
         enabled: process.env.FORK_ENABLED === 'true'
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",
         accountsBalance: "10000000000000000000000" // 10000 ETH
+      },
+      hardfork: "shanghai",
+      mining: {
+        auto: true,
+        interval: 0
       }
     },
     "base-mainnet": {
       url: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
       chainId: 8453,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    },
-    "base-sepolia": {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      chainId: 84532,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     }
   },
   etherscan: {
     apiKey: {
-      "base-mainnet": process.env.BASESCAN_API_KEY || "",
-      "base-sepolia": process.env.BASESCAN_API_KEY || ""
+      "base-mainnet": process.env.BASESCAN_API_KEY || ""
     },
     customChains: [
       {
@@ -54,14 +50,6 @@ const config: HardhatUserConfig = {
           apiURL: "https://api.basescan.org/api",
           browserURL: "https://basescan.org"
         }
-      },
-      {
-        network: "base-sepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org"
-        }
       }
     ]
   },
@@ -70,30 +58,5 @@ const config: HardhatUserConfig = {
   }
 };
 
-// Add Base chain configuration
-const baseChainConfig = {
-  hardfork: "london",
-  eip150Block: 0,
-  eip155Block: 0,
-  eip158Block: 0,
-  byzantiumBlock: 0,
-  constantinopleBlock: 0,
-  petersburgBlock: 0,
-  istanbulBlock: 0,
-  muirGlacierBlock: 0,
-  berlinBlock: 0,
-  londonBlock: 0,
-  arrowGlacierBlock: 0,
-  grayGlacierBlock: 0,
-  mergeNetsplitBlock: 0,
-  terminalTotalDifficulty: 0,
-  baseFeePerGas: null
-};
-
-// Apply Base chain configuration to hardhat network
-config.networks!.hardhat = {
-  ...config.networks!.hardhat,
-  ...baseChainConfig
-};
 
 export default config;

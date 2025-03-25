@@ -2,7 +2,7 @@
   "networks": {
     "mainnet": {
       "Insurance": {
-        "address": "0x67d269191c92Caf3cD7723F116c85e6E9bf55933",
+        "address": "0xFcCa971FE9Ee20C1Cf22596E700aA993D8fD19c5",
         "abi": [
           "constructor(address _usdc)",
           "OwnableInvalidOwner(address)",
@@ -43,7 +43,7 @@
         ]
       },
       "TrancheA": {
-        "address": "0xfBD745797A0fb50429f0a2b04581092798Fdf30B",
+        "address": "0xB76E7B83349568dbdA2D6D2D5463eA8a91016b73",
         "abi": [
           "constructor(string name_, string symbol_)",
           "ERC20InsufficientAllowance(address,uint256,uint256)",
@@ -74,7 +74,7 @@
         ]
       },
       "TrancheB": {
-        "address": "0x8Ba41269ed69496c07bea886c300016A0BA8FB5E",
+        "address": "0x4248287EA99e9030743542D66760914d135B35c2",
         "abi": [
           "constructor(string name_, string symbol_)",
           "ERC20InsufficientAllowance(address,uint256,uint256)",
@@ -105,7 +105,7 @@
         ]
       },
       "TrancheC": {
-        "address": "0xe7942Ac9b02c9e668f795F73f32D719462c5fF08",
+        "address": "0x1dd541a34dD2626a1Ecce71Ea9c3B1d1c9d49EA3",
         "abi": [
           "constructor(string name_, string symbol_)",
           "ERC20InsufficientAllowance(address,uint256,uint256)",
@@ -152,7 +152,7 @@
         ]
       },
       "AaveLendingAdapter": {
-        "address": "0x7a2088a1bFc9d81c55368AE168C2C02570cB814F",
+        "address": "0x834Ea01e45F9b5365314358159d92d134d89feEb",
         "abi": [
           "constructor(address _aavePool, address _poolDataProvider)",
           "AmountTooLow()",
@@ -169,7 +169,7 @@
         ]
       },
       "MoonwellLendingAdapter": {
-        "address": "0x09635F643e140090A9A8Dcd712eD6285858ceBef",
+        "address": "0x8D75F9F7f4F4C4eFAB9402261bC864f21DF0c649",
         "abi": [
           "constructor(address _mToken)",
           "AmountTooLow()",
@@ -185,7 +185,7 @@
         ]
       },
       "CompoundLendingAdapter": {
-        "address": "0xc5a5C42992dECbae36851359345FE25997F5C42d",
+        "address": "0x0dEe24C99e8dF7f0E058F4F48f228CC07DB704Fc",
         "abi": [
           "constructor(address _comet)",
           "AmountTooLow()",
@@ -199,96 +199,6 @@
           "deposit(address,uint256)",
           "getBalance(address)",
           "withdraw(address,uint256)"
-        ]
-      }
-    },
-    "sepolia": {
-      "Insurance": {
-        "address": "0xB654b0FC024616802B4295095AE08DAb98DfF7c0",
-        "abi": [
-          "constructor(address _usdc)",
-          "function A() external view returns (address)",
-          "function B() external view returns (address)",
-          "function C() external view returns (address)",
-          "function usdc() external view returns (address)",
-          "function splitRisk(uint256 amountUsdc) external",
-          "function invest() external",
-          "function divest() external",
-          "function claim(uint256 amountA, uint256 amountB, uint256 amountC) external",
-          "function claimAll() external",
-          "function isInvested() external view returns (bool)",
-          "function inLiquidMode() external view returns (bool)",
-          "function usdcPayoutA() external view returns (uint256)",
-          "function usdcPayoutB() external view returns (uint256)",
-          "function usdcPayoutC() external view returns (uint256)",
-          "event RiskSplit(address indexed splitter, uint256 amountUsdc)",
-          "event Invest(uint256 amountUsdc)",
-          "event Divest(uint256 amountUsdc)",
-          "event Claim(address indexed claimant, uint256 amountA, uint256 amountB, uint256 amountC, uint256 amountUsdc)"
-        ]
-      },
-      "TrancheA": {
-        "address": "0xFE3247FCFc20702A18505A10650C9698aCAbF20e",
-        "abi": [
-          "function name() external view returns (string)",
-          "function symbol() external view returns (string)",
-          "function decimals() external view returns (uint8)",
-          "function totalSupply() external view returns (uint256)",
-          "function balanceOf(address account) external view returns (uint256)",
-          "function transfer(address recipient, uint256 amount) external returns (bool)",
-          "function allowance(address owner, address spender) external view returns (uint256)",
-          "function approve(address spender, uint256 amount) external returns (bool)",
-          "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
-          "event Transfer(address indexed from, address indexed to, uint256 value)",
-          "event Approval(address indexed owner, address indexed spender, uint256 value)"
-        ]
-      },
-      "TrancheB": {
-        "address": "0x80F22dA6aF639eF35345ba98AfE6a48478bDcE9E",
-        "abi": [
-          "function name() external view returns (string)",
-          "function symbol() external view returns (string)",
-          "function decimals() external view returns (uint8)",
-          "function totalSupply() external view returns (uint256)",
-          "function balanceOf(address account) external view returns (uint256)",
-          "function transfer(address recipient, uint256 amount) external returns (bool)",
-          "function allowance(address owner, address spender) external view returns (uint256)",
-          "function approve(address spender, uint256 amount) external returns (bool)",
-          "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
-          "event Transfer(address indexed from, address indexed to, uint256 value)",
-          "event Approval(address indexed owner, address indexed spender, uint256 value)"
-        ]
-      },
-      "TrancheC": {
-        "address": "0xe101FB315a64cDa9944E570a7bFfaFE60b994b1D",
-        "abi": [
-          "function name() external view returns (string)",
-          "function symbol() external view returns (string)",
-          "function decimals() external view returns (uint8)",
-          "function totalSupply() external view returns (uint256)",
-          "function balanceOf(address account) external view returns (uint256)",
-          "function transfer(address recipient, uint256 amount) external returns (bool)",
-          "function allowance(address owner, address spender) external view returns (uint256)",
-          "function approve(address spender, uint256 amount) external returns (bool)",
-          "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
-          "event Transfer(address indexed from, address indexed to, uint256 value)",
-          "event Approval(address indexed owner, address indexed spender, uint256 value)"
-        ]
-      },
-      "USDC": {
-        "address": "0xB654b0FC024616802B4295095AE08DAb98DfF7c0",
-        "abi": [
-          "function name() external view returns (string)",
-          "function symbol() external view returns (string)",
-          "function decimals() external view returns (uint8)",
-          "function totalSupply() external view returns (uint256)",
-          "function balanceOf(address account) external view returns (uint256)",
-          "function transfer(address recipient, uint256 amount) external returns (bool)",
-          "function allowance(address owner, address spender) external view returns (uint256)",
-          "function approve(address spender, uint256 amount) external returns (bool)",
-          "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
-          "event Transfer(address indexed from, address indexed to, uint256 value)",
-          "event Approval(address indexed owner, address indexed spender, uint256 value)"
         ]
       }
     }

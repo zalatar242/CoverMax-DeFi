@@ -18,20 +18,6 @@ export const networks = {
         chainId: 8453,
         blockExplorerUrl: "https://basescan.org",
         defaultRpcUrl: "https://mainnet.base.org"
-    },
-    sepolia: {
-        // These are placeholder addresses - need to be updated when deploying to testnet
-        USDC_ADDRESS: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-        AAVE_V3_POOL: "",
-        AAVE_DATA_PROVIDER: "",
-        MOONWELL_COMPTROLLER: "",
-        MOONWELL_USDC: "",
-        COMPOUND_USDC_MARKET: "",
-
-        // Base Sepolia Chain Info
-        chainId: 84532,
-        blockExplorerUrl: "https://sepolia.basescan.org",
-        defaultRpcUrl: "https://sepolia.base.org"
     }
 } as const;
 

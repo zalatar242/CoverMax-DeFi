@@ -15,11 +15,10 @@ async function verifyContract(address: string, args: any[] = []) {
 }
 
 async function main() {
-  const isMainnet = network.name === "base-mainnet" || network.name === "hardhat";
-  const networkKey = isMainnet ? "mainnet" : "sepolia";
+  const networkKey = "mainnet"; // Always use mainnet addresses
   const addresses = networks[networkKey];
 
-  console.log(`Deploying lending adapters on ${network.name} (using ${networkKey} addresses)...`);
+  console.log(`Deploying lending adapters on ${network.name} (using mainnet addresses)...`);
 
   // Deploy Aave adapter
   const AaveAdapter = await ethers.getContractFactory("AaveLendingAdapter");
@@ -46,8 +45,8 @@ async function main() {
   await compoundAdapter.waitForDeployment();
   console.log("CompoundLendingAdapter deployed to:", await compoundAdapter.getAddress());
 
-  // Only verify contracts on actual networks (not hardhat/localhost)
-  if (network.name === "base-mainnet" || network.name === "base-sepolia") {
+  // Only verify contracts on mainnet (not hardhat/localhost)
+  if (network.name === "base-mainnet") {
     console.log("\nWaiting 30 seconds before verification...");
     await new Promise(resolve => setTimeout(resolve, 30000));
 

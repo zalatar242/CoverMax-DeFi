@@ -25,11 +25,27 @@ import {
   Assessment as AnalyticsIcon
 } from '@mui/icons-material';
 import { AppKitProvider } from './utils/walletConnector';
+import { useAccount, useConnect } from 'wagmi';
 
 // Pages
 import Dashboard from './pages/Dashboard';
 import Deposit from './pages/Deposit';
 import Analytics from './pages/Analytics';
+
+const ConnectWalletButton = () => {
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+
+  return (
+    <Button
+      variant="contained"
+      color="secondary"
+      onClick={isConnected ? undefined : () => connect()}
+    >
+      {isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Connect Wallet'}
+    </Button>
+  );
+};
 
 const App = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -104,7 +120,7 @@ const App = () => {
                   ))}
                 </Box>
               )}
-              <appkit-button />
+              <ConnectWalletButton />
             </Toolbar>
           </AppBar>
 
