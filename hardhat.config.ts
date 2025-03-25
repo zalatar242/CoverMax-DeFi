@@ -17,7 +17,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
-      chainId: process.env.NETWORK === 'sepolia' ? 84532 : 8453,
+      chainId: process.env.NETWORK === 'sepolia' ? 84532 : 84531, // Using 84531 for local fork to avoid conflict with Base mainnet
       forking: {
         url: process.env.NETWORK === 'sepolia'
           ? process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org"

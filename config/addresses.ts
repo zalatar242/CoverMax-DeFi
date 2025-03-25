@@ -21,7 +21,7 @@ export const networks = {
     },
     sepolia: {
         // These are placeholder addresses - need to be updated when deploying to testnet
-        USDC_ADDRESS: "",
+        USDC_ADDRESS: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
         AAVE_V3_POOL: "",
         AAVE_DATA_PROVIDER: "",
         MOONWELL_COMPTROLLER: "",
