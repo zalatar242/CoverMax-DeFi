@@ -17,7 +17,10 @@ export const networks = {
         // Base Chain Info
         chainId: 8453,
         blockExplorerUrl: "https://basescan.org",
-        defaultRpcUrl: "https://mainnet.base.org"
+        defaultRpcUrl: "https://mainnet.base.org",
+
+        // Testing accounts
+        USDC_WHALE: "0x6c561B446416E1A00E8E93E221854d6eA4171372"
     }
 } as const;
 

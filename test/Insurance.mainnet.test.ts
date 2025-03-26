@@ -36,8 +36,7 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
   });
 
-  const { USDC_ADDRESS, AAVE_V3_POOL, AAVE_DATA_PROVIDER } = networks.mainnet;
-  const USDC_WHALE = process.env.MAINNET_USDC_WHALE!;
+  const { USDC_ADDRESS, AAVE_V3_POOL, AAVE_DATA_PROVIDER, USDC_WHALE } = networks.mainnet;
 
   let insurance: Insurance;
   let usdc: IERC20;

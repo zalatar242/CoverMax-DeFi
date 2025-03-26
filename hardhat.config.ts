@@ -20,7 +20,8 @@ const config: HardhatUserConfig = {
       chainId: 31337, // Default hardhat chain ID
       forking: {
         url: process.env.BASE_MAINNET_RPC_URL || "",
-        enabled: process.env.FORK_ENABLED === 'true' && !!process.env.BASE_MAINNET_RPC_URL
+        enabled: process.env.FORK_ENABLED === 'true' && !!process.env.BASE_MAINNET_RPC_URL,
+        blockNumber: 12300000
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test junk",

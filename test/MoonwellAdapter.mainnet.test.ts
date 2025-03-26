@@ -14,7 +14,7 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
     const network = networks.mainnet;
     const USDC_ADDRESS = network.USDC_ADDRESS;
     const MOONWELL_MUSDC = network.MOONWELL_USDC;
-    const USDC_WHALE = process.env.MAINNET_USDC_WHALE!;
+    const USDC_WHALE = network.USDC_WHALE;
 
     let owner: SignerWithAddress;
     let usdc: IERC20;
@@ -24,10 +24,6 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
     const TEST_AMOUNT = parseUnits("100", 6); // 100 USDC
 
     before(async function() {
-        if (!USDC_WHALE) {
-            throw new Error("MAINNET_USDC_WHALE address not provided in environment variables");
-        }
-
         // Configure fork
         await ethers.provider.send("hardhat_reset", [{
             forking: {

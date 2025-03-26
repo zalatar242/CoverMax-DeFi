@@ -7,8 +7,7 @@ import { networks } from "../config/addresses";
 
 describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
     // Get addresses from network config
-    const { USDC_ADDRESS, AAVE_V3_POOL, AAVE_DATA_PROVIDER } = networks.mainnet;
-    const USDC_WHALE = process.env.MAINNET_USDC_WHALE!;
+    const { USDC_ADDRESS, AAVE_V3_POOL, AAVE_DATA_PROVIDER, USDC_WHALE } = networks.mainnet;
 
     let owner: SignerWithAddress;
     let usdc: IERC20;

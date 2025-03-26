@@ -7,8 +7,7 @@ import { networks } from "../config/addresses";
 
 describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
     // Get addresses from network config for Base mainnet
-    const { USDC_ADDRESS, COMPOUND_USDC_MARKET } = networks.mainnet;
-    const USDC_WHALE = process.env.MAINNET_USDC_WHALE!;
+    const { USDC_ADDRESS, COMPOUND_USDC_MARKET, USDC_WHALE } = networks.mainnet;
 
     let owner: SignerWithAddress;
     let usdc: IERC20;
