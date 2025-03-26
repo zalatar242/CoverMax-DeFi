@@ -14,9 +14,7 @@ import {
   ListItemIcon,
   ListItemText,
   useTheme,
-  useMediaQuery,
-  Snackbar,
-  Alert
+  useMediaQuery
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -25,40 +23,20 @@ import {
   Assessment as AnalyticsIcon
 } from '@mui/icons-material';
 import { AppKitProvider } from './utils/walletConnector';
-import { useAccount, useConnect } from 'wagmi';
 
 // Pages
 import Dashboard from './pages/Dashboard';
 import Deposit from './pages/Deposit';
 import Analytics from './pages/Analytics';
+import Portfolio from './pages/Portfolio';
 
-const ConnectWalletButton = () => {
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
-
-  return (
-    <Button
-      variant="contained"
-      color="secondary"
-      onClick={isConnected ? undefined : () => connect()}
-    >
-      {isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : 'Connect Wallet'}
-    </Button>
-  );
-};
-
-const App = () => {
+const AppContent = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [error, setError] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
-  };
-
-  const handleCloseError = () => {
-    setError(null);
   };
 
   const menuItems = [
@@ -87,81 +65,87 @@ const App = () => {
   );
 
   return (
-    <AppKitProvider>
-      <Router>
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-          <AppBar position="static">
-            <Toolbar>
-              {isMobile && (
-                <IconButton
-                  color="inherit"
-                  edge="start"
-                  onClick={handleDrawerToggle}
-                  sx={{ mr: 2 }}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                CoverMax - DeFi
-              </Typography>
-              {!isMobile && (
-                <Box sx={{ display: 'flex', gap: 2, mr: 2 }}>
-                  {menuItems.map((item) => (
-                    <Button
-                      key={item.text}
-                      color="inherit"
-                      component={Link}
-                      to={item.path}
-                      startIcon={item.icon}
-                    >
-                      {item.text}
-                    </Button>
-                  ))}
-                </Box>
-              )}
-              <ConnectWalletButton />
-            </Toolbar>
-          </AppBar>
-
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <AppBar position="static">
+        <Toolbar>
           {isMobile && (
-            <Drawer
-              variant="temporary"
-              anchor="left"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              ModalProps={{
-                keepMounted: true // Better mobile performance
-              }}
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
             >
-              {drawer}
-            </Drawer>
+              <MenuIcon />
+            </IconButton>
           )}
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            CoverMax - DeFi
+          </Typography>
+          {!isMobile && (
+            <Box sx={{ display: 'flex', gap: 2, mr: 2 }}>
+              {menuItems.map((item) => (
+                <Button
+                  key={item.text}
+                  color="inherit"
+                  component={Link}
+                  to={item.path}
+                  startIcon={item.icon}
+                >
+                  {item.text}
+                </Button>
+              ))}
+            </Box>
+          )}
+          <Box sx={{
+            '& appkit-button::part(button)': {
+              color: 'white',
+              borderColor: 'white',
+              borderRadius: '4px',
+              padding: '6px 16px',
+              textTransform: 'none',
+              fontSize: '14px',
+              fontWeight: 500,
+              fontFamily: theme.typography.fontFamily,
+            }
+          }}>
+            <appkit-button />
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-          <Container component="main" sx={{ flex: 1, py: 4 }}>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/deposit" element={<Deposit />} />
-              <Route path="/analytics" element={<Analytics />} />
-            </Routes>
-          </Container>
+      {isMobile && (
+        <Drawer
+          variant="temporary"
+          anchor="left"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true // Better mobile performance
+          }}
+        >
+          {drawer}
+        </Drawer>
+      )}
 
-          <Snackbar
-            open={!!error}
-            autoHideDuration={6000}
-            onClose={handleCloseError}
-          >
-            <Alert
-              onClose={handleCloseError}
-              severity="error"
-              sx={{ width: '100%' }}
-            >
-              {error}
-            </Alert>
-          </Snackbar>
-        </Box>
-      </Router>
-    </AppKitProvider>
+      <Container component="main" sx={{ flex: 1, py: 4 }}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/deposit" element={<Deposit />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/portfolio" element={<Portfolio />} />
+        </Routes>
+      </Container>
+    </Box>
+  );
+};
+
+const App = () => {
+  return (
+    <Router>
+      <AppKitProvider>
+        <AppContent />
+      </AppKitProvider>
+    </Router>
   );
 };
 

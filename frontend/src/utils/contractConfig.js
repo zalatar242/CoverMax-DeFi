@@ -1,61 +1,43 @@
 import contracts from '../contracts.json';
+import { hardhat } from '@reown/appkit/networks';
+import { useAppKitNetwork } from '@reown/appkit/react';
 
-/**
- * Gets the current network from environment variables
- * @returns {string} Current network name ('mainnet' or 'hardhat')
- */
-export const getCurrentNetwork = () => {
-  // Check if we're connected to hardhat local network
-  if (window.ethereum?.networkVersion === '31337') {
-    return 'hardhat';
-  }
-  return process.env.REACT_APP_DEFAULT_NETWORK || 'mainnet';
-};
-
-/**
- * Gets contract configuration for a specific contract on the current network
- * @param {string} contractName Name of the contract (e.g., 'Insurance', 'TrancheA')
- * @returns {Object} Contract configuration with address and ABI
- */
-export const getContractConfig = (contractName) => {
-  const network = getCurrentNetwork();
-  const networkContracts = contracts.networks[network];
+const getContractConfig = (networkName, contractName) => {
+  // For local development, use 'hardhat' network contracts
+  const networkContracts = contracts.networks[networkName === 'hardhat' ? 'hardhat' : networkName];
 
   if (!networkContracts || !networkContracts[contractName]) {
-    throw new Error(`Contract ${contractName} not found on network ${network}`);
+    console.error(`Contract ${contractName} not found on network ${networkName}`);
+    return null;
   }
 
   return networkContracts[contractName];
 };
 
-/**
- * Gets contract configurations for all tranches on the current network
- * @returns {Object} Object containing contract configs for all tranches
- */
-export const getTranchesConfig = () => {
+export const useMainConfig = () => {
+  const { chainId } = useAppKitNetwork();
+  // Default to hardhat for development
+  const networkName = chainId === hardhat.id ? 'hardhat' : 'base';
   return {
-    A: getContractConfig('TrancheA'),
-    B: getContractConfig('TrancheB'),
-    C: getContractConfig('TrancheC')
+    Insurance: getContractConfig(networkName, 'Insurance'),
+    USDC: getContractConfig(networkName, 'USDC')
   };
 };
 
-/**
- * Gets Insurance contract and USDC configuration
- * @returns {Object} Object containing Insurance and USDC contract configs
- */
-export const getMainConfig = () => {
+export const useTranchesConfig = () => {
+  const { chainId } = useAppKitNetwork();
+  // Default to hardhat for development
+  const networkName = chainId === hardhat.id ? 'hardhat' : 'base';
+
   return {
-    Insurance: getContractConfig('Insurance'),
-    USDC: getContractConfig('USDC')
+    A: getContractConfig(networkName, 'TrancheA'),
+    B: getContractConfig(networkName, 'TrancheB'),
+    C: getContractConfig(networkName, 'TrancheC')
   };
 };
 
-/**
- * Gets all contract configurations for the current network
- * @returns {Object} All contract configurations
- */
-export const getAllContracts = () => {
-  const network = getCurrentNetwork();
-  return contracts.networks[network];
+export const useContractsConfig = () => {
+  const { chainId } = useAppKitNetwork();
+  const networkName = chainId === hardhat.id ? 'hardhat' : 'base';
+  return contracts.networks[networkName];
 };

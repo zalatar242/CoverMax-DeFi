@@ -12,17 +12,43 @@ import {
   CircularProgress,
   Alert,
 } from '@mui/material';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSimulateContract } from 'wagmi';
+import { useWalletConnection } from '../utils/walletConnector';
+import { useMainConfig } from '../utils/contractConfig';
+import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits } from 'viem';
-import Insurance from '../contracts.json';
 
 const Deposit = () => {
-  const { address, isConnected } = useAccount();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+  const { isConnected, address } = useWalletConnection();
+  const { Insurance, USDC } = useMainConfig();
   const navigate = useNavigate();
+
+  // Check allowance
+  const { data: allowance } = useReadContract({
+    address: USDC?.address,
+    abi: USDC?.abi,
+    functionName: 'allowance',
+    args: [address, Insurance?.address],
+    enabled: Boolean(address && USDC && Insurance),
+    watch: true,
+  });
+
+  // Write contract hooks
+  const { writeContract: writeApprove, data: approveHash } = useWriteContract();
+  const { writeContract: writeDeposit, data: depositHash } = useWriteContract();
+
+  // Transaction receipt hooks
+  const { isLoading: isApproveLoading, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
+    hash: approveHash,
+  });
+
+  const { isLoading: isDepositLoading, isSuccess: isDepositSuccess } = useWaitForTransactionReceipt({
+    hash: depositHash,
+  });
 
   useEffect(() => {
     // Reset form when wallet disconnects
@@ -30,58 +56,17 @@ const Deposit = () => {
       setAmount('');
       setError(null);
       setSuccess(false);
+      setIsApproved(false);
     }
   }, [isConnected]);
 
-  // Prepare USDC approval
-  const { data: approveSimData, error: approveSimError } = useSimulateContract({
-    address: Insurance.USDC_ADDRESS,
-    abi: ['function approve(address spender, uint256 amount) returns (bool)'],
-    functionName: 'approve',
-    args: amount ? [Insurance.address, parseUnits(amount, 6)] : undefined,
-    enabled: !!amount && validateAmount(amount)
-  });
-
-  const {
-    writeContract: approve,
-    data: approveData,
-    error: approveError
-  } = useWriteContract();
-
-  const {
-    isLoading: isApproving,
-    isSuccess: isApproved
-  } = useWaitForTransactionReceipt({
-    hash: approveData
-  });
-
-  // Prepare deposit
-  const { data: depositSimData, error: depositSimError } = useSimulateContract({
-    address: Insurance.address,
-    abi: Insurance.abi,
-    functionName: 'deposit',
-    args: amount ? [parseUnits(amount, 6), 33n, 33n, 33n] : undefined,
-    enabled: !!amount && validateAmount(amount) && isApproved
-  });
-
-  const {
-    writeContract: deposit,
-    data: depositData,
-    error: depositError
-  } = useWriteContract();
-
-  const {
-    isLoading: isDepositing,
-    isSuccess: isDeposited
-  } = useWaitForTransactionReceipt({
-    hash: depositData
-  });
-
+  // Check if amount is approved
   useEffect(() => {
-    if (isDeposited) {
-      setSuccess(true);
+    if (amount && allowance) {
+      const parsedAmount = parseUnits(amount, 6);
+      setIsApproved(allowance >= parsedAmount);
     }
-  }, [isDeposited]);
+  }, [amount, allowance]);
 
   const validateAmount = (value) => {
     if (!value || isNaN(value)) return false;
@@ -93,10 +78,9 @@ const Deposit = () => {
     const value = event.target.value;
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setAmount(value);
+      setError(null);
       if (value && !validateAmount(value)) {
         setError("Amount must be divisible by 3 for equal tranche allocation");
-      } else {
-        setError(null);
       }
     }
   };
@@ -111,22 +95,40 @@ const Deposit = () => {
       setLoading(true);
       setError(null);
 
-      // First approve
-      if (approveSimData) {
-        await approve?.(approveSimData.request);
-      }
-
-      // Then deposit after approval
-      if (isApproved && depositSimData) {
-        await deposit?.(depositSimData.request);
+      if (!isApproved) {
+        // Approve USDC
+        writeApprove({
+          address: USDC.address,
+          abi: USDC.abi,
+          functionName: 'approve',
+          args: [Insurance.address, parseUnits(amount, 6)],
+        });
+      } else {
+        // Deposit
+        writeDeposit({
+          address: Insurance.address,
+          abi: Insurance.abi,
+          functionName: 'deposit',
+          args: [parseUnits(amount, 6), 33, 33, 33],
+        });
       }
     } catch (err) {
       console.error("Error during deposit:", err);
       setError(err.message || "Error during deposit. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
+
+  // Handle transaction success
+  useEffect(() => {
+    if (isApproveSuccess) {
+      setIsApproved(true);
+      setLoading(false);
+    }
+    if (isDepositSuccess) {
+      setSuccess(true);
+      setLoading(false);
+    }
+  }, [isApproveSuccess, isDepositSuccess]);
 
   const RiskExplanation = () => (
     <Grid container spacing={2} sx={{ mt: 2 }}>
@@ -236,7 +238,7 @@ const Deposit = () => {
           sx={{ mb: 2 }}
           error={!!amount && !validateAmount(amount)}
           helperText={amount && !validateAmount(amount) ? "Amount must be divisible by 3" : ""}
-          disabled={loading || isApproving || isDepositing}
+          disabled={loading || isApproveLoading || isDepositLoading}
         />
 
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
@@ -249,11 +251,11 @@ const Deposit = () => {
           <Button
             variant="contained"
             onClick={handleDeposit}
-            disabled={!validateAmount(amount) || loading || isApproving || isDepositing}
+            disabled={!validateAmount(amount) || loading || isApproveLoading || isDepositLoading}
           >
-            {isApproving || isDepositing ? (
+            {loading || isApproveLoading || isDepositLoading ? (
               <CircularProgress size={24} color="inherit" />
-            ) : isApproved && !isDeposited ? (
+            ) : isApproved ? (
               'Deposit'
             ) : (
               'Approve & Deposit'

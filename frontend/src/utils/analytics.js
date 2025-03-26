@@ -1,6 +1,4 @@
-import { formatUnits } from 'viem';
-
-// Format helpers that don't need updating
+// Format helpers
 export const formatUSDC = (value) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',

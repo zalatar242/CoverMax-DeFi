@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Box,
@@ -14,56 +14,61 @@ import {
 import {
   Timeline,
   AccountBalance,
-  Assessment
+  Assessment,
+  AccountBalanceWallet
 } from '@mui/icons-material';
-import { getInsuranceContract, fetchPortfolioData, fetchProtocolStatus } from '../utils/contracts';
-import { useAccount } from 'wagmi';
+import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { formatUSDC, calculatePercentage } from '../utils/analytics';
+import { usePortfolioData, useProtocolStatus, useUSDCBalance } from '../utils/contracts';
 
 const Dashboard = () => {
-  const { address, isConnected } = useAccount();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [portfolioData, setPortfolioData] = useState({
-    trancheA: "0",
-    trancheB: "0",
-    trancheC: "0",
-    depositedValue: "0"
-  });
-  const [protocolData, setProtocolData] = useState({
-    status: "Deposit Period",
-    nextPhase: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-  });
+  const { isConnected, address } = useWalletConnection();
+  const { openConnectModal } = useWalletModal();
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!isConnected || !address) {
-        setLoading(false);
-        return;
-      }
+  const {
+    balance: usdcBalance,
+    isError: usdcError,
+    isLoading: usdcLoading
+  } = useUSDCBalance();
 
-      try {
-        setLoading(true);
-        setError(null);
-        const contract = await getInsuranceContract();
+  const {
+    trancheA,
+    trancheB,
+    trancheC,
+    depositedValue,
+    isError: portfolioError,
+    isLoading: portfolioLoading
+  } = usePortfolioData();
 
-        const [portfolio, protocol] = await Promise.all([
-          fetchPortfolioData(contract, address),
-          fetchProtocolStatus(contract)
-        ]);
+  const {
+    status,
+    tvl,
+    apy,
+    isError: protocolError,
+    isLoading: protocolLoading
+  } = useProtocolStatus();
 
-        setPortfolioData(portfolio);
-        setProtocolData(protocol);
-      } catch (err) {
-        console.error("Failed to load dashboard data:", err);
-        setError("Failed to load dashboard data. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loading = usdcLoading || portfolioLoading || protocolLoading;
+  const error = usdcError || portfolioError || protocolError;
 
-    loadDashboardData();
-  }, [isConnected, address]);
+  const ConnectWalletPrompt = () => (
+    <Paper elevation={2} sx={{ p: 4, textAlign: 'center', mb: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Connect Your Wallet
+      </Typography>
+      <Typography variant="body1" color="textSecondary" sx={{ mb: 3 }}>
+        Connect your wallet to view your portfolio and protocol statistics
+      </Typography>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={openConnectModal}
+        size="large"
+      >
+        Connect Wallet
+      </Button>
+    </Paper>
+  );
 
   const PortfolioWidget = () => (
     <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
@@ -85,7 +90,7 @@ const Dashboard = () => {
               Total Portfolio Value
             </Typography>
             <Typography variant="h4" gutterBottom>
-              {formatUSDC(portfolioData.depositedValue)}
+              {formatUSDC(depositedValue)}
             </Typography>
           </Box>
           <Grid container spacing={2}>
@@ -95,9 +100,9 @@ const Dashboard = () => {
                   <Typography color="textSecondary" gutterBottom>
                     Senior Tranche (A)
                   </Typography>
-                  <Typography variant="h6">{formatUSDC(portfolioData.trancheA)}</Typography>
+                  <Typography variant="h6">{formatUSDC(trancheA)}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {calculatePercentage(portfolioData.trancheA, portfolioData.depositedValue)} of portfolio
+                    {calculatePercentage(trancheA, depositedValue)} of portfolio
                   </Typography>
                 </CardContent>
               </Card>
@@ -108,9 +113,9 @@ const Dashboard = () => {
                   <Typography color="textSecondary" gutterBottom>
                     Mezzanine Tranche (B)
                   </Typography>
-                  <Typography variant="h6">{formatUSDC(portfolioData.trancheB)}</Typography>
+                  <Typography variant="h6">{formatUSDC(trancheB)}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {calculatePercentage(portfolioData.trancheB, portfolioData.depositedValue)} of portfolio
+                    {calculatePercentage(trancheB, depositedValue)} of portfolio
                   </Typography>
                 </CardContent>
               </Card>
@@ -121,9 +126,9 @@ const Dashboard = () => {
                   <Typography color="textSecondary" gutterBottom>
                     Junior Tranche (C)
                   </Typography>
-                  <Typography variant="h6">{formatUSDC(portfolioData.trancheC)}</Typography>
+                  <Typography variant="h6">{formatUSDC(trancheC)}</Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {calculatePercentage(portfolioData.trancheC, portfolioData.depositedValue)} of portfolio
+                    {calculatePercentage(trancheC, depositedValue)} of portfolio
                   </Typography>
                 </CardContent>
               </Card>
@@ -149,39 +154,116 @@ const Dashboard = () => {
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Timeline /> Protocol Status
       </Typography>
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="body1" gutterBottom>
-          Current Period: {protocolData.status}
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          Next Phase: {protocolData.nextPhase}
-        </Typography>
-      </Box>
-    </Paper>
-  );
-
-  const AnalyticsWidget = () => (
-    <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
-      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Assessment /> Quick Stats
-      </Typography>
-      {!isConnected ? (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          Connect wallet to view analytics
-        </Alert>
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
       ) : (
         <Box sx={{ mt: 2 }}>
           <Typography variant="body1" gutterBottom>
-            Your Deposited Value: ${portfolioData.depositedValue} USDC
+            Current Period: {status}
           </Typography>
-          <Button
-            variant="text"
-            color="primary"
-            component={Link}
-            to="/analytics"
-          >
-            View Full Analytics
-          </Button>
+          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>
+            TVL: ${tvl.total}
+          </Typography>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={4}>
+              <Typography variant="body2" color="textSecondary">
+                Tranche A: ${tvl.byTranche.A}
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="body2" color="textSecondary">
+                Tranche B: ${tvl.byTranche.B}
+              </Typography>
+            </Grid>
+            <Grid item xs={4}>
+              <Typography variant="body2" color="textSecondary">
+                Tranche C: ${tvl.byTranche.C}
+              </Typography>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
+    </Paper>
+  );
+
+  const APYWidget = () => (
+    <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Assessment /> Expected Returns
+      </Typography>
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid item xs={12} sm={4}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Senior (A)
+                </Typography>
+                <Typography variant="h6">
+                  {apy.A}% APY
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Mezzanine (B)
+                </Typography>
+                <Typography variant="h6">
+                  {apy.B}% APY
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Junior (C)
+                </Typography>
+                <Typography variant="h6">
+                  {apy.C}% APY
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+    </Paper>
+  );
+
+  const USDCBalanceWidget = () => (
+    <Paper elevation={2} sx={{ p: 2, height: '100%', mb: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <AccountBalanceWallet /> USDC Balance
+      </Typography>
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : !isConnected ? (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          {address === null ?
+            "Checking wallet connection..." :
+            "Please connect your wallet to view your USDC balance"
+          }
+        </Alert>
+      ) : (
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="h4" gutterBottom>
+            {formatUSDC(usdcBalance)}
+          </Typography>
+          <Typography variant="body2" color="textSecondary">
+            Available USDC in Wallet
+          </Typography>
         </Box>
       )}
     </Paper>
@@ -194,10 +276,14 @@ const Dashboard = () => {
       </Typography>
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          Failed to load dashboard data. Please try again later.
         </Alert>
       )}
+      {!isConnected && <ConnectWalletPrompt />}
       <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <USDCBalanceWidget />
+        </Grid>
         <Grid item xs={12}>
           <PortfolioWidget />
         </Grid>
@@ -205,7 +291,7 @@ const Dashboard = () => {
           <TimelineWidget />
         </Grid>
         <Grid item xs={12} md={6}>
-          <AnalyticsWidget />
+          <APYWidget />
         </Grid>
       </Grid>
     </Box>

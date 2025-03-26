@@ -1,97 +1,174 @@
-import { readContract, readContracts } from 'wagmi/actions';
+import { useWalletConnection } from './walletConnector';
+import { useMainConfig, useTranchesConfig } from './contractConfig';
+import { useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
-import { getMainConfig, getTranchesConfig } from './contractConfig';
 
-export const getInsuranceContract = async () => {
-  const { Insurance } = getMainConfig();
-  return Insurance;
+export const useUSDCBalance = () => {
+  const { address } = useWalletConnection();
+  const { USDC } = useMainConfig();
+
+  const { data, error, isError, isLoading } = useReadContract({
+    address: USDC?.address,
+    abi: USDC?.abi,
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && USDC),
+  });
+
+  return {
+    balance: data ? formatUnits(data, 6) : "0",
+    isError,
+    isLoading
+  };
 };
 
-export const fetchPortfolioData = async (address) => {
-  if (!address) {
-    return {
-      trancheA: "0",
-      trancheB: "0",
-      trancheC: "0",
-      depositedValue: "0"
-    };
-  }
+export const usePortfolioData = () => {
+  const { address } = useWalletConnection();
+  const { Insurance } = useMainConfig();
+  const tranches = useTranchesConfig();
 
-  try {
-    const insurance = await getInsuranceContract();
-    const tranches = getTranchesConfig();
+  const { data: trancheAData, isLoading: loadingA, isError: errorA } = useReadContract({
+    address: tranches?.A?.address,
+    abi: tranches?.A?.abi,
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && tranches?.A),
+  });
 
-    // Read all balances at once
-    const balances = await readContracts({
-      contracts: [
-        {
-          ...tranches.A,
-          functionName: 'balanceOf',
-          args: [address]
-        },
-        {
-          ...tranches.B,
-          functionName: 'balanceOf',
-          args: [address]
-        },
-        {
-          ...tranches.C,
-          functionName: 'balanceOf',
-          args: [address]
-        }
-      ]
-    });
+  const { data: trancheBData, isLoading: loadingB, isError: errorB } = useReadContract({
+    address: tranches?.B?.address,
+    abi: tranches?.B?.abi,
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && tranches?.B),
+  });
 
-    const depositedValue = await readContract({
-      ...insurance,
-      functionName: 'getUserDepositedValue',
-      args: [address]
-    });
+  const { data: trancheCData, isLoading: loadingC, isError: errorC } = useReadContract({
+    address: tranches?.C?.address,
+    abi: tranches?.C?.abi,
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && tranches?.C),
+  });
 
-    return {
-      trancheA: formatUnits(balances[0] || 0n, 6),
-      trancheB: formatUnits(balances[1] || 0n, 6),
-      trancheC: formatUnits(balances[2] || 0n, 6),
-      depositedValue: formatUnits(depositedValue || 0n, 6)
-    };
-  } catch (error) {
-    console.error("Error fetching portfolio data:", error);
-    throw error;
-  }
+  const { data: depositedValueData, isLoading: loadingDeposited, isError: errorDeposited } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'getUserDepositedValue',
+    args: [address],
+    enabled: Boolean(address && Insurance),
+  });
+
+  return {
+    trancheA: trancheAData ? formatUnits(trancheAData, 6) : "0",
+    trancheB: trancheBData ? formatUnits(trancheBData, 6) : "0",
+    trancheC: trancheCData ? formatUnits(trancheCData, 6) : "0",
+    depositedValue: depositedValueData ? formatUnits(depositedValueData, 6) : "0",
+    isLoading: loadingA || loadingB || loadingC || loadingDeposited,
+    isError: errorA || errorB || errorC || errorDeposited
+  };
 };
 
-export const fetchProtocolStatus = async () => {
-  const insurance = await getInsuranceContract();
+export const useProtocolStatus = () => {
+  const { Insurance } = useMainConfig();
+  const tranches = useTranchesConfig();
 
-  try {
-    const [isInvested, inLiquidMode] = await readContracts({
-      contracts: [
-        {
-          ...insurance,
-          functionName: 'isInvested'
-        },
-        {
-          ...insurance,
-          functionName: 'inLiquidMode'
-        }
-      ]
-    });
+  const { data: isInvestedData = false, isLoading: loadingInvested } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'isInvested',
+    enabled: Boolean(Insurance),
+  });
 
-    let status;
-    if (!isInvested) {
-      status = "Deposit Period";
-    } else if (!inLiquidMode) {
-      status = "Investment Period";
-    } else {
-      status = "Claim Period";
-    }
+  const { data: inLiquidModeData = false, isLoading: loadingLiquid } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'inLiquidMode',
+    enabled: Boolean(Insurance),
+  });
 
-    // Get next phase date - this would need to be calculated based on contract periods
-    const nextPhase = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const { data: totalAData, isLoading: loadingTotalA, isError: errorTotalA } = useReadContract({
+    address: tranches?.A?.address,
+    abi: tranches?.A?.abi,
+    functionName: 'totalSupply',
+    enabled: Boolean(tranches?.A),
+  });
 
-    return { status, nextPhase };
-  } catch (error) {
-    console.error("Error fetching protocol status:", error);
-    throw error;
+  const { data: totalBData, isLoading: loadingTotalB, isError: errorTotalB } = useReadContract({
+    address: tranches?.B?.address,
+    abi: tranches?.B?.abi,
+    functionName: 'totalSupply',
+    enabled: Boolean(tranches?.B),
+  });
+
+  const { data: totalCData, isLoading: loadingTotalC, isError: errorTotalC } = useReadContract({
+    address: tranches?.C?.address,
+    abi: tranches?.C?.abi,
+    functionName: 'totalSupply',
+    enabled: Boolean(tranches?.C),
+  });
+
+  const { data: rateAData, isLoading: loadingRateA, isError: errorRateA } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'T1',
+    enabled: Boolean(Insurance),
+  });
+
+  const { data: rateBData, isLoading: loadingRateB, isError: errorRateB } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'T2',
+    enabled: Boolean(Insurance),
+  });
+
+  const { data: rateCData, isLoading: loadingRateC, isError: errorRateC } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'T3',
+    enabled: Boolean(Insurance),
+  });
+
+  let status;
+  if (!isInvestedData) {
+    status = "Deposit Period";
+  } else if (!inLiquidModeData) {
+    status = "Investment Period";
+  } else {
+    status = "Claim Period";
   }
+
+  // Calculate APYs with null checks
+  const apy = {
+    A: rateAData ? formatUnits(rateAData, 6) : "0",
+    B: rateBData ? formatUnits(rateBData, 6) : "0",
+    C: rateCData ? formatUnits(rateCData, 6) : "0"
+  };
+
+  // Calculate TVL with null checks
+  const tvlByTranche = {
+    A: totalAData ? formatUnits(totalAData, 6) : "0",
+    B: totalBData ? formatUnits(totalBData, 6) : "0",
+    C: totalCData ? formatUnits(totalCData, 6) : "0"
+  };
+
+  const totalTVL = (
+    parseFloat(tvlByTranche.A) +
+    parseFloat(tvlByTranche.B) +
+    parseFloat(tvlByTranche.C)
+  ).toFixed(2);
+
+  return {
+    status,
+    tvl: {
+      total: totalTVL,
+      byTranche: tvlByTranche
+    },
+    apy,
+    isLoading: loadingTotalA || loadingTotalB || loadingTotalC ||
+               loadingRateA || loadingRateB || loadingRateC ||
+               loadingInvested || loadingLiquid,
+    isError: errorTotalA || errorTotalB || errorTotalC ||
+             errorRateA || errorRateB || errorRateC
+  };
 };

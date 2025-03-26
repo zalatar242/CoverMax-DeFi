@@ -1,12 +1,15 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import ReactDOM from 'react-dom/client';
 import App from './App';
+import { ThemeProvider, createTheme } from '@mui/material';
 
 const theme = createTheme({
   palette: {
-    background: {
-      default: '#f5f5f5',
+    primary: {
+      main: '#1976d2',
+    },
+    secondary: {
+      main: '#dc004e',
     },
   },
   typography: {
@@ -22,12 +25,11 @@ const theme = createTheme({
   },
 });
 
-const container = document.getElementById('root');
-const root = createRoot(container);
+const root = ReactDOM.createRoot(document.getElementById('root'));
+
 root.render(
   <React.StrictMode>
     <ThemeProvider theme={theme}>
-      <CssBaseline />
       <App />
     </ThemeProvider>
   </React.StrictMode>

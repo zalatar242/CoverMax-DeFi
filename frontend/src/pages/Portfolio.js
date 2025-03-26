@@ -12,15 +12,15 @@ import {
   Slider,
   TextField,
 } from '@mui/material';
-import { useAccount, useReadContract, useReadContracts } from 'wagmi';
-import { formatUnits } from 'viem';
 import Insurance from '../contracts.json';
 import { formatUSDC, calculatePercentage } from '../utils/analytics';
+import { appKit } from '../utils/walletConnector';
 
 const Portfolio = () => {
-  const { address, isConnected } = useAccount();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [address, setAddress] = useState(null);
   const [portfolio, setPortfolio] = useState({
     totalValue: "0",
     trancheA: "0",
@@ -33,74 +33,74 @@ const Portfolio = () => {
     }
   });
 
-  // Get balances
-  const { data: balances, isError: balancesError } = useReadContracts({
-    contracts: [
-      {
-        address: Insurance.address,
-        abi: Insurance.abi,
-        functionName: 'balanceOf',
-        args: address ? [address, 0n] : undefined,
-      },
-      {
-        address: Insurance.address,
-        abi: Insurance.abi,
-        functionName: 'balanceOf',
-        args: address ? [address, 1n] : undefined,
-      },
-      {
-        address: Insurance.address,
-        abi: Insurance.abi,
-        functionName: 'balanceOf',
-        args: address ? [address, 2n] : undefined,
+  useEffect(() => {
+    const checkConnection = () => {
+      const button = document.querySelector('appkit-button');
+      if (button) {
+        setIsConnected(!!button.address);
+        setAddress(button.address || null);
       }
-    ],
-    enabled: isConnected && !!address,
-  });
+    };
 
-  // Get total value
-  const { data: totalValue, isError: totalValueError } = useReadContract({
-    address: Insurance.address,
-    abi: Insurance.abi,
-    functionName: 'getUserDepositedValue',
-    args: address ? [address] : undefined,
-    enabled: isConnected && !!address,
-  });
+    // Initial check
+    checkConnection();
+
+    // Listen for connection changes
+    document.addEventListener('appkitAccountsChanged', (e) => {
+      setIsConnected(!!e.detail.address);
+      setAddress(e.detail.address || null);
+    });
+
+    return () => {
+      document.removeEventListener('appkitAccountsChanged', checkConnection);
+    };
+  }, []);
 
   useEffect(() => {
-    if (!isConnected || !address) {
-      setLoading(false);
-      return;
-    }
+    const fetchPortfolioData = async () => {
+      if (!isConnected || !address) {
+        setLoading(false);
+        return;
+      }
 
-    if (balances && totalValue) {
       try {
+        setLoading(true);
         setError(null);
-        const [trancheA, trancheB, trancheC] = balances;
+
+        const provider = await appKit.getProvider();
+        const insuranceContract = new provider.eth.Contract(Insurance.abi, Insurance.address);
+
+        // Get balances for all tranches and total value
+        const [trancheA, trancheB, trancheC, totalValue] = await Promise.all([
+          insuranceContract.methods.balanceOf(address, 0).call(),
+          insuranceContract.methods.balanceOf(address, 1).call(),
+          insuranceContract.methods.balanceOf(address, 2).call(),
+          insuranceContract.methods.getUserDepositedValue(address).call()
+        ]);
 
         setPortfolio({
-          totalValue: formatUnits(totalValue, 6),
-          trancheA: formatUnits(trancheA || 0n, 6),
-          trancheB: formatUnits(trancheB || 0n, 6),
-          trancheC: formatUnits(trancheC || 0n, 6),
+          totalValue: (totalValue / 1e6).toString(),
+          trancheA: (trancheA / 1e6).toString(),
+          trancheB: (trancheB / 1e6).toString(),
+          trancheC: (trancheC / 1e6).toString(),
           allocations: {
-            trancheA: Number(formatUnits(trancheA || 0n, 6)) > 0 ? 33 : 0,
-            trancheB: Number(formatUnits(trancheB || 0n, 6)) > 0 ? 33 : 0,
-            trancheC: Number(formatUnits(trancheC || 0n, 6)) > 0 ? 33 : 0
+            trancheA: Number(trancheA) > 0 ? 33 : 0,
+            trancheB: Number(trancheB) > 0 ? 33 : 0,
+            trancheC: Number(trancheC) > 0 ? 33 : 0
           }
         });
+
+        setError(null);
       } catch (err) {
         console.error("Error processing portfolio data:", err);
         setError("Error processing portfolio data. Please try again.");
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
-    if (balancesError || totalValueError) {
-      setError("Error loading portfolio data. Please try again.");
-    }
-
-    setLoading(false);
-  }, [isConnected, address, balances, totalValue, balancesError, totalValueError]);
+    fetchPortfolioData();
+  }, [isConnected, address]);
 
   const PortfolioSummary = () => (
     <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
