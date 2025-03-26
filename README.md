@@ -25,7 +25,7 @@ The protocol consists of these main components:
 
 1. Install dependencies:
 ```bash
-yarn install
+npm install
 ```
 
 2. Set up environment:
@@ -75,13 +75,13 @@ npx hardhat run scripts/deploy-mainnet.ts --network base-mainnet
 
 ```bash
 # Run all tests
-yarn test
+npm test
 
 # Run specific test file
-yarn test test/Insurance.mainnet.test.ts
+npm test test/Insurance.mainnet.test.ts
 
 # Run coverage
-yarn coverage
+npm run coverage
 ```
 
 ## Contributing
