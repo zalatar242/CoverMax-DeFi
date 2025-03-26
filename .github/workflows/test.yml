@@ -20,15 +20,20 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: |
+        npm install -g npm@latest
+        npm ci
+        npm install
 
-    - name: Run tests
-      env:
-        FORK_ENABLED: 'true'
-        BASE_MAINNET_RPC_URL: ${{ secrets.BASE_MAINNET_RPC_URL }}
+    - name: Verify BASE_MAINNET_RPC_URL
       run: |
         if [ -z "${{ secrets.BASE_MAINNET_RPC_URL }}" ]; then
           echo "Error: BASE_MAINNET_RPC_URL secret is not set"
           exit 1
         fi
-        npx hardhat test
+
+    - name: Run tests
+      env:
+        FORK_ENABLED: 'true'
+        BASE_MAINNET_RPC_URL: ${{ secrets.BASE_MAINNET_RPC_URL }}
+      run: npm test
