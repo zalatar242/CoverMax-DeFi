@@ -1,104 +1,66 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
   Typography,
-  Button,
   Container,
   Box,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   useTheme,
-  useMediaQuery
 } from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-} from '@mui/icons-material';
 import { AppKitProvider } from './utils/walletConnector';
 
 // Pages
 import Dashboard from './pages/Dashboard';
 
+// Custom theme colors
+const colors = {
+  primary: '#FF385C',
+  text: '#484848',
+  textLight: '#767676',
+  border: '#EBEBEB'
+};
+
 const AppContent = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' }
-  ];
-
-  const drawer = (
-    <Box sx={{ mt: 2 }}>
-      <List>
-        {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            component={Link}
-            to={item.path}
-            onClick={() => isMobile && handleDrawerToggle()}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItem>
-        ))}
-      </List>
-    </Box>
-  );
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#F7F7F7' }}>
+      <AppBar
+        position="static"
+        elevation={0}
+        sx={{
+          bgcolor: 'white',
+          borderBottom: `1px solid ${colors.border}`,
+          mb: 2
+        }}
+      >
         <Toolbar>
-          {isMobile && (
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            CoverMax - DeFi
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              flexGrow: 1,
+              color: colors.primary,
+              fontWeight: 700,
+              fontSize: '1.5rem'
+            }}
+          >
+            CoverMax
           </Typography>
-          {!isMobile && (
-            <Box sx={{ display: 'flex', gap: 2, mr: 2 }}>
-              {menuItems.map((item) => (
-                <Button
-                  key={item.text}
-                  color="inherit"
-                  component={Link}
-                  to={item.path}
-                  startIcon={item.icon}
-                >
-                  {item.text}
-                </Button>
-              ))}
-            </Box>
-          )}
           <Box sx={{
             '& appkit-button::part(button)': {
-              color: 'white',
-              borderColor: 'white',
-              borderRadius: '4px',
-              padding: '6px 16px',
+              color: colors.text,
+              borderColor: colors.border,
+              borderRadius: '8px',
+              padding: '8px 16px',
               textTransform: 'none',
               fontSize: '14px',
               fontWeight: 500,
               fontFamily: theme.typography.fontFamily,
+              '&:hover': {
+                borderColor: colors.text
+              }
             }
           }}>
             <appkit-button />
@@ -106,21 +68,7 @@ const AppContent = () => {
         </Toolbar>
       </AppBar>
 
-      {isMobile && (
-        <Drawer
-          variant="temporary"
-          anchor="left"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true // Better mobile performance
-          }}
-        >
-          {drawer}
-        </Drawer>
-      )}
-
-      <Container component="main" sx={{ flex: 1, py: 4 }}>
+      <Container component="main" sx={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
         </Routes>
