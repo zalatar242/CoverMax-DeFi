@@ -28,7 +28,7 @@ interface DeployedContracts {
 }
 
 async function main() {
-  const isTestNetwork = network.name === "hardhat" || network.name === "localhost";
+  const isLocalNetwork = network.name === "hardhat" || network.name === "localhost";
   const networkKey = "mainnet"; // Always use mainnet addresses
   const addresses = networks[networkKey];
 
@@ -96,7 +96,7 @@ async function main() {
   deployedContracts.TrancheC = await ethers.getContractAt("Tranche", await deployedContracts.Insurance.C());
 
   // Only verify on actual networks
-  if (!isTestNetwork) {
+  if (!isLocalNetwork) {
     console.log("\nWaiting 30 seconds before verification...");
     await new Promise(resolve => setTimeout(resolve, 30000));
 
@@ -144,12 +144,12 @@ async function main() {
   console.log(`CompoundLendingAdapter: ${await deployedContracts.CompoundLendingAdapter.getAddress()}`);
 
   // Transfer USDC to test wallet if on local network
-  if (isTestNetwork) {
+  if (isLocalNetwork) {
     console.log("\nFunding test wallet with USDC...");
     const TEST_WALLET = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
     const TRANSFER_AMOUNT = ethers.parseUnits("100", 6); // 100 USDC
 
-    const usdcWhale = "0x6c561B446416E1A00E8E93E221854d6eA4171372"; // Coinbase USDC Whale on Base
+    const usdcWhale = process.env.MAINNET_USDC_WHALE!; // Coinbase USDC Whale on Base
 
     // Fund whale with ETH for gas
     await ethers.provider.send("hardhat_setBalance", [

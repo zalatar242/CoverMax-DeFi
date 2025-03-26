@@ -43,14 +43,21 @@ describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
         await ethers.provider.send("hardhat_impersonateAccount", [USDC_WHALE]);
         whale = await ethers.getSigner(USDC_WHALE);
 
-        // Log initial balances and important addresses
-        const whaleBalance = await usdc.balanceOf(USDC_WHALE);
-        console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6));
-        console.log("USDC Address:", USDC_ADDRESS);
+        console.log("\nAave Adapter Test Setup");
+        console.log("======================");
+        console.log("\nAddresses:");
+        console.log("----------");
+        console.log("USDC Token:", USDC_ADDRESS);
         console.log("Aave Pool:", AAVE_V3_POOL);
         console.log("Aave Data Provider:", AAVE_DATA_PROVIDER);
         console.log("Whale Address:", USDC_WHALE);
         console.log("Adapter Address:", await aaveAdapter.getAddress());
+
+        const whaleBalance = await usdc.balanceOf(USDC_WHALE);
+        console.log("\nInitial Balances:");
+        console.log("----------------");
+        console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6), "USDC");
+        console.log("======================\n");
 
         // Verify the Aave pool contract exists
         const code = await ethers.provider.getCode(AAVE_V3_POOL);
@@ -79,7 +86,10 @@ describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
     });
 
     it("should deposit USDC into Aave", async function() {
+        console.log("\nDeposit Test");
+        console.log("------------");
         const initialBalance = await aaveAdapter.getBalance(USDC_ADDRESS);
+        console.log("Initial Aave balance:", ethers.formatUnits(initialBalance, 6), "USDC");
 
         await expect(
             aaveAdapter.connect(whale).deposit(USDC_ADDRESS, TEST_AMOUNT)
@@ -87,6 +97,8 @@ describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
          .withArgs(USDC_ADDRESS, TEST_AMOUNT);
 
         const finalBalance = await aaveAdapter.getBalance(USDC_ADDRESS);
+        console.log("Final Aave balance:", ethers.formatUnits(finalBalance, 6), "USDC");
+        console.log("------------\n");
         expect(finalBalance).to.equal(initialBalance + TEST_AMOUNT);
     });
 
@@ -96,7 +108,13 @@ describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
     });
 
     it("should withdraw USDC from Aave", async function() {
+        console.log("\nWithdrawal Test");
+        console.log("---------------");
+
         const initialWhaleBalance = await usdc.balanceOf(USDC_WHALE);
+        const initialAdapterBalance = await aaveAdapter.getBalance(USDC_ADDRESS);
+        console.log("Initial whale balance:", ethers.formatUnits(initialWhaleBalance, 6), "USDC");
+        console.log("Initial Aave balance:", ethers.formatUnits(initialAdapterBalance, 6), "USDC");
 
         await expect(
             aaveAdapter.connect(whale).withdraw(USDC_ADDRESS, TEST_AMOUNT)
@@ -104,10 +122,14 @@ describe("Aave Lending Adapter (Base Mainnet Fork)", function() {
          .withArgs(USDC_ADDRESS, TEST_AMOUNT);
 
         const finalWhaleBalance = await usdc.balanceOf(USDC_WHALE);
-        expect(finalWhaleBalance).to.equal(initialWhaleBalance + TEST_AMOUNT);
+        const finalAdapterBalance = await aaveAdapter.getBalance(USDC_ADDRESS);
 
-        const adapterBalance = await aaveAdapter.getBalance(USDC_ADDRESS);
-        expect(adapterBalance).to.equal(0);
+        console.log("Final whale balance:", ethers.formatUnits(finalWhaleBalance, 6), "USDC");
+        console.log("Final Aave balance:", ethers.formatUnits(finalAdapterBalance, 6), "USDC");
+        console.log("---------------\n");
+
+        expect(finalWhaleBalance).to.equal(initialWhaleBalance + TEST_AMOUNT);
+        expect(finalAdapterBalance).to.equal(0);
     });
 
     after(async function() {

@@ -54,12 +54,20 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
         whale = await ethers.getSigner(USDC_WHALE);
 
         // Log initial balances and important addresses
-        const whaleBalance = await usdc.balanceOf(USDC_WHALE);
-        console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6));
-        console.log("USDC Address:", USDC_ADDRESS);
+        console.log("\nMoonwell Adapter Test Setup");
+        console.log("=========================");
+        console.log("\nAddresses:");
+        console.log("----------");
+        console.log("USDC Token:", USDC_ADDRESS);
         console.log("Moonwell mUSDC:", MOONWELL_MUSDC);
         console.log("Whale Address:", USDC_WHALE);
         console.log("Adapter Address:", await moonwellAdapter.getAddress());
+
+        const whaleBalance = await usdc.balanceOf(USDC_WHALE);
+        console.log("\nInitial Balances:");
+        console.log("----------------");
+        console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6), "USDC");
+        console.log("=========================\n");
     });
 
     it("should deploy with correct address", async function() {
@@ -93,26 +101,29 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
     });
 
     it("should deposit USDC into Moonwell", async function() {
+        console.log("\nDeposit Test");
+        console.log("------------");
+
         // Check whale's USDC balance
         const whaleBalance = await usdc.balanceOf(USDC_WHALE);
-        console.log("Whale USDC balance before deposit:", ethers.formatUnits(whaleBalance, 6));
+        console.log("Whale USDC balance:", ethers.formatUnits(whaleBalance, 6), "USDC");
 
         // Ensure whale has approved the adapter
         await usdc.connect(whale).approve(await moonwellAdapter.getAddress(), TEST_AMOUNT);
 
         // Check allowance
         const allowance = await usdc.allowance(USDC_WHALE, await moonwellAdapter.getAddress());
-        console.log("Adapter allowance:", ethers.formatUnits(allowance, 6));
+        console.log("Adapter allowance:", ethers.formatUnits(allowance, 6), "USDC");
 
         const initialBalance = await moonwellAdapter.getBalance(USDC_ADDRESS);
-        console.log("Initial adapter balance (in USDC):", ethers.formatUnits(initialBalance, 6));
+        console.log("Initial adapter balance:", ethers.formatUnits(initialBalance, 6), "USDC");
 
         // Get mToken contract for checking actual balances
         const mToken = await ethers.getContractAt("IMToken", MOONWELL_MUSDC);
         const initialMTokenBalance = await mToken.balanceOf(await moonwellAdapter.getAddress());
         const exchangeRate = await mToken.exchangeRateStored();
         console.log("Exchange rate:", ethers.formatUnits(exchangeRate, 18));
-        console.log("Initial mToken balance:", ethers.formatUnits(initialMTokenBalance, 18));
+        console.log("Initial mToken balance:", ethers.formatUnits(initialMTokenBalance, 18), "mUSDC");
 
         // Attempt deposit
         await expect(moonwellAdapter.connect(whale).deposit(USDC_ADDRESS, TEST_AMOUNT))
@@ -121,8 +132,9 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
 
         const finalBalance = await moonwellAdapter.getBalance(USDC_ADDRESS);
         const finalMTokenBalance = await mToken.balanceOf(await moonwellAdapter.getAddress());
-        console.log("Final mToken balance:", ethers.formatUnits(finalMTokenBalance, 18));
-        console.log("Final adapter balance (in USDC):", ethers.formatUnits(finalBalance, 6));
+        console.log("Final mToken balance:", ethers.formatUnits(finalMTokenBalance, 18), "mUSDC");
+        console.log("Final adapter balance:", ethers.formatUnits(finalBalance, 6), "USDC");
+        console.log("------------\n");
 
         // Check that the converted balance is approximately equal to the deposited amount
         expect(finalBalance).to.be.closeTo(TEST_AMOUNT, ethers.parseUnits("1", 6)); // Allow for some rounding
@@ -137,19 +149,26 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
     });
 
     it("should withdraw USDC from Moonwell", async function() {
+        console.log("\nWithdrawal Test");
+        console.log("---------------");
+
         const initialWhaleBalance = await usdc.balanceOf(USDC_WHALE);
         const initialAdapterBalance = await moonwellAdapter.getBalance(USDC_ADDRESS);
-        console.log("Initial adapter balance before withdraw:", ethers.formatUnits(initialAdapterBalance, 6));
+        console.log("Initial whale balance:", ethers.formatUnits(initialWhaleBalance, 6), "USDC");
+        console.log("Initial adapter balance:", ethers.formatUnits(initialAdapterBalance, 6), "USDC");
 
         await expect(moonwellAdapter.connect(whale).withdraw(USDC_ADDRESS, TEST_AMOUNT))
             .to.emit(moonwellAdapter, "WithdrawSuccessful")
             .withArgs(USDC_ADDRESS, TEST_AMOUNT);
 
         const finalWhaleBalance = await usdc.balanceOf(USDC_WHALE);
-        expect(finalWhaleBalance).to.be.gt(initialWhaleBalance);
-
         const finalAdapterBalance = await moonwellAdapter.getBalance(USDC_ADDRESS);
-        console.log("Final adapter balance after withdraw:", ethers.formatUnits(finalAdapterBalance, 6));
+
+        console.log("Final whale balance:", ethers.formatUnits(finalWhaleBalance, 6), "USDC");
+        console.log("Final adapter balance:", ethers.formatUnits(finalAdapterBalance, 6), "USDC");
+        console.log("---------------\n");
+
+        expect(finalWhaleBalance).to.be.gt(initialWhaleBalance);
         expect(finalAdapterBalance).to.be.lt(initialAdapterBalance);
     });
 

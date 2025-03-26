@@ -122,11 +122,24 @@ describe("Insurance (Base Mainnet Fork)", function () {
         throw new Error("USDC contract not found at specified address");
       }
 
+      console.log("\nInsurance Contract Test Setup");
+      console.log("===========================");
+
+      console.log("\nAddresses:");
+      console.log("----------");
+      console.log("USDC Token:", USDC_ADDRESS);
+      console.log("Insurance:", await insurance.getAddress());
+      console.log("Aave Adapter:", await aaveAdapter.getAddress());
+      console.log("Tranche A:", await trancheA.getAddress());
+      console.log("Tranche B:", await trancheBAddress);
+      console.log("Tranche C:", await trancheCAddress);
+      console.log("Whale:", USDC_WHALE);
+
       const whaleBalance = await usdc.balanceOf(USDC_WHALE);
-      console.log("USDC Address:", USDC_ADDRESS);
-      console.log("Whale Address:", USDC_WHALE);
-      console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6));
-      console.log("Required Amount:", ethers.formatUnits(transferAmount, 6));
+      console.log("\nBalances:");
+      console.log("---------");
+      console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6), "USDC");
+      console.log("Required Amount:", ethers.formatUnits(transferAmount, 6), "USDC");
 
       if (whaleBalance < transferAmount) {
         throw new Error(`Insufficient whale balance. Has: ${ethers.formatUnits(whaleBalance, 6)} USDC, Needs: ${ethers.formatUnits(transferAmount, 6)} USDC`);
@@ -134,9 +147,13 @@ describe("Insurance (Base Mainnet Fork)", function () {
 
       // Transfer USDC
       await usdc.connect(whale).transfer(attacker.address, transferAmount);
-      console.log("Transferred to attacker successfully");
       await usdc.connect(whale).transfer(user.address, transferAmount);
-      console.log("Transferred to user successfully");
+
+      const attackerBalance = await usdc.balanceOf(attacker.address);
+      const userBalance = await usdc.balanceOf(user.address);
+      console.log("Attacker USDC Balance:", ethers.formatUnits(attackerBalance, 6), "USDC");
+      console.log("User USDC Balance:", ethers.formatUnits(userBalance, 6), "USDC");
+      console.log("===========================\n");
     } catch (error: any) {
       console.error("Error in whale setup:", error?.message || "Unknown error");
       throw error;
@@ -235,13 +252,26 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
 
     it("Should invest and divest correctly", async function () {
+      console.log("\nInvestment Lifecycle Test");
+      console.log("=======================");
+
+      const initialPoolBalance = await usdc.balanceOf(await aaveAdapter.getAddress());
+      console.log("Initial pool balance:", ethers.formatUnits(initialPoolBalance, 6), "USDC");
+
       await advanceTime(ISSUANCE_PERIOD);
       await insurance.invest();
       expect(await insurance.isInvested()).to.be.true;
 
+      const investedBalance = await usdc.balanceOf(await aaveAdapter.getAddress());
+      console.log("Balance after investment:", ethers.formatUnits(investedBalance, 6), "USDC");
+
       await advanceTime(INSURANCE_PERIOD);
       await insurance.divest();
       expect(await insurance.inLiquidMode()).to.be.true;
+
+      const finalPoolBalance = await usdc.balanceOf(await aaveAdapter.getAddress());
+      console.log("Final pool balance:", ethers.formatUnits(finalPoolBalance, 6), "USDC");
+      console.log("=======================\n");
     });
 
     it("Should prevent early divestment", async function () {
@@ -270,31 +300,57 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
 
     it("Should prevent claim manipulation through transfer", async function () {
+      console.log("\nClaim Manipulation Test");
+      console.log("=====================");
+
       const amount = ethers.parseUnits("30", 6);
+      console.log("Total amount:", ethers.formatUnits(amount, 6), "USDC");
       await insurance.connect(attacker).splitRisk(amount);
       await advanceTime(ISSUANCE_PERIOD + INSURANCE_PERIOD);
       await insurance.divest();
 
       // Split up the tranches
       const trancheAmount = amount / 3n;
+      console.log("Each tranche amount:", ethers.formatUnits(trancheAmount, 6), "USDC");
+
+      console.log("\nInitial State:");
+      console.log("-------------");
+      console.log("Attacker Tranche A:", ethers.formatUnits(await trancheA.balanceOf(attacker.address), 18), "shares");
+      console.log("User Tranche A: 0 shares");
+
       await trancheA.connect(attacker).transfer(user.address, trancheAmount);
+      console.log("\nAfter Transfer:");
+      console.log("--------------");
+      console.log("Attacker Tranche A: 0 shares");
+      console.log("User Tranche A:", ethers.formatUnits(trancheAmount, 18), "shares");
 
       // Record balances before claiming
       const initialBalanceAttacker = await usdc.balanceOf(attacker.address);
       const initialBalanceUser = await usdc.balanceOf(user.address);
+      console.log("\nBefore Claims:");
+      console.log("-------------");
+      console.log("Attacker USDC:", ethers.formatUnits(initialBalanceAttacker, 6), "USDC");
+      console.log("User USDC:", ethers.formatUnits(initialBalanceUser, 6), "USDC");
 
-      // Claim
+      // Claims
+      console.log("\nProcessing Claims...");
       await insurance.connect(user).claim(trancheAmount, 0, 0);
       await insurance.connect(attacker).claim(0, trancheAmount, trancheAmount);
 
-      // Calculate total claimed by comparing balance differences
+      // Calculate total claimed
       const finalBalanceAttacker = await usdc.balanceOf(attacker.address);
       const finalBalanceUser = await usdc.balanceOf(user.address);
-      const totalClaimed =
-        (finalBalanceAttacker - initialBalanceAttacker) +
-        (finalBalanceUser - initialBalanceUser);
+      const totalClaimed = (finalBalanceAttacker - initialBalanceAttacker) +
+                         (finalBalanceUser - initialBalanceUser);
 
-      // Total claimed should equal original deposit
+      console.log("\nAfter Claims:");
+      console.log("------------");
+      console.log("Attacker USDC:", ethers.formatUnits(finalBalanceAttacker, 6), "USDC");
+      console.log("User USDC:", ethers.formatUnits(finalBalanceUser, 6), "USDC");
+      console.log("Total Claimed:", ethers.formatUnits(totalClaimed, 6), "USDC");
+      console.log("=====================\n");
+
+      // Verify total claimed equals original deposit
       expect(totalClaimed).to.equal(amount);
     });
 
@@ -306,9 +362,20 @@ describe("Insurance (Base Mainnet Fork)", function () {
       await advanceTime(INSURANCE_PERIOD);
       await insurance.divest();
 
+      console.log("\nClaim All Test");
+      console.log("==============");
+
       const beforeBalanceA = await trancheA.balanceOf(attacker.address);
       const beforeBalanceB = await trancheB.balanceOf(attacker.address);
       const beforeBalanceC = await trancheC.balanceOf(attacker.address);
+      const initialUSDC = await usdc.balanceOf(attacker.address);
+
+      console.log("\nInitial Balances:");
+      console.log("----------------");
+      console.log("Tranche A:", ethers.formatUnits(beforeBalanceA, 18), "shares");
+      console.log("Tranche B:", ethers.formatUnits(beforeBalanceB, 18), "shares");
+      console.log("Tranche C:", ethers.formatUnits(beforeBalanceC, 18), "shares");
+      console.log("USDC:", ethers.formatUnits(initialUSDC, 6), "USDC");
 
       expect(beforeBalanceA).to.be.gt(0);
       expect(beforeBalanceB).to.be.gt(0);
@@ -317,6 +384,16 @@ describe("Insurance (Base Mainnet Fork)", function () {
       // Claim all tranches
       await insurance.connect(attacker).claimAll();
 
+      const afterUSDC = await usdc.balanceOf(attacker.address);
+      console.log("\nFinal Balances:");
+      console.log("--------------");
+      console.log("Tranche A: 0 shares");
+      console.log("Tranche B: 0 shares");
+      console.log("Tranche C: 0 shares");
+      console.log("USDC:", ethers.formatUnits(afterUSDC, 6), "USDC");
+      console.log("USDC Claimed:", ethers.formatUnits(afterUSDC - initialUSDC, 6), "USDC");
+      console.log("==============\n");
+
       // Verify all balances are now 0
       expect(await trancheA.balanceOf(attacker.address)).to.equal(0);
       expect(await trancheB.balanceOf(attacker.address)).to.equal(0);
@@ -324,8 +401,28 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
 
     it("Should handle full lifecycle with claims", async function () {
+      console.log("\nFull Lifecycle Test");
+      console.log("==================");
+
       const amount = ethers.parseUnits("30", 6); // 30 USDC (divisible by 3)
+      console.log("\nInitial State:");
+      console.log("-------------");
+      console.log("Total amount:", ethers.formatUnits(amount, 6), "USDC");
+
       await insurance.connect(whale).splitRisk(amount);
+      const trancheAmount = amount / 3n;
+      console.log("Each tranche amount:", ethers.formatUnits(trancheAmount, 6), "USDC");
+
+      const initialBalances = {
+        trancheA: await trancheA.balanceOf(USDC_WHALE),
+        trancheB: await trancheB.balanceOf(USDC_WHALE),
+        trancheC: await trancheC.balanceOf(USDC_WHALE)
+      };
+      console.log("\nAfter Split:");
+      console.log("------------");
+      console.log("Tranche A:", ethers.formatUnits(initialBalances.trancheA, 18), "shares");
+      console.log("Tranche B:", ethers.formatUnits(initialBalances.trancheB, 18), "shares");
+      console.log("Tranche C:", ethers.formatUnits(initialBalances.trancheC, 18), "shares");
 
       await advanceTime(ISSUANCE_PERIOD);
       await insurance.invest();
@@ -333,8 +430,19 @@ describe("Insurance (Base Mainnet Fork)", function () {
       await advanceTime(INSURANCE_PERIOD);
       await insurance.divest();
 
-      const trancheAmount = amount / 3n;
+      const initialUSDC = await usdc.balanceOf(USDC_WHALE);
+      console.log("\nBefore Claim:");
+      console.log("------------");
+      console.log("USDC Balance:", ethers.formatUnits(initialUSDC, 6), "USDC");
+
       await insurance.connect(whale).claim(trancheAmount, trancheAmount, trancheAmount);
+
+      const finalUSDC = await usdc.balanceOf(USDC_WHALE);
+      console.log("\nAfter Claim:");
+      console.log("-----------");
+      console.log("USDC Balance:", ethers.formatUnits(finalUSDC, 6), "USDC");
+      console.log("USDC Claimed:", ethers.formatUnits(finalUSDC - initialUSDC, 6), "USDC");
+      console.log("==================\n");
 
       expect(await trancheA.balanceOf(USDC_WHALE)).to.equal(0);
       expect(await trancheB.balanceOf(USDC_WHALE)).to.equal(0);
@@ -342,7 +450,11 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
 
     it("Should prevent double claiming", async function () {
+      console.log("\nDouble Claiming Test");
+      console.log("==================");
+
       const amount = ethers.parseUnits("30", 6); // 30 USDC (divisible by 3)
+      console.log("Initial amount:", ethers.formatUnits(amount, 6), "USDC");
       await insurance.connect(whale).splitRisk(amount);
 
       await advanceTime(ISSUANCE_PERIOD);
@@ -352,7 +464,17 @@ describe("Insurance (Base Mainnet Fork)", function () {
       await insurance.divest();
 
       const trancheAmount = amount / 3n;
+      console.log("\nFirst Claim:");
+      console.log("------------");
+      console.log("Claiming Tranche A:", ethers.formatUnits(trancheAmount, 6), "USDC");
+
+      const initialUSDC = await usdc.balanceOf(USDC_WHALE);
       await insurance.connect(whale).claim(trancheAmount, 0, 0);
+      const afterFirstClaim = await usdc.balanceOf(USDC_WHALE);
+
+      console.log("USDC Claimed:", ethers.formatUnits(afterFirstClaim - initialUSDC, 6), "USDC");
+      console.log("\nAttempting Second Claim (Should Fail)...");
+      console.log("==================\n");
 
       await expect(insurance.connect(whale).claim(trancheAmount, 0, 0))
         .to.be.revertedWith("Insurance: insufficient A balance");

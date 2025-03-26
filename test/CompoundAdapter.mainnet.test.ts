@@ -55,13 +55,21 @@ describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
 
         whale = await ethers.getSigner(USDC_WHALE);
 
+        console.log("\nCompound Adapter Test Setup");
+        console.log("========================");
         // Log initial balances and important addresses
         const whaleBalance = await usdc.balanceOf(USDC_WHALE);
-        console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6));
-        console.log("USDC Address:", USDC_ADDRESS);
+        console.log("\nAddresses:");
+        console.log("----------");
+        console.log("USDC Token:", USDC_ADDRESS);
         console.log("Compound Pool (Comet):", COMPOUND_USDC_MARKET);
         console.log("Whale Address:", USDC_WHALE);
         console.log("Adapter Address:", await compoundAdapter.getAddress());
+
+        console.log("\nInitial Balances:");
+        console.log("----------------");
+        console.log("Whale USDC Balance:", ethers.formatUnits(whaleBalance, 6), "USDC");
+        console.log("========================\n");
 
         const cometAddress = await compoundAdapter.comet();
         expect(cometAddress).to.equal(COMPOUND_USDC_MARKET);
@@ -115,7 +123,9 @@ describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
 
     it("should deposit USDC into Compound", async function() {
         const initialBalance = await compoundAdapter.getBalance(USDC_ADDRESS);
-        console.log("Initial Compound balance:", initialBalance.toString());
+        console.log("\nDeposit Test");
+        console.log("------------");
+        console.log("Initial Compound balance:", ethers.formatUnits(initialBalance, 6), "USDC");
 
         // Test the returned shares and event
         const depositTx = await compoundAdapter.connect(whale).deposit(USDC_ADDRESS, TEST_AMOUNT);
@@ -141,7 +151,8 @@ describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
 
         // Get final balance and log it
         const finalBalance = await compoundAdapter.getBalance(USDC_ADDRESS);
-        console.log("Final Compound balance:", finalBalance.toString());
+        console.log("Final Compound balance:", ethers.formatUnits(finalBalance, 6), "USDC");
+        console.log("------------\n");
         // Allow for potential rounding or fees in Compound V3
         expect(finalBalance).to.be.closeTo(TEST_AMOUNT, 2);
     });
@@ -164,7 +175,9 @@ describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
 
         // Get the actual balance we have in Compound
         const adapterBalance = await compoundAdapter.getBalance(USDC_ADDRESS);
-        console.log("Adapter Compound balance before withdrawal:", adapterBalance.toString());
+        console.log("\nWithdrawal Test");
+        console.log("---------------");
+        console.log("Adapter Compound balance before withdrawal:", ethers.formatUnits(adapterBalance, 6), "USDC");
 
         // Withdraw what we actually have, not TEST_AMOUNT
         await expect(compoundAdapter.connect(whale).withdraw(USDC_ADDRESS, adapterBalance))
@@ -176,6 +189,8 @@ describe("Compound Lending Adapter (Base Mainnet Fork)", function() {
         expect(finalWhaleBalance).to.equal(initialWhaleBalance + adapterBalance);
 
         const finalAdapterBalance = await compoundAdapter.getBalance(USDC_ADDRESS);
+        console.log("Final adapter balance:", ethers.formatUnits(finalAdapterBalance, 6), "USDC");
+        console.log("---------------\n");
         expect(finalAdapterBalance).to.equal(0);
     });
 
