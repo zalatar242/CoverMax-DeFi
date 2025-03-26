@@ -2,7 +2,7 @@
   "networks": {
     "mainnet": {
       "Insurance": {
-        "address": "0xFcCa971FE9Ee20C1Cf22596E700aA993D8fD19c5",
+        "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
         "abi": [
           "constructor(address _usdc)",
           "OwnableInvalidOwner(address)",
@@ -43,7 +43,7 @@
         ]
       },
       "TrancheA": {
-        "address": "0xB76E7B83349568dbdA2D6D2D5463eA8a91016b73",
+        "address": "0xd8058efe0198ae9dD7D563e1b4938Dcbc86A1F81",
         "abi": [
           "constructor(string name_, string symbol_)",
           "ERC20InsufficientAllowance(address,uint256,uint256)",
@@ -74,7 +74,7 @@
         ]
       },
       "TrancheB": {
-        "address": "0x4248287EA99e9030743542D66760914d135B35c2",
+        "address": "0x6D544390Eb535d61e196c87d6B9c80dCD8628Acd",
         "abi": [
           "constructor(string name_, string symbol_)",
           "ERC20InsufficientAllowance(address,uint256,uint256)",
@@ -105,7 +105,7 @@
         ]
       },
       "TrancheC": {
-        "address": "0x1dd541a34dD2626a1Ecce71Ea9c3B1d1c9d49EA3",
+        "address": "0xB1eDe3F5AC8654124Cb5124aDf0Fd3885CbDD1F7",
         "abi": [
           "constructor(string name_, string symbol_)",
           "ERC20InsufficientAllowance(address,uint256,uint256)",
@@ -152,7 +152,7 @@
         ]
       },
       "AaveLendingAdapter": {
-        "address": "0x834Ea01e45F9b5365314358159d92d134d89feEb",
+        "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
         "abi": [
           "constructor(address _aavePool, address _poolDataProvider)",
           "AmountTooLow()",
@@ -169,7 +169,7 @@
         ]
       },
       "MoonwellLendingAdapter": {
-        "address": "0x8D75F9F7f4F4C4eFAB9402261bC864f21DF0c649",
+        "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
         "abi": [
           "constructor(address _mToken)",
           "AmountTooLow()",
@@ -185,7 +185,7 @@
         ]
       },
       "CompoundLendingAdapter": {
-        "address": "0x0dEe24C99e8dF7f0E058F4F48f228CC07DB704Fc",
+        "address": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
         "abi": [
           "constructor(address _comet)",
           "AmountTooLow()",
@@ -199,6 +199,394 @@
           "deposit(address,uint256)",
           "getBalance(address)",
           "withdraw(address,uint256)"
+        ]
+      }
+    },
+    "local": {
+      "Insurance": {
+        "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "abi": [
+          "constructor(address _usdc)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "AdapterAdded(address)",
+          "AdapterRemoved(address)",
+          "Claim(address,uint256,uint256,uint256,uint256)",
+          "Divest(uint256)",
+          "Invest(uint256)",
+          "LendingError(address,address,uint256,uint256)",
+          "OwnershipTransferred(address,address)",
+          "RiskSplit(address,uint256)",
+          "A()",
+          "B()",
+          "C()",
+          "S()",
+          "T1()",
+          "T2()",
+          "T3()",
+          "addLendingAdapter(address)",
+          "claim(uint256,uint256,uint256)",
+          "claimAll()",
+          "divest()",
+          "inLiquidMode()",
+          "invest()",
+          "isInvested()",
+          "lendingAdapters(uint256)",
+          "owner()",
+          "removeLendingAdapter(uint256)",
+          "renounceOwnership()",
+          "splitRisk(uint256)",
+          "totalTranches()",
+          "transferOwnership(address)",
+          "usdc()",
+          "usdcPayoutA()",
+          "usdcPayoutB()",
+          "usdcPayoutC()"
+        ]
+      },
+      "TrancheA": {
+        "address": "0xd8058efe0198ae9dD7D563e1b4938Dcbc86A1F81",
+        "abi": [
+          "constructor(string name_, string symbol_)",
+          "ERC20InsufficientAllowance(address,uint256,uint256)",
+          "ERC20InsufficientBalance(address,uint256,uint256)",
+          "ERC20InvalidApprover(address)",
+          "ERC20InvalidReceiver(address)",
+          "ERC20InvalidSender(address)",
+          "ERC20InvalidSpender(address)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "Approval(address,address,uint256)",
+          "OwnershipTransferred(address,address)",
+          "Transfer(address,address,uint256)",
+          "allowance(address,address)",
+          "approve(address,uint256)",
+          "balanceOf(address)",
+          "burn(address,uint256)",
+          "decimals()",
+          "mint(address,uint256)",
+          "name()",
+          "owner()",
+          "renounceOwnership()",
+          "symbol()",
+          "totalSupply()",
+          "transfer(address,uint256)",
+          "transferFrom(address,address,uint256)",
+          "transferOwnership(address)"
+        ]
+      },
+      "TrancheB": {
+        "address": "0x6D544390Eb535d61e196c87d6B9c80dCD8628Acd",
+        "abi": [
+          "constructor(string name_, string symbol_)",
+          "ERC20InsufficientAllowance(address,uint256,uint256)",
+          "ERC20InsufficientBalance(address,uint256,uint256)",
+          "ERC20InvalidApprover(address)",
+          "ERC20InvalidReceiver(address)",
+          "ERC20InvalidSender(address)",
+          "ERC20InvalidSpender(address)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "Approval(address,address,uint256)",
+          "OwnershipTransferred(address,address)",
+          "Transfer(address,address,uint256)",
+          "allowance(address,address)",
+          "approve(address,uint256)",
+          "balanceOf(address)",
+          "burn(address,uint256)",
+          "decimals()",
+          "mint(address,uint256)",
+          "name()",
+          "owner()",
+          "renounceOwnership()",
+          "symbol()",
+          "totalSupply()",
+          "transfer(address,uint256)",
+          "transferFrom(address,address,uint256)",
+          "transferOwnership(address)"
+        ]
+      },
+      "TrancheC": {
+        "address": "0xB1eDe3F5AC8654124Cb5124aDf0Fd3885CbDD1F7",
+        "abi": [
+          "constructor(string name_, string symbol_)",
+          "ERC20InsufficientAllowance(address,uint256,uint256)",
+          "ERC20InsufficientBalance(address,uint256,uint256)",
+          "ERC20InvalidApprover(address)",
+          "ERC20InvalidReceiver(address)",
+          "ERC20InvalidSender(address)",
+          "ERC20InvalidSpender(address)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "Approval(address,address,uint256)",
+          "OwnershipTransferred(address,address)",
+          "Transfer(address,address,uint256)",
+          "allowance(address,address)",
+          "approve(address,uint256)",
+          "balanceOf(address)",
+          "burn(address,uint256)",
+          "decimals()",
+          "mint(address,uint256)",
+          "name()",
+          "owner()",
+          "renounceOwnership()",
+          "symbol()",
+          "totalSupply()",
+          "transfer(address,uint256)",
+          "transferFrom(address,address,uint256)",
+          "transferOwnership(address)"
+        ]
+      },
+      "USDC": {
+        "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+        "abi": [
+          "function name() external view returns (string)",
+          "function symbol() external view returns (string)",
+          "function decimals() external view returns (uint8)",
+          "function totalSupply() external view returns (uint256)",
+          "function balanceOf(address account) external view returns (uint256)",
+          "function transfer(address recipient, uint256 amount) external returns (bool)",
+          "function allowance(address owner, address spender) external view returns (uint256)",
+          "function approve(address spender, uint256 amount) external returns (bool)",
+          "function transferFrom(address sender, address recipient, uint256 amount) external returns (bool)",
+          "event Transfer(address indexed from, address indexed to, uint256 value)",
+          "event Approval(address indexed owner, address indexed spender, uint256 value)"
+        ]
+      },
+      "AaveLendingAdapter": {
+        "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+        "abi": [
+          "constructor(address _aavePool, address _poolDataProvider)",
+          "AmountTooLow()",
+          "ApprovalFailed(address,address)",
+          "DepositFailed(string)",
+          "WithdrawFailed(string)",
+          "DepositSuccessful(address,uint256)",
+          "WithdrawSuccessful(address,uint256)",
+          "aavePool()",
+          "deposit(address,uint256)",
+          "getBalance(address)",
+          "poolDataProvider()",
+          "withdraw(address,uint256)"
+        ]
+      },
+      "MoonwellLendingAdapter": {
+        "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
+        "abi": [
+          "constructor(address _mToken)",
+          "AmountTooLow()",
+          "ApprovalFailed(address,address)",
+          "DepositFailed(string)",
+          "WithdrawFailed(string)",
+          "DepositSuccessful(address,uint256)",
+          "WithdrawSuccessful(address,uint256)",
+          "deposit(address,uint256)",
+          "getBalance(address)",
+          "mToken()",
+          "withdraw(address,uint256)"
+        ]
+      },
+      "CompoundLendingAdapter": {
+        "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+        "abi": [
+          "constructor(address _comet)",
+          "AmountTooLow()",
+          "ApprovalFailed(address,address)",
+          "DepositFailed(string)",
+          "WithdrawFailed(string)",
+          "DepositSuccessful(address,uint256,uint256)",
+          "WithdrawSuccessful(address,uint256)",
+          "USDC()",
+          "comet()",
+          "deposit(address,uint256)",
+          "getBalance(address)",
+          "withdraw(address,uint256)"
+        ]
+      }
+    },
+    "hardhat": {
+      "Insurance": {
+        "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+        "abi": [
+          "constructor(address _usdc)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "AdapterAdded(address)",
+          "AdapterRemoved(address)",
+          "Claim(address,uint256,uint256,uint256,uint256)",
+          "Divest(uint256)",
+          "Invest(uint256)",
+          "LendingError(address,address,uint256,uint256)",
+          "OwnershipTransferred(address,address)",
+          "RiskSplit(address,uint256)",
+          "A()",
+          "B()",
+          "C()",
+          "S()",
+          "T1()",
+          "T2()",
+          "T3()",
+          "addLendingAdapter(address)",
+          "claim(uint256,uint256,uint256)",
+          "claimAll()",
+          "divest()",
+          "inLiquidMode()",
+          "invest()",
+          "isInvested()",
+          "lendingAdapters(uint256)",
+          "owner()",
+          "removeLendingAdapter(uint256)",
+          "renounceOwnership()",
+          "splitRisk(uint256)",
+          "totalTranches()",
+          "transferOwnership(address)",
+          "usdc()",
+          "usdcPayoutA()",
+          "usdcPayoutB()",
+          "usdcPayoutC()"
+        ]
+      },
+      "AaveLendingAdapter": {
+        "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "abi": [
+          "constructor(address _aavePool, address _poolDataProvider)",
+          "AmountTooLow()",
+          "ApprovalFailed(address,address)",
+          "DepositFailed(string)",
+          "WithdrawFailed(string)",
+          "DepositSuccessful(address,uint256)",
+          "WithdrawSuccessful(address,uint256)",
+          "aavePool()",
+          "deposit(address,uint256)",
+          "getBalance(address)",
+          "poolDataProvider()",
+          "withdraw(address,uint256)"
+        ]
+      },
+      "MoonwellLendingAdapter": {
+        "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+        "abi": [
+          "constructor(address _mToken)",
+          "AmountTooLow()",
+          "ApprovalFailed(address,address)",
+          "DepositFailed(string)",
+          "WithdrawFailed(string)",
+          "DepositSuccessful(address,uint256)",
+          "WithdrawSuccessful(address,uint256)",
+          "deposit(address,uint256)",
+          "getBalance(address)",
+          "mToken()",
+          "withdraw(address,uint256)"
+        ]
+      },
+      "CompoundLendingAdapter": {
+        "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "abi": [
+          "constructor(address _comet)",
+          "AmountTooLow()",
+          "ApprovalFailed(address,address)",
+          "DepositFailed(string)",
+          "WithdrawFailed(string)",
+          "DepositSuccessful(address,uint256,uint256)",
+          "WithdrawSuccessful(address,uint256)",
+          "USDC()",
+          "comet()",
+          "deposit(address,uint256)",
+          "getBalance(address)",
+          "withdraw(address,uint256)"
+        ]
+      },
+      "TrancheA": {
+        "address": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
+        "abi": [
+          "constructor(string name_, string symbol_)",
+          "ERC20InsufficientAllowance(address,uint256,uint256)",
+          "ERC20InsufficientBalance(address,uint256,uint256)",
+          "ERC20InvalidApprover(address)",
+          "ERC20InvalidReceiver(address)",
+          "ERC20InvalidSender(address)",
+          "ERC20InvalidSpender(address)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "Approval(address,address,uint256)",
+          "OwnershipTransferred(address,address)",
+          "Transfer(address,address,uint256)",
+          "allowance(address,address)",
+          "approve(address,uint256)",
+          "balanceOf(address)",
+          "burn(address,uint256)",
+          "decimals()",
+          "mint(address,uint256)",
+          "name()",
+          "owner()",
+          "renounceOwnership()",
+          "symbol()",
+          "totalSupply()",
+          "transfer(address,uint256)",
+          "transferFrom(address,address,uint256)",
+          "transferOwnership(address)"
+        ]
+      },
+      "TrancheB": {
+        "address": "0xdAD42D43ecE0f6e8da8c2BCbC6A25FF6b3922C58",
+        "abi": [
+          "constructor(string name_, string symbol_)",
+          "ERC20InsufficientAllowance(address,uint256,uint256)",
+          "ERC20InsufficientBalance(address,uint256,uint256)",
+          "ERC20InvalidApprover(address)",
+          "ERC20InvalidReceiver(address)",
+          "ERC20InvalidSender(address)",
+          "ERC20InvalidSpender(address)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "Approval(address,address,uint256)",
+          "OwnershipTransferred(address,address)",
+          "Transfer(address,address,uint256)",
+          "allowance(address,address)",
+          "approve(address,uint256)",
+          "balanceOf(address)",
+          "burn(address,uint256)",
+          "decimals()",
+          "mint(address,uint256)",
+          "name()",
+          "owner()",
+          "renounceOwnership()",
+          "symbol()",
+          "totalSupply()",
+          "transfer(address,uint256)",
+          "transferFrom(address,address,uint256)",
+          "transferOwnership(address)"
+        ]
+      },
+      "TrancheC": {
+        "address": "0xCBd5431cC04031d089c90E7c83288183A6Fe545d",
+        "abi": [
+          "constructor(string name_, string symbol_)",
+          "ERC20InsufficientAllowance(address,uint256,uint256)",
+          "ERC20InsufficientBalance(address,uint256,uint256)",
+          "ERC20InvalidApprover(address)",
+          "ERC20InvalidReceiver(address)",
+          "ERC20InvalidSender(address)",
+          "ERC20InvalidSpender(address)",
+          "OwnableInvalidOwner(address)",
+          "OwnableUnauthorizedAccount(address)",
+          "Approval(address,address,uint256)",
+          "OwnershipTransferred(address,address)",
+          "Transfer(address,address,uint256)",
+          "allowance(address,address)",
+          "approve(address,uint256)",
+          "balanceOf(address)",
+          "burn(address,uint256)",
+          "decimals()",
+          "mint(address,uint256)",
+          "name()",
+          "owner()",
+          "renounceOwnership()",
+          "symbol()",
+          "totalSupply()",
+          "transfer(address,uint256)",
+          "transferFrom(address,address,uint256)",
+          "transferOwnership(address)"
         ]
       }
     }
