@@ -1,13 +1,11 @@
 import contracts from '../contracts.json';
-import { hardhat } from '@reown/appkit/networks';
 import { useAppKitNetwork } from '@reown/appkit/react';
 
-const getContractConfig = (networkName, contractName) => {
-  // For local development, use 'hardhat' network contracts
-  const networkContracts = contracts.networks[networkName === 'hardhat' ? 'hardhat' : networkName];
+const getContractConfig = (contractName) => {
+  const networkContracts = contracts.networks.hardhat;
 
   if (!networkContracts || !networkContracts[contractName]) {
-    console.error(`Contract ${contractName} not found on network ${networkName}`);
+    console.error(`Contract ${contractName} not found in hardhat network config`);
     return null;
   }
 
@@ -15,29 +13,20 @@ const getContractConfig = (networkName, contractName) => {
 };
 
 export const useMainConfig = () => {
-  const { chainId } = useAppKitNetwork();
-  // Default to hardhat for development
-  const networkName = chainId === hardhat.id ? 'hardhat' : 'base';
   return {
-    Insurance: getContractConfig(networkName, 'Insurance'),
-    USDC: getContractConfig(networkName, 'USDC')
+    Insurance: getContractConfig('Insurance'),
+    USDC: getContractConfig('USDC')
   };
 };
 
 export const useTranchesConfig = () => {
-  const { chainId } = useAppKitNetwork();
-  // Default to hardhat for development
-  const networkName = chainId === hardhat.id ? 'hardhat' : 'base';
-
   return {
-    A: getContractConfig(networkName, 'TrancheA'),
-    B: getContractConfig(networkName, 'TrancheB'),
-    C: getContractConfig(networkName, 'TrancheC')
+    A: getContractConfig('TrancheA'),
+    B: getContractConfig('TrancheB'),
+    C: getContractConfig('TrancheC')
   };
 };
 
 export const useContractsConfig = () => {
-  const { chainId } = useAppKitNetwork();
-  const networkName = chainId === hardhat.id ? 'hardhat' : 'base';
-  return contracts.networks[networkName];
+  return contracts.networks.hardhat;
 };

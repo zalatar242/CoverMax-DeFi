@@ -19,16 +19,11 @@ import {
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
-  AccountBalance as DepositIcon,
-  Assessment as AnalyticsIcon
 } from '@mui/icons-material';
 import { AppKitProvider } from './utils/walletConnector';
 
 // Pages
 import Dashboard from './pages/Dashboard';
-import Deposit from './pages/Deposit';
-import Analytics from './pages/Analytics';
-import Portfolio from './pages/Portfolio';
 
 const AppContent = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,9 +35,7 @@ const AppContent = () => {
   };
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Deposit', icon: <DepositIcon />, path: '/deposit' },
-    { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' }
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' }
   ];
 
   const drawer = (
@@ -130,9 +123,6 @@ const AppContent = () => {
       <Container component="main" sx={{ flex: 1, py: 4 }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/deposit" element={<Deposit />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/portfolio" element={<Portfolio />} />
         </Routes>
       </Container>
     </Box>

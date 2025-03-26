@@ -1,6 +1,6 @@
 import { createAppKit, useAppKitAccount, useAppKit, useAppKitNetwork } from '@reown/appkit/react';
 import { WagmiProvider } from 'wagmi';
-import { base, hardhat } from '@reown/appkit/networks';
+import { hardhat } from '@reown/appkit/networks';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 
@@ -15,9 +15,8 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 };
 
-// Configure networks
+// Configure networks - Only using Hardhat Local
 const networks = [
-  base,
   {
     ...hardhat,
     id: 31337,
@@ -72,9 +71,12 @@ export function AppKitProvider({ children }) {
 // Hook to get current network
 export const useNetwork = () => {
   const { chainId } = useAppKitNetwork();
+  console.log('Current Chain ID:', chainId);
+  const network = networks.find(n => n.id === chainId) || networks[0];
+  console.log('Selected Network:', network);
   return {
     chainId,
-    network: networks.find(n => n.id === chainId) || networks[0]
+    network
   };
 };
 
