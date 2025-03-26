@@ -20,7 +20,14 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
+      run: |
+        if [ ! -f "package-lock.json" ]; then
+          echo "No package-lock.json found, running npm install..."
+          npm install
+        else
+          echo "Using existing package-lock.json..."
+          npm ci
+        fi
 
     - name: Verify BASE_MAINNET_RPC_URL
       run: |
