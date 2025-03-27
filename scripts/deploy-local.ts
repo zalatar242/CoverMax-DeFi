@@ -33,8 +33,24 @@ async function main() {
     COMPOUND_USDC_MARKET: mockAddresses.compoundMarket
   });
 
-  // 4. Update contracts.json with deployed addresses
+  // 4. Update contracts.json with all deployed addresses
+  const mockAavePool = await ethers.getContractAt("MockAavePool", mockAddresses.aavePool);
+  const mockAaveDataProvider = await ethers.getContractAt("MockAavePoolDataProvider", mockAddresses.aaveDataProvider);
+  const mockUSDC = await ethers.getContractAt("MockUSDC", mockAddresses.usdcAddress);
+
+  // Get the aToken address that was created when deploying MockAavePool
+  const aTokenAddress = await mockAavePool.aTokens(await mockUSDC.getAddress());
+  console.log("Adding aToken to contracts.json:", aTokenAddress);
+  const mockAToken = await ethers.getContractAt("MockAToken", aTokenAddress);
+
   await updateContractsJson("hardhat", [
+    // Mock contracts first
+    { name: "USDC", contract: mockUSDC },
+    { name: "AavePool", contract: mockAavePool },
+    { name: "AavePoolDataProvider", contract: mockAaveDataProvider },
+    { name: "AToken", contract: mockAToken },  // Add the aToken contract
+
+    // Core contracts
     { name: "Insurance", contract: contracts.insurance },
     { name: "AaveLendingAdapter", contract: contracts.aaveAdapter },
     { name: "MoonwellLendingAdapter", contract: contracts.moonwellAdapter },

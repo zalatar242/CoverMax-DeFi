@@ -11,15 +11,24 @@ export async function deployMocks() {
   await mockUSDC.waitForDeployment();
 
   // Deploy Aave contracts
+  // Deploy Aave contracts
   const MockAavePool = await ethers.getContractFactory("MockAavePool");
   const mockAavePool = await MockAavePool.deploy(await mockUSDC.getAddress());
   await mockAavePool.waitForDeployment();
 
-  const aTokenAddress = await mockAavePool.aTokens(await mockUSDC.getAddress());
+  // Get the aToken address that was created during MockAavePool deployment
+  const usdcAddress = await mockUSDC.getAddress();
+  const aTokenAddress = await mockAavePool.aTokens(usdcAddress);
+  console.log("Deployed aToken address:", aTokenAddress);
 
+  // Deploy MockAavePoolDataProvider with the correct aToken address
   const MockAavePoolDataProvider = await ethers.getContractFactory("MockAavePoolDataProvider");
-  const mockDataProvider = await MockAavePoolDataProvider.deploy(await mockUSDC.getAddress(), aTokenAddress);
+  const mockDataProvider = await MockAavePoolDataProvider.deploy(usdcAddress, aTokenAddress);
   await mockDataProvider.waitForDeployment();
+
+  // Verify the aToken is correctly set
+  const storedAToken = await mockDataProvider.getReserveTokensAddresses(usdcAddress);
+  console.log("Stored aToken address:", storedAToken[0]);
 
   // Deploy Compound contracts
   const MockComet = await ethers.getContractFactory("MockComet");

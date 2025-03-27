@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, TextField, Card, CardContent, Stack, Alert, CircularProgress } from '@mui/material';
-import { ArrowBack, AccountBalance } from '@mui/icons-material';
+import { ArrowBack, AccountBalance, CheckCircle } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { formatUnits, parseUnits } from 'viem';
-import { useWalletConnection } from '../utils/walletConnector';
-import { useUSDCBalance } from '../utils/contracts';
-import { useMainConfig } from '../utils/contractConfig';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 
 // Same colors as Dashboard for consistency
 const colors = {
@@ -22,48 +17,14 @@ const colors = {
 
 const Deposit = () => {
   const navigate = useNavigate();
-  const { address } = useWalletConnection();
-  const { balance: usdcBalance } = useUSDCBalance();
-  const { USDC, Insurance } = useMainConfig();
-
   const [amount, setAmount] = useState('');
   const [isApproving, setIsApproving] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const [error, setError] = useState('');
-  const [approvalHash, setApprovalHash] = useState('');
-  const [depositHash, setDepositHash] = useState('');
 
-  // Monitor transactions
-  const { isLoading: isWaitingApproval, isSuccess: isApprovalSuccess } = useWaitForTransactionReceipt({
-    hash: approvalHash,
-  });
+  // Mock USDC balance (1000 USDC)
+  const mockBalance = 1000;
 
-  const { isLoading: isWaitingDeposit, isSuccess: isDepositSuccess } = useWaitForTransactionReceipt({
-    hash: depositHash,
-  });
-
-  // USDC Approval
-  const { writeContract: approveUSDC } = useWriteContract();
-  const handleApprove = async () => {
-    try {
-      setError('');
-      setIsApproving(true);
-      const amountToApprove = parseUnits(amount, 6); // USDC has 6 decimals
-      await approveUSDC({
-        address: USDC.address,
-        abi: USDC.abi,
-        functionName: 'approve',
-        args: [Insurance.address, amountToApprove]
-      });
-    } catch (err) {
-      setError('Failed to approve USDC: ' + err.message);
-    } finally {
-      setIsApproving(false);
-    }
-  };
-
-  // Deposit
-  const { writeContract: deposit } = useWriteContract();
   const validateAmount = (value) => {
     if (!value) return true; // Empty is valid (will be caught by disabled button)
     // Check if amount is divisible by 3
@@ -71,6 +32,23 @@ const Deposit = () => {
     return Number.isInteger(numValue * 1000000 / 3); // Check divisibility accounting for 6 decimals
   };
 
+  // Mock approval function
+  const handleApprove = async () => {
+    try {
+      setError('');
+      setIsApproving(true);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsApproving(false);
+      // Show success message
+      setError('Demo: Approval successful! (This is a mock transaction)');
+    } catch (err) {
+      setError('Failed to approve USDC');
+      setIsApproving(false);
+    }
+  };
+
+  // Mock deposit function
   const handleDeposit = async () => {
     try {
       if (!validateAmount(amount)) {
@@ -79,16 +57,14 @@ const Deposit = () => {
       }
       setError('');
       setIsDepositing(true);
-      const depositAmount = parseUnits(amount, 6);
-      await deposit({
-        address: Insurance.address,
-        abi: Insurance.abi,
-        functionName: 'splitRisk',
-        args: [depositAmount]
-      });
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsDepositing(false);
+      setAmount('');
+      // Show success message
+      setError('Demo: Deposit successful! (This is a mock transaction)');
     } catch (err) {
-      setError('Failed to deposit: ' + err.message);
-    } finally {
+      setError('Failed to deposit');
       setIsDepositing(false);
     }
   };
@@ -114,18 +90,18 @@ const Deposit = () => {
       >
         <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
           <Typography variant="h5" sx={{ color: colors.text, fontWeight: 600, mb: 3 }}>
-            Deposit USDC
+            Deposit USDC (Demo)
           </Typography>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 3 }}>
+            <Alert severity={error.includes('successful') ? 'success' : 'error'} sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
 
           <Box sx={{ mb: 4 }}>
             <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
-              Available Balance: {formatUnits(usdcBalance || 0n, 6)} USDC
+              Available Balance: {mockBalance} USDC (Demo)
             </Typography>
             <TextField
               fullWidth
@@ -146,9 +122,8 @@ const Deposit = () => {
                   <Button
                     size="small"
                     onClick={() => {
-                      const rawAmount = Number(formatUnits(usdcBalance || 0n, 6));
                       // Round down to nearest number divisible by 3
-                      const roundedAmount = Math.floor(rawAmount / 3) * 3;
+                      const roundedAmount = Math.floor(mockBalance / 3) * 3;
                       setAmount(roundedAmount.toString());
                     }}
                     sx={{ color: colors.primary }}
@@ -166,6 +141,7 @@ const Deposit = () => {
                 variant="outlined"
                 onClick={handleApprove}
                 disabled={!amount || isApproving || !validateAmount(amount)}
+                startIcon={<CheckCircle />}
                 sx={{
                   color: colors.text,
                   borderColor: colors.border,

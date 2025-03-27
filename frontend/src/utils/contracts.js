@@ -3,40 +3,23 @@ import { useMainConfig, useTranchesConfig } from './contractConfig';
 import { useReadContract } from 'wagmi';
 import { formatUnits, parseEther } from 'viem';
 
+// Demo mode flag - set to false for live data
+const DEMO_MODE = false;
+
 export const useUSDCBalance = () => {
   const { address, isConnected } = useWalletConnection();
   const { USDC } = useMainConfig();
 
-  console.log('Wallet Status:', { address, isConnected });
-  console.log('USDC Contract:', {
-    address: USDC?.address,
-    hasFunctions: USDC?.abi?.some(item => item.type === 'function'),
-    functions: USDC?.abi?.filter(item => item.type === 'function').map(f => f.name)
-  });
-
-  const enabled = Boolean(address && USDC);
-  const callConfig = {
+  const { data, isError, isLoading } = useReadContract({
     address: USDC?.address,
     abi: USDC?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled
-  };
-  console.log('Contract Call Config:', callConfig);
-
-  const { data, error, isError, isLoading } = useReadContract({
-    address: USDC?.address,
-    abi: USDC?.abi,
-    functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && USDC),
+    enabled: Boolean(address && USDC && isConnected),
   });
-
-  console.log('USDC Balance Data:', data);
-  if (error) console.log('USDC Balance Error:', error);
 
   return {
-    balance: data || 0n,  // Return raw bigint value
+    balance: data || 0n,
     isError,
     isLoading
   };
@@ -47,24 +30,12 @@ export const usePortfolioData = () => {
   const { Insurance } = useMainConfig();
   const tranches = useTranchesConfig();
 
-  console.log('Portfolio Wallet Status:', { address, isConnected });
-  console.log('Insurance Contract:', {
-    address: Insurance?.address,
-    hasFunctions: Insurance?.abi?.some(item => item.type === 'function'),
-    functions: Insurance?.abi?.filter(item => item.type === 'function').map(f => f.name)
-  });
-  console.log('Tranches Config:', {
-    A: { address: tranches?.A?.address, hasFunctions: tranches?.A?.abi?.some(item => item.type === 'function') },
-    B: { address: tranches?.B?.address, hasFunctions: tranches?.B?.abi?.some(item => item.type === 'function') },
-    C: { address: tranches?.C?.address, hasFunctions: tranches?.C?.abi?.some(item => item.type === 'function') }
-  });
-
   const { data: trancheAData, isLoading: loadingA, isError: errorA } = useReadContract({
     address: tranches?.A?.address,
     abi: tranches?.A?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches?.A),
+    enabled: Boolean(address && tranches?.A && isConnected),
   });
 
   const { data: trancheBData, isLoading: loadingB, isError: errorB } = useReadContract({
@@ -72,7 +43,7 @@ export const usePortfolioData = () => {
     abi: tranches?.B?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches?.B),
+    enabled: Boolean(address && tranches?.B && isConnected),
   });
 
   const { data: trancheCData, isLoading: loadingC, isError: errorC } = useReadContract({
@@ -80,27 +51,18 @@ export const usePortfolioData = () => {
     abi: tranches?.C?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches?.C),
+    enabled: Boolean(address && tranches?.C && isConnected),
   });
 
-  // Mock values for deposited value until it's added to the contract
-  const depositedValueData = "0";
-  const loadingDeposited = false;
-  const errorDeposited = null;
-
-  console.log('Tranche Balance Data:', {
-    A: trancheAData,
-    B: trancheBData,
-    C: trancheCData,
-    deposited: depositedValueData
+  const { data: depositedValueData, isLoading: loadingDeposited, isError: errorDeposited } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'getUserDeposit',
+    args: [address],
+    enabled: Boolean(address && Insurance && isConnected),
   });
 
-  if (errorA) console.log('Tranche A Error:', errorA);
-  if (errorB) console.log('Tranche B Error:', errorB);
-  if (errorC) console.log('Tranche C Error:', errorC);
-  if (errorDeposited) console.log('Deposited Value Error:', errorDeposited);
-
-  const result = {
+  return {
     trancheA: trancheAData ? formatUnits(trancheAData, 6) : "0",
     trancheB: trancheBData ? formatUnits(trancheBData, 6) : "0",
     trancheC: trancheCData ? formatUnits(trancheCData, 6) : "0",
@@ -108,26 +70,71 @@ export const usePortfolioData = () => {
     isLoading: loadingA || loadingB || loadingC || loadingDeposited,
     isError: errorA || errorB || errorC || errorDeposited
   };
-
-  console.log('Portfolio Result:', result);
-  return result;
 };
 
 export const useProtocolStatus = () => {
   const { Insurance } = useMainConfig();
+  const tranches = useTranchesConfig();
 
-  const { data: isInvestedData = false } = useReadContract({
+  const { data: isInvestedData = false, isLoading: loadingInvested } = useReadContract({
     address: Insurance?.address,
     abi: Insurance?.abi,
     functionName: 'isInvested',
     enabled: Boolean(Insurance),
   });
 
-  const { data: inLiquidModeData = false } = useReadContract({
+  const { data: inLiquidModeData = false, isLoading: loadingLiquid } = useReadContract({
     address: Insurance?.address,
     abi: Insurance?.abi,
     functionName: 'inLiquidMode',
     enabled: Boolean(Insurance),
+  });
+
+  // Fetch TVL for each tranche
+  const { data: trancheATVL = 0n, isLoading: loadingTVLA } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'getTrancheValue',
+    args: [0], // Tranche A index
+    enabled: Boolean(Insurance),
+  });
+
+  const { data: trancheBTVL = 0n, isLoading: loadingTVLB } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'getTrancheValue',
+    args: [1], // Tranche B index
+    enabled: Boolean(Insurance),
+  });
+
+  const { data: trancheCTVL = 0n, isLoading: loadingTVLC } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'getTrancheValue',
+    args: [2], // Tranche C index
+    enabled: Boolean(Insurance),
+  });
+
+  // Calculate APY from yield rate
+  const { data: trancheAYield = 0n, isLoading: loadingYieldA } = useReadContract({
+    address: tranches?.A?.address,
+    abi: tranches?.A?.abi,
+    functionName: 'getCurrentYieldRate',
+    enabled: Boolean(tranches?.A),
+  });
+
+  const { data: trancheBYield = 0n, isLoading: loadingYieldB } = useReadContract({
+    address: tranches?.B?.address,
+    abi: tranches?.B?.abi,
+    functionName: 'getCurrentYieldRate',
+    enabled: Boolean(tranches?.B),
+  });
+
+  const { data: trancheCYield = 0n, isLoading: loadingYieldC } = useReadContract({
+    address: tranches?.C?.address,
+    abi: tranches?.C?.abi,
+    functionName: 'getCurrentYieldRate',
+    enabled: Boolean(tranches?.C),
   });
 
   let status;
@@ -139,11 +146,29 @@ export const useProtocolStatus = () => {
     status = "Claim Period";
   }
 
+  const totalTVL = trancheATVL + trancheBTVL + trancheCTVL;
+
+  const isLoading =
+    loadingInvested || loadingLiquid ||
+    loadingTVLA || loadingTVLB || loadingTVLC ||
+    loadingYieldA || loadingYieldB || loadingYieldC;
+
   return {
     status,
-    tvl: { total: "0", byTranche: { A: "0", B: "0", C: "0" } },
-    apy: { A: "0", B: "0", C: "0" },
-    isLoading: false,
+    tvl: {
+      total: formatUnits(totalTVL, 6),
+      byTranche: {
+        A: formatUnits(trancheATVL, 6),
+        B: formatUnits(trancheBTVL, 6),
+        C: formatUnits(trancheCTVL, 6)
+      }
+    },
+    apy: {
+      A: formatUnits(trancheAYield, 6),
+      B: formatUnits(trancheBYield, 6),
+      C: formatUnits(trancheCYield, 6)
+    },
+    isLoading,
     isError: false
   };
 };
