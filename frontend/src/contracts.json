@@ -163,6 +163,129 @@
         "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
         "abi": [
           {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "_usdc"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [],
+            "name": "A",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "B",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "C",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "adapter"
+              }
+            ],
+            "name": "addLendingAdapter",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "uint256",
+                "name": "index"
+              }
+            ],
+            "name": "removeLendingAdapter",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "uint256",
+                "name": "amountUsdc"
+              }
+            ],
+            "name": "splitRisk",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "invest",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "divest",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "uint256",
+                "name": "amountA"
+              },
+              {
+                "type": "uint256",
+                "name": "amountB"
+              },
+              {
+                "type": "uint256",
+                "name": "amountC"
+              }
+            ],
+            "name": "claim",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "claimAll",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
             "inputs": [],
             "name": "usdc",
             "outputs": [
@@ -199,16 +322,241 @@
             "type": "function"
           },
           {
+            "inputs": [],
+            "name": "S",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "T1",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "T2",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "T3",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "totalTranches",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "usdcPayoutA",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "usdcPayoutB",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "usdcPayoutC",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
             "inputs": [
               {
                 "type": "uint256",
-                "name": "amountUsdc"
+                "name": ""
               }
             ],
-            "name": "splitRisk",
-            "outputs": [],
-            "stateMutability": "nonpayable",
+            "name": "lendingAdapters",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
             "type": "function"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": true,
+                "name": "splitter",
+                "type": "address"
+              },
+              {
+                "indexed": false,
+                "name": "amountUsdc",
+                "type": "uint256"
+              }
+            ],
+            "name": "RiskSplit",
+            "type": "event"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": false,
+                "name": "amountUsdc",
+                "type": "uint256"
+              }
+            ],
+            "name": "Invest",
+            "type": "event"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": false,
+                "name": "amountUsdc",
+                "type": "uint256"
+              }
+            ],
+            "name": "Divest",
+            "type": "event"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": false,
+                "name": "adapter",
+                "type": "address"
+              }
+            ],
+            "name": "AdapterAdded",
+            "type": "event"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": false,
+                "name": "adapter",
+                "type": "address"
+              }
+            ],
+            "name": "AdapterRemoved",
+            "type": "event"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": true,
+                "name": "claimant",
+                "type": "address"
+              },
+              {
+                "indexed": false,
+                "name": "amountA",
+                "type": "uint256"
+              },
+              {
+                "indexed": false,
+                "name": "amountB",
+                "type": "uint256"
+              },
+              {
+                "indexed": false,
+                "name": "amountC",
+                "type": "uint256"
+              },
+              {
+                "indexed": false,
+                "name": "amountUsdc",
+                "type": "uint256"
+              }
+            ],
+            "name": "Claim",
+            "type": "event"
+          },
+          {
+            "anonymous": false,
+            "inputs": [
+              {
+                "indexed": true,
+                "name": "adapter",
+                "type": "address"
+              },
+              {
+                "indexed": false,
+                "name": "asset",
+                "type": "address"
+              },
+              {
+                "indexed": false,
+                "name": "amount",
+                "type": "uint256"
+              },
+              {
+                "indexed": false,
+                "name": "errorCode",
+                "type": "uint256"
+              }
+            ],
+            "name": "LendingError",
+            "type": "event"
           }
         ]
       },

@@ -62,9 +62,9 @@ contract Insurance is Ownable {
         usdc = _usdc;
 
         // Create tranche tokens
-        A = address(new Tranche("Tranche A", "TA"));
-        B = address(new Tranche("Tranche B", "TB"));
-        C = address(new Tranche("Tranche C", "TC"));
+        A = address(new Tranche("CM Tranche A", "CM-A"));
+        B = address(new Tranche("CM Tranche B", "CM-B"));
+        C = address(new Tranche("CM Tranche C", "CM-C"));
 
         // Set time periods
         S = block.timestamp + 7 days;
