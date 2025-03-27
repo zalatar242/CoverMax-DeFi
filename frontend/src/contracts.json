@@ -241,6 +241,37 @@
             "inputs": [
               {
                 "type": "address",
+                "name": "usdc"
+              },
+              {
+                "type": "address",
+                "name": "aToken"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "name": "aTokens",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
                 "name": "asset"
               }
             ],
@@ -319,22 +350,902 @@
         ]
       },
       "AaveLendingAdapter": {
-        "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853"
+        "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
+        "abi": [
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "_aavePool"
+              },
+              {
+                "type": "address",
+                "name": "_poolDataProvider"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "deposit",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              }
+            ],
+            "name": "getBalance",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "aavePool",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "poolDataProvider",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "withdraw",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ]
       },
       "MoonwellLendingAdapter": {
-        "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+        "address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+        "abi": [
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "_mToken"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "deposit",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "name": "getBalance",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "mToken",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "withdraw",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ]
       },
       "CompoundLendingAdapter": {
-        "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+        "address": "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318",
+        "abi": [
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "_comet"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "deposit",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              }
+            ],
+            "name": "getBalance",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "comet",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "USDC",
+            "outputs": [
+              {
+                "type": "address",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "asset"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "withdraw",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ]
       },
       "TrancheA": {
-        "address": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321"
+        "address": "0x6F1216D1BFe15c98520CA1434FC1d9D57AC95321",
+        "abi": [
+          {
+            "inputs": [
+              {
+                "type": "string",
+                "name": "name_"
+              },
+              {
+                "type": "string",
+                "name": "symbol_"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "owner"
+              },
+              {
+                "type": "address",
+                "name": "spender"
+              }
+            ],
+            "name": "allowance",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "spender"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "approve",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "burn",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [
+              {
+                "type": "uint8",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "mint",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "name",
+            "outputs": [
+              {
+                "type": "string",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [
+              {
+                "type": "string",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "to"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "transfer",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "from"
+              },
+              {
+                "type": "address",
+                "name": "to"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "transferFrom",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ]
       },
       "TrancheB": {
-        "address": "0xdAD42D43ecE0f6e8da8c2BCbC6A25FF6b3922C58"
+        "address": "0xdAD42D43ecE0f6e8da8c2BCbC6A25FF6b3922C58",
+        "abi": [
+          {
+            "inputs": [
+              {
+                "type": "string",
+                "name": "name_"
+              },
+              {
+                "type": "string",
+                "name": "symbol_"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "owner"
+              },
+              {
+                "type": "address",
+                "name": "spender"
+              }
+            ],
+            "name": "allowance",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "spender"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "approve",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "burn",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [
+              {
+                "type": "uint8",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "mint",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "name",
+            "outputs": [
+              {
+                "type": "string",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [
+              {
+                "type": "string",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "to"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "transfer",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "from"
+              },
+              {
+                "type": "address",
+                "name": "to"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "transferFrom",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ]
       },
       "TrancheC": {
-        "address": "0xCBd5431cC04031d089c90E7c83288183A6Fe545d"
+        "address": "0xCBd5431cC04031d089c90E7c83288183A6Fe545d",
+        "abi": [
+          {
+            "inputs": [
+              {
+                "type": "string",
+                "name": "name_"
+              },
+              {
+                "type": "string",
+                "name": "symbol_"
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "owner"
+              },
+              {
+                "type": "address",
+                "name": "spender"
+              }
+            ],
+            "name": "allowance",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "spender"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "approve",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "burn",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "decimals",
+            "outputs": [
+              {
+                "type": "uint8",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "account"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "mint",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "name",
+            "outputs": [
+              {
+                "type": "string",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [
+              {
+                "type": "string",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "to"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "transfer",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "type": "address",
+                "name": "from"
+              },
+              {
+                "type": "address",
+                "name": "to"
+              },
+              {
+                "type": "uint256",
+                "name": "amount"
+              }
+            ],
+            "name": "transferFrom",
+            "outputs": [
+              {
+                "type": "bool",
+                "name": ""
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+          }
+        ]
       }
     }
   }
