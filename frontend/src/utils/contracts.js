@@ -36,7 +36,7 @@ export const useUSDCBalance = () => {
   if (error) console.log('USDC Balance Error:', error);
 
   return {
-    balance: data ? formatUnits(data, 6) : "0",
+    balance: data || 0n,  // Return raw bigint value
     isError,
     isLoading
   };

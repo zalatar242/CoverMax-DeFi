@@ -8,11 +8,14 @@ import {
   Box,
   useTheme,
   useMediaQuery,
+  Stack,
+  Button,
 } from '@mui/material';
 import { AppKitProvider } from './utils/walletConnector';
 
 // Pages
 import Dashboard from './pages/Dashboard';
+import Deposit from './pages/Deposit';
 
 // Custom theme colors - Stripe-inspired with purple accent
 const colors = {
@@ -47,26 +50,120 @@ const AppContent = () => {
         <Toolbar sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          flexDirection: { xs: 'column', sm: 'row' },
+          flexDirection: 'row',
           gap: { xs: 2, sm: 0 },
-          py: { xs: 1, sm: 0 }
+          py: { xs: 1, sm: 0 },
+          flexWrap: { xs: 'wrap', sm: 'nowrap' }
         }}>
-          <Typography
-            variant="h6"
-            component={Link}
-            to="/"
-            sx={{
-              color: colors.primary,
-              fontWeight: 700,
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
-              textDecoration: 'none',
-              '&:hover': {
-                color: colors.primaryDark
-              }
-            }}
-          >
-            CoverMax
-          </Typography>
+          <Box sx={{ width: '100%' }}>
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              justifyContent: { xs: 'center', sm: 'flex-start' }
+            }}>
+              <Typography
+                variant="h6"
+                component={Link}
+                to="/"
+                sx={{
+                  color: colors.primary,
+                  fontWeight: 700,
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  textDecoration: 'none',
+                  '&:hover': {
+                    color: colors.primaryDark
+                  }
+                }}
+              >
+                CoverMax
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={2}
+                sx={{
+                  display: { xs: 'none', sm: 'flex' }
+                }}
+              >
+                <Button
+                  component={Link}
+                  to="/"
+                  sx={{
+                    color: colors.text,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: colors.primary
+                    }
+                  }}
+                >
+                  Dashboard
+                </Button>
+                <Button
+                  component={Link}
+                  to="/deposit"
+                  sx={{
+                    color: colors.text,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: colors.primary
+                    }
+                  }}
+                >
+                  Deposit
+                </Button>
+              </Stack>
+            </Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                display: { xs: 'flex', sm: 'none' },
+                mt: 2,
+                width: '100%'
+              }}
+            >
+              <Button
+                component={Link}
+                to="/"
+                variant="outlined"
+                fullWidth
+                sx={{
+                  color: colors.text,
+                  borderColor: colors.border,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': {
+                    borderColor: colors.primary,
+                    color: colors.primary
+                  }
+                }}
+              >
+                Dashboard
+              </Button>
+              <Button
+                component={Link}
+                to="/deposit"
+                variant="outlined"
+                fullWidth
+                sx={{
+                  color: colors.text,
+                  borderColor: colors.border,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': {
+                    borderColor: colors.primary,
+                    color: colors.primary
+                  }
+                }}
+              >
+                Deposit
+              </Button>
+            </Stack>
+          </Box>
           <Box sx={{
             width: { xs: '100%', sm: 'auto' },
             '& appkit-button': {
@@ -108,6 +205,7 @@ const AppContent = () => {
       >
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/deposit" element={<Deposit />} />
         </Routes>
       </Container>
     </Box>

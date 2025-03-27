@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, Card, CardContent, Stack, Divider, useTheme, useMediaQuery } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { AccountBalance, SwapHoriz, ErrorOutline } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { formatUSDC, calculatePercentage } from '../utils/analytics';
@@ -18,6 +19,7 @@ const colors = {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
@@ -141,7 +143,7 @@ const Dashboard = () => {
         Welcome to CoverMax
       </Typography>
       <Typography variant="body1" sx={{ color: colors.textLight, mb: 3 }}>
-        Connect your wallet to view your portfolio and start investing
+        Connect your wallet to view your portfolio and start protecting your assets
       </Typography>
       <Button
         variant="contained"
@@ -200,6 +202,7 @@ const Dashboard = () => {
               variant="contained"
               fullWidth={isMobile}
               startIcon={<AccountBalance />}
+              onClick={() => navigate('/deposit')}
               sx={{
                 bgcolor: colors.primary,
                 '&:hover': {

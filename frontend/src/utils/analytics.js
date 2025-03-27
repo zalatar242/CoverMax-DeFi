@@ -1,11 +1,18 @@
+import { formatUnits } from 'viem';
+
 // Format helpers
 export const formatUSDC = (value) => {
+  // Convert bigint to string with proper decimals
+  const formattedValue = typeof value === 'bigint'
+    ? Number(formatUnits(value, 6))
+    : Number(value);
+
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(value);
+  }).format(formattedValue);
 };
 
 export const calculatePercentage = (value, total) => {
