@@ -6,7 +6,7 @@ import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useUSDCBalance } from '../utils/contracts';
 import { useMainConfig } from '../utils/contractConfig';
 import { parseUnits, formatUnits } from 'viem';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 
 const colors = {
   primary: '#9097ff',
@@ -32,33 +32,75 @@ const Deposit = () => {
   const { balance, isLoading: isLoadingBalance } = useUSDCBalance();
   const { USDC, Insurance } = useMainConfig();
 
+  const { data: allowance = 0n, isLoading: isLoadingAllowance, refetch: refetchAllowance } = useReadContract({
+    address: USDC?.address,
+    abi: USDC?.abi,
+    functionName: 'allowance',
+    args: [address, Insurance?.address],
+    enabled: Boolean(address && USDC && Insurance && isConnected),
+  });
+
   const { writeContract: approveUSDC, data: approveTxHash } = useWriteContract();
   const { writeContract: deposit, data: depositTxHash } = useWriteContract();
 
   const { isLoading: isWaitingApprove } = useWaitForTransactionReceipt({
     hash: approveTxHash,
+    enabled: Boolean(approveTxHash),
     onSuccess: () => {
-      setIsApproving(false);
       setSuccess('USDC approval successful!');
+      // Double check to ensure we catch the update
+      setTimeout(() => {
+        refetchAllowance();
+      }, 1000);
     },
     onError: () => {
       setError('Failed to approve USDC');
+    },
+    onSettled: () => {
+      // Always called when the transaction completes, regardless of success/failure
       setIsApproving(false);
     }
   });
 
+  // Additional effect to watch for approval transaction completion
+  React.useEffect(() => {
+    if (approveTxHash) {
+      const checkReceipt = async () => {
+        try {
+          refetchAllowance();
+        } catch (error) {
+          console.error('Error refetching allowance:', error);
+        }
+      };
+      checkReceipt();
+    }
+  }, [approveTxHash, refetchAllowance]);
+
   const { isLoading: isWaitingDeposit } = useWaitForTransactionReceipt({
     hash: depositTxHash,
+    enabled: Boolean(depositTxHash),
     onSuccess: () => {
-      setIsDepositing(false);
       setAmount('');
       setSuccess('Deposit successful!');
     },
     onError: () => {
       setError('Failed to deposit');
+    },
+    onSettled: () => {
+      // Always called when the transaction completes, regardless of success/failure
       setIsDepositing(false);
     }
   });
+
+  // Reset loading states when no transaction hash
+  React.useEffect(() => {
+    if (!approveTxHash) {
+      setIsApproving(false);
+    }
+    if (!depositTxHash) {
+      setIsDepositing(false);
+    }
+  }, [approveTxHash, depositTxHash]);
 
   const validateAmount = (value) => {
     if (!value) return true; // Empty is valid (will be caught by disabled button)
@@ -224,11 +266,14 @@ const Deposit = () => {
             <Stack direction="row" spacing={2}>
               <Button
                 fullWidth
-                variant="outlined"
+                variant={amount && parseUnits(amount, 6) > allowance ? "contained" : "outlined"}
                 onClick={handleApprove}
-                disabled={!amount || isApproving || isWaitingApprove || !validateAmount(amount)}
+                disabled={!amount || isApproving || isWaitingApprove || !validateAmount(amount) || (amount && parseUnits(amount, 6) <= allowance)}
                 startIcon={<CheckCircle />}
-                sx={{
+                sx={amount && parseUnits(amount, 6) > allowance ? {
+                  bgcolor: colors.primary,
+                  '&:hover': { bgcolor: colors.primaryDark }
+                } : {
                   color: colors.text,
                   borderColor: colors.border,
                   '&:hover': { borderColor: colors.text }
@@ -238,13 +283,17 @@ const Deposit = () => {
               </Button>
               <Button
                 fullWidth
-                variant="contained"
+                variant={amount && parseUnits(amount, 6) <= allowance ? "contained" : "outlined"}
                 onClick={handleDeposit}
-                disabled={!amount || isDepositing || isWaitingDeposit}
+                disabled={!amount || isDepositing || isWaitingDeposit || (amount && parseUnits(amount, 6) > allowance)}
                 startIcon={<AccountBalance />}
-                sx={{
+                sx={amount && parseUnits(amount, 6) <= allowance ? {
                   bgcolor: colors.primary,
                   '&:hover': { bgcolor: colors.primaryDark }
+                } : {
+                  color: colors.text,
+                  borderColor: colors.border,
+                  '&:hover': { borderColor: colors.text }
                 }}
               >
                 {(isDepositing || isWaitingDeposit) ? <CircularProgress size={24} /> : '2. Deposit'}
