@@ -1,10 +1,7 @@
 import { useWalletConnection } from './walletConnector';
 import { useMainConfig, useTranchesConfig } from './contractConfig';
 import { useReadContract } from 'wagmi';
-import { formatUnits, parseEther } from 'viem';
-
-// Demo mode flag - set to false for live data
-const DEMO_MODE = false;
+import { formatUnits, numberToHex, hexToBigInt } from 'viem';
 
 export const useUSDCBalance = () => {
   const { address, isConnected } = useWalletConnection();
@@ -76,97 +73,78 @@ export const useProtocolStatus = () => {
   const { Insurance } = useMainConfig();
   const tranches = useTranchesConfig();
 
-  const { data: isInvestedData = false, isLoading: loadingInvested } = useReadContract({
+  // Get time periods
+  const { data: startTime = 0n, isLoading: loadingS } = useReadContract({
     address: Insurance?.address,
     abi: Insurance?.abi,
-    functionName: 'isInvested',
+    functionName: 'S',
     enabled: Boolean(Insurance),
   });
 
-  const { data: inLiquidModeData = false, isLoading: loadingLiquid } = useReadContract({
+  const { data: t1Time = 0n, isLoading: loadingT1 } = useReadContract({
     address: Insurance?.address,
     abi: Insurance?.abi,
-    functionName: 'inLiquidMode',
+    functionName: 'T1',
     enabled: Boolean(Insurance),
   });
 
-  // Fetch TVL for each tranche
-  const { data: trancheATVL = 0n, isLoading: loadingTVLA } = useReadContract({
+  const { data: t2Time = 0n, isLoading: loadingT2 } = useReadContract({
     address: Insurance?.address,
     abi: Insurance?.abi,
-    functionName: 'getTrancheValue',
-    args: [0], // Tranche A index
+    functionName: 'T2',
     enabled: Boolean(Insurance),
   });
 
-  const { data: trancheBTVL = 0n, isLoading: loadingTVLB } = useReadContract({
-    address: Insurance?.address,
-    abi: Insurance?.abi,
-    functionName: 'getTrancheValue',
-    args: [1], // Tranche B index
-    enabled: Boolean(Insurance),
-  });
-
-  const { data: trancheCTVL = 0n, isLoading: loadingTVLC } = useReadContract({
-    address: Insurance?.address,
-    abi: Insurance?.abi,
-    functionName: 'getTrancheValue',
-    args: [2], // Tranche C index
-    enabled: Boolean(Insurance),
-  });
-
-  // Calculate APY from yield rate
-  const { data: trancheAYield = 0n, isLoading: loadingYieldA } = useReadContract({
+  // Get total supply for each tranche
+  const { data: trancheASupply = 0n, isLoading: loadingSupplyA } = useReadContract({
     address: tranches?.A?.address,
     abi: tranches?.A?.abi,
-    functionName: 'getCurrentYieldRate',
+    functionName: 'totalSupply',
     enabled: Boolean(tranches?.A),
   });
 
-  const { data: trancheBYield = 0n, isLoading: loadingYieldB } = useReadContract({
+  const { data: trancheBSupply = 0n, isLoading: loadingSupplyB } = useReadContract({
     address: tranches?.B?.address,
     abi: tranches?.B?.abi,
-    functionName: 'getCurrentYieldRate',
+    functionName: 'totalSupply',
     enabled: Boolean(tranches?.B),
   });
 
-  const { data: trancheCYield = 0n, isLoading: loadingYieldC } = useReadContract({
+  const { data: trancheCSupply = 0n, isLoading: loadingSupplyC } = useReadContract({
     address: tranches?.C?.address,
     abi: tranches?.C?.abi,
-    functionName: 'getCurrentYieldRate',
+    functionName: 'totalSupply',
     enabled: Boolean(tranches?.C),
   });
 
+  // Calculate total TVL
+  const totalTVL = trancheASupply + trancheBSupply + trancheCSupply;
+
+  // Determine current phase based on timestamp
+  const currentTimestamp = hexToBigInt(numberToHex(Math.floor(Date.now() / 1000)));
   let status;
-  if (!isInvestedData) {
+  if (currentTimestamp < startTime) {
     status = "Deposit Period";
-  } else if (!inLiquidModeData) {
+  } else if (currentTimestamp < t1Time) {
     status = "Investment Period";
+  } else if (currentTimestamp < t2Time) {
+    status = "Withdrawal Period";
   } else {
     status = "Claim Period";
   }
 
-  const totalTVL = trancheATVL + trancheBTVL + trancheCTVL;
-
-  const isLoading =
-    loadingInvested || loadingLiquid ||
-    loadingTVLA || loadingTVLB || loadingTVLC ||
-    loadingYieldA || loadingYieldB || loadingYieldC;
+  const isLoading = loadingS || loadingT1 || loadingT2 ||
+                    loadingSupplyA || loadingSupplyB || loadingSupplyC;
 
   return {
     status,
     tvl: {
       total: formatUnits(totalTVL, 6),
       byTranche: {
-        A: formatUnits(trancheATVL, 6),
-        B: formatUnits(trancheBTVL, 6),
-        C: formatUnits(trancheCTVL, 6)
+        A: formatUnits(trancheASupply, 6),
+        B: formatUnits(trancheBSupply, 6),
+        C: formatUnits(trancheCSupply, 6)
       }
-    },
-    apy: {
-      A: formatUnits(trancheAYield, 6),
-      B: formatUnits(trancheBYield, 6),
-      C: formatUnits(trancheCYield, 6)
     },
     isLoading,
     isError: false

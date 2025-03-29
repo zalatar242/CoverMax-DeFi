@@ -30,6 +30,25 @@ const Withdraw = () => {
   const { Insurance } = useMainConfig();
   const tranches = useTranchesConfig();
 
+  // Get withdrawal start time
+  const { data: withdrawalStart } = useReadContract({
+    address: Insurance?.address,
+    abi: Insurance?.abi,
+    functionName: 'T2',
+    enabled: Boolean(Insurance),
+  });
+
+  // Format date for display
+  const formattedWithdrawalDate = withdrawalStart
+    ? new Date(Number(withdrawalStart) * 1000).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : 'Loading...';
+
   // Read balances for each tranche
   const { data: trancheABalance = 0n, isLoading: isLoadingBalanceA } = useReadContract({
     address: tranches.A?.address,
@@ -280,6 +299,9 @@ const Withdraw = () => {
               </Typography>
               <Typography variant="body2" sx={{ color: colors.textLight }}>
                 • The amount must be divisible by 3 to ensure equal withdrawal from tranches
+              </Typography>
+              <Typography variant="body2" sx={{ color: colors.textLight }}>
+                • Withdrawals will be enabled starting {formattedWithdrawalDate}
               </Typography>
             </Stack>
           </Box>
