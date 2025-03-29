@@ -16,6 +16,7 @@ import { AppKitProvider } from './utils/walletConnector';
 // Pages
 import Dashboard from './pages/Dashboard';
 import Deposit from './pages/Deposit';
+import Withdraw from './pages/Withdraw';
 
 // Custom theme colors - Stripe-inspired with purple accent
 const colors = {
@@ -115,6 +116,21 @@ const AppContent = () => {
                 >
                   Deposit
                 </Button>
+                <Button
+                  component={Link}
+                  to="/withdraw"
+                  sx={{
+                    color: colors.text,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: colors.primary
+                    }
+                  }}
+                >
+                  Withdraw
+                </Button>
               </Stack>
             </Box>
             <Stack
@@ -162,6 +178,24 @@ const AppContent = () => {
               >
                 Deposit
               </Button>
+              <Button
+                component={Link}
+                to="/withdraw"
+                variant="outlined"
+                fullWidth
+                sx={{
+                  color: colors.text,
+                  borderColor: colors.border,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': {
+                    borderColor: colors.primary,
+                    color: colors.primary
+                  }
+                }}
+              >
+                Withdraw
+              </Button>
             </Stack>
           </Box>
           <Box sx={{
@@ -206,6 +240,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/deposit" element={<Deposit />} />
+          <Route path="/withdraw" element={<Withdraw />} />
         </Routes>
       </Container>
     </Box>

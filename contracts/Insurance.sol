@@ -84,7 +84,7 @@ contract Insurance is Ownable {
 
     /// @notice Remove a lending adapter
     /// @param index The index of the adapter to remove
-    function removeLendingAdapter(uint256 index) external {
+    function removeLendingAdapter(uint256 index) external onlyOwner {
         require(block.timestamp < S, "Insurance: past issuance period");
         require(index < lendingAdapters.length, "Insurance: invalid index");
         emit AdapterRemoved(address(lendingAdapters[index]));
@@ -98,7 +98,10 @@ contract Insurance is Ownable {
     function splitRisk(uint256 amountUsdc) external {
         require(block.timestamp < S, "Insurance: issuance ended");
         require(amountUsdc > 2, "Insurance: amount too low");
-        require(amountUsdc % 3 == 0, "Insurance: amount must be divisible by 3");
+        require(
+            amountUsdc % 3 == 0,
+            "Insurance: amount must be divisible by 3"
+        );
 
         require(
             IERC20(usdc).transferFrom(msg.sender, address(this), amountUsdc),
@@ -135,15 +138,25 @@ contract Insurance is Ownable {
             );
             // Approve the adapter to spend USDC
             require(
-                IERC20(usdc).approve(address(lendingAdapters[i]), amountPerAdapter),
+                IERC20(usdc).approve(
+                    address(lendingAdapters[i]),
+                    amountPerAdapter
+                ),
                 "Insurance: USDC approval failed"
             );
 
-            try lendingAdapters[i].deposit(usdc, amountPerAdapter) returns (uint256) {
+            try lendingAdapters[i].deposit(usdc, amountPerAdapter) returns (
+                uint256
+            ) {
                 // Deposit succeeded
             } catch Error(string memory reason) {
                 // Log the error and continue to next adapter
-                emit LendingError(address(lendingAdapters[i]), usdc, amountPerAdapter, 1);
+                emit LendingError(
+                    address(lendingAdapters[i]),
+                    usdc,
+                    amountPerAdapter,
+                    1
+                );
                 // Reset approval
                 IERC20(usdc).approve(address(lendingAdapters[i]), 0);
                 continue;
@@ -168,11 +181,18 @@ contract Insurance is Ownable {
         } else {
             // Withdraw from lending adapters
             for (uint i = 0; i < lendingAdapters.length; i++) {
-                try lendingAdapters[i].withdraw(usdc, type(uint256).max) returns (uint256 amount) {
+                try
+                    lendingAdapters[i].withdraw(usdc, type(uint256).max)
+                returns (uint256 amount) {
                     totalRecovered += amount;
                 } catch Error(string memory reason) {
                     // Log the error and continue to next adapter
-                    emit LendingError(address(lendingAdapters[i]), usdc, type(uint256).max, 2);
+                    emit LendingError(
+                        address(lendingAdapters[i]),
+                        usdc,
+                        type(uint256).max,
+                        2
+                    );
                     continue;
                 }
             }
@@ -199,16 +219,18 @@ contract Insurance is Ownable {
             usdcPayoutC = payout;
         } else {
             if (totalRecovered >= trancheSupply) {
-                usdcPayoutA = RAY;  // A gets full payment
+                usdcPayoutA = RAY; // A gets full payment
                 uint256 remaining = totalRecovered - trancheSupply;
 
                 if (remaining >= trancheSupply) {
-                    usdcPayoutB = RAY;  // B gets full payment
+                    usdcPayoutB = RAY; // B gets full payment
                     remaining -= trancheSupply;
-                    usdcPayoutC = remaining > 0 ? (RAY * remaining) / trancheSupply : 0;
+                    usdcPayoutC = remaining > 0
+                        ? (RAY * remaining) / trancheSupply
+                        : 0;
                 } else {
-                    usdcPayoutB = (RAY * remaining) / trancheSupply;  // B gets partial
-                    usdcPayoutC = 0;  // C gets nothing
+                    usdcPayoutB = (RAY * remaining) / trancheSupply; // B gets partial
+                    usdcPayoutC = 0; // C gets nothing
                 }
             } else {
                 // Not enough to cover A
@@ -225,7 +247,11 @@ contract Insurance is Ownable {
     /// @param amountA Amount of A tranche tokens to redeem
     /// @param amountB Amount of B tranche tokens to redeem
     /// @param amountC Amount of C tranche tokens to redeem
-    function _claim(uint256 amountA, uint256 amountB, uint256 amountC) internal {
+    function _claim(
+        uint256 amountA,
+        uint256 amountB,
+        uint256 amountC
+    ) internal {
         // Special case: after T1, if never invested, allow direct claims
         if (block.timestamp >= T1 && !isInvested && !inLiquidMode) {
             this.divest();
