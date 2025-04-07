@@ -25,7 +25,7 @@ The protocol consists of these main components:
 
 1. Install dependencies:
 ```bash
-npm install
+npm install --legacy-peer-deps --force
 ```
 
 2. Set up environment:
@@ -43,7 +43,72 @@ npx hardhat node
 npx hardhat run scripts/deploy-local.ts --network localhost
 ```
 
-For detailed local development instructions, including testing and troubleshooting, see [Local Development Guide](LOCAL_DEVELOPMENT.md).
+## Local Development
+
+### What Gets Deployed
+
+The deployment process sets up:
+
+1. Mock External Contracts:
+   - Mock USDC
+   - Mock Aave (Pool, DataProvider)
+   - Mock Compound (Comet)
+   - Mock Moonwell (mToken, Comptroller)
+
+2. Core Protocol:
+   - Insurance contract
+   - Lending adapters (Aave, Compound, Moonwell)
+   - Tranches (A, B, C)
+
+### Frontend Setup
+
+1. Install frontend dependencies:
+```bash
+cd frontend
+npm install --legacy-peer-deps --force
+```
+
+2. Set up frontend environment:
+```bash
+cp .env.example .env
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+### MetaMask Configuration
+
+1. Configure MetaMask for local development:
+   - Network Name: Hardhat Local
+   - RPC URL: http://localhost:8545
+   - Chain ID: 31337
+   - Currency Symbol: ETH
+
+2. Import test account:
+   - Copy private key from Hardhat node output
+   - Import into MetaMask using "Import Account"
+
+### Troubleshooting
+
+Common issues and solutions:
+
+1. "Nonce too high" error
+   - Reset MetaMask account (Settings -> Advanced -> Reset Account)
+   - Restart Hardhat node and redeploy
+
+2. Transaction failures
+   - Check ETH balance for gas
+   - Verify USDC approval and balance
+   - Confirm correct signer/account
+
+3. Frontend connection issues
+   - Verify MetaMask network settings
+   - Check contract addresses in frontend config
+   - Clear browser cache
+
+For more detailed instructions, see [Local Development Guide](LOCAL_DEVELOPMENT.md).
 
 ## Documentation
 
@@ -51,9 +116,6 @@ For detailed local development instructions, including testing and troubleshooti
 - [Scripts Documentation](scripts/README.md) - Details about deployment scripts and configuration
 
 ## Deployment
-
-### Local Development
-See [Local Development Guide](LOCAL_DEVELOPMENT.md) for detailed instructions on setting up a local development environment.
 
 ### Production Deployment
 
