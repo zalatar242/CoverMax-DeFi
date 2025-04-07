@@ -1,10 +1,11 @@
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps --no-audit --no-fund && CI=false npm run build"
   publish = "build"
 
 [build.environment]
   NODE_VERSION = "18.17.0"
+  NPM_FLAGS = "--legacy-peer-deps --no-audit --no-fund"
 
 [[redirects]]
   from = "/*"
