@@ -1,37 +1,21 @@
 [build]
   base = "frontend"
-  command = "npm install --legacy-peer-deps --no-audit --no-fund && npm run build"
+  command = "CI=false npm install --legacy-peer-deps --no-audit --no-fund && CI=false npm run build"
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "18.x"
   NPM_FLAGS = "--legacy-peer-deps --no-audit --no-fund"
   CI = "false"
+  NODE_ENV = "production"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = true
 
+# Handle JavaScript files
 [[headers]]
-  for = "/*"
+  for = "/static/*"
   [headers.values]
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-    Content-Security-Policy = "script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'none'"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "interest-cohort=()"
-
-[[headers]]
-  for = "/static/js/*"
-  [headers.values]
-    Content-Type = "application/javascript"
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/*.js"
-  [headers.values]
-    Content-Type = "application/javascript"
     Cache-Control = "public, max-age=31536000, immutable"
