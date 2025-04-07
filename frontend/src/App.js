@@ -17,6 +17,7 @@ import { AppKitProvider } from './utils/walletConnector';
 import Dashboard from './pages/Dashboard';
 import Deposit from './pages/Deposit';
 import Withdraw from './pages/Withdraw';
+import Faucet from './pages/Faucet';
 
 // Custom theme colors - Stripe-inspired with purple accent
 const colors = {
@@ -131,6 +132,21 @@ const AppContent = () => {
                 >
                   Withdraw
                 </Button>
+                <Button
+                  component={Link}
+                  to="/faucet"
+                  sx={{
+                    color: colors.text,
+                    textTransform: 'none',
+                    fontWeight: 500,
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: colors.primary
+                    }
+                  }}
+                >
+                  Faucet
+                </Button>
               </Stack>
             </Box>
             <Stack
@@ -196,6 +212,24 @@ const AppContent = () => {
               >
                 Withdraw
               </Button>
+              <Button
+                component={Link}
+                to="/faucet"
+                variant="outlined"
+                fullWidth
+                sx={{
+                  color: colors.text,
+                  borderColor: colors.border,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  '&:hover': {
+                    borderColor: colors.primary,
+                    color: colors.primary
+                  }
+                }}
+              >
+                Faucet
+              </Button>
             </Stack>
           </Box>
           <Box sx={{
@@ -241,6 +275,7 @@ const AppContent = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/deposit" element={<Deposit />} />
           <Route path="/withdraw" element={<Withdraw />} />
+          <Route path="/faucet" element={<Faucet />} />
         </Routes>
       </Container>
     </Box>
