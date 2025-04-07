@@ -89,15 +89,28 @@ export function AppKitProvider({ children }) {
   );
 }
 
+// Network key mapping (matches contractConfig.js)
+const NETWORK_KEYS = {
+  84532: 'base-sepolia',
+  8453: 'base-mainnet',
+  31337: 'hardhat'
+};
+
 // Hook to get current network
 export const useNetwork = () => {
   const { chainId } = useAppKitNetwork();
   console.log('Current Chain ID:', chainId);
+
+  // Map chain ID to network key
+  const networkKey = NETWORK_KEYS[chainId] || 'hardhat';
   const network = networks.find(n => n.id === chainId) || networks[0];
-  console.log('Selected Network:', network);
+
+  console.log('Selected Network:', network, 'Network Key:', networkKey);
+
   return {
     chainId,
-    network
+    network,
+    networkKey
   };
 };
 

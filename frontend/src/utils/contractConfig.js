@@ -20,7 +20,7 @@ const NETWORK_CONFIG = {
       decimals: 18
     }
   },
-  'base-sepolia': { // Changed from 'sepolia' to match contracts.json
+  'base-sepolia': {
     name: 'Base Sepolia',
     chainId: 84532,
     rpcUrl: 'https://sepolia.base.org',
@@ -29,6 +29,13 @@ const NETWORK_CONFIG = {
       decimals: 18
     }
   }
+};
+
+// Network key mapping
+const NETWORK_KEYS = {
+  84532: 'base-sepolia',
+  8453: 'base-mainnet',
+  31337: 'hardhat'
 };
 
 const getContractConfig = (contractName, currentNetwork) => {
@@ -47,12 +54,12 @@ const getContractConfig = (contractName, currentNetwork) => {
 };
 
 export const useMainConfig = () => {
-  const { network: appKitNetwork, switchNetwork } = useAppKitNetwork();
+  const { chainId } = useAppKitNetwork();
 
-  // Map the appkit network to our network config
-  const currentNetwork = Object.keys(NETWORK_CONFIG).find(
-    key => NETWORK_CONFIG[key].chainId === appKitNetwork?.chainId
-  ) || process.env.REACT_APP_DEFAULT_NETWORK || 'mainnet';
+  // Map chain ID to network key
+  const currentNetwork = NETWORK_KEYS[chainId] || 'hardhat';
+
+  console.log('Current ChainId:', chainId, 'Mapped Network:', currentNetwork);
 
   return {
     Insurance: getContractConfig('Insurance', currentNetwork),
@@ -62,17 +69,20 @@ export const useMainConfig = () => {
     switchNetwork: async (networkKey) => {
       const network = NETWORK_CONFIG[networkKey];
       if (network) {
-        await switchNetwork(network);
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: `0x${network.chainId.toString(16)}` }],
+        });
       }
     }
   };
 };
 
 export const useTranchesConfig = () => {
-  const { network: appKitNetwork } = useAppKitNetwork();
-  const currentNetwork = Object.keys(NETWORK_CONFIG).find(
-    key => NETWORK_CONFIG[key].chainId === appKitNetwork?.chainId
-  ) || process.env.REACT_APP_DEFAULT_NETWORK || 'mainnet';
+  const { chainId } = useAppKitNetwork();
+
+  // Map chain ID to network key
+  const currentNetwork = NETWORK_KEYS[chainId] || 'hardhat';
 
   return {
     A: getContractConfig('TrancheA', currentNetwork),
@@ -82,13 +92,20 @@ export const useTranchesConfig = () => {
 };
 
 export const useContractsConfig = () => {
-  const { network: appKitNetwork } = useAppKitNetwork();
-  const currentNetwork = Object.keys(NETWORK_CONFIG).find(
-    key => NETWORK_CONFIG[key].chainId === appKitNetwork?.chainId
-  ) || process.env.REACT_APP_DEFAULT_NETWORK || 'mainnet';
+  const { chainId } = useAppKitNetwork();
+
+  // Map chain ID to network key
+  const currentNetwork = NETWORK_KEYS[chainId] || 'hardhat';
+
+  console.log('useContractsConfig - Network:', currentNetwork, 'ChainId:', chainId);
+
+  const networkContracts = contracts.networks[currentNetwork];
+  if (!networkContracts) {
+    console.error(`No contracts found for network: ${currentNetwork}`);
+  }
 
   return {
-    ...contracts.networks[currentNetwork],
+    ...(networkContracts || {}),
     network: NETWORK_CONFIG[currentNetwork],
     networks: NETWORK_CONFIG,
     currentNetwork
