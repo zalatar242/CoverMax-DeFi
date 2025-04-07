@@ -15,7 +15,7 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 };
 
-// Configure networks - Only using Hardhat Local
+// Configure networks
 const networks = [
   {
     ...hardhat,
@@ -31,6 +31,27 @@ const networks = [
       default: { http: ['http://127.0.0.1:8545'] },
       public: { http: ['http://127.0.0.1:8545'] },
     }
+  },
+  {
+    id: 84532,
+    name: 'Base Sepolia',
+    network: 'base-sepolia',
+    nativeCurrency: {
+      decimals: 18,
+      name: 'Ether',
+      symbol: 'ETH',
+    },
+    rpcUrls: {
+      default: { http: ['https://sepolia.base.org'] },
+      public: { http: ['https://sepolia.base.org'] },
+    },
+    blockExplorers: {
+      default: {
+        name: 'BaseScan',
+        url: 'https://sepolia.basescan.org'
+      }
+    },
+    testnet: true
   }
 ];
 

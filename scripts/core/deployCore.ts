@@ -20,8 +20,8 @@ export interface DeployedContracts {
 }
 
 async function verifyContract(address: string, args: any[] = []) {
-  if (!["base-mainnet", "mainnet"].includes(network.name)) {
-    console.log("Skipping verification on non-mainnet network");
+  if (!["base-mainnet", "mainnet", "base-sepolia"].includes(network.name)) {
+    console.log("Skipping verification on unsupported network");
     return;
   }
 
@@ -31,9 +31,19 @@ async function verifyContract(address: string, args: any[] = []) {
       address,
       constructorArguments: args,
     });
-  } catch (err) {
-    console.log("Verification error:", err);
+  } catch (err: any) {
+    if (err.message.includes("Already Verified")) {
+      console.log("Contract already verified");
+    } else {
+      console.error("Verification error:", err);
+      throw err; // Rethrow to handle in the main deployment
+    }
   }
+}
+
+async function waitForConfirmations(tx: any) {
+  const receipt = await tx.wait(2); // Wait for 2 confirmations
+  return receipt;
 }
 
 export async function deployCoreContracts(addresses: DeploymentAddresses): Promise<DeployedContracts> {
@@ -64,28 +74,52 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
   const insurance = await Insurance.deploy(addresses.USDC_ADDRESS);
   await insurance.waitForDeployment();
 
-  // Add lending adapters
-  await (await insurance.addLendingAdapter(await aaveAdapter.getAddress())).wait();
-  await (await insurance.addLendingAdapter(await moonwellAdapter.getAddress())).wait();
-  await (await insurance.addLendingAdapter(await compoundAdapter.getAddress())).wait();
+  // Add lending adapters with proper error handling and confirmations
+  console.log("\nAdding lending adapters...");
+  try {
+    const tx1 = await insurance.addLendingAdapter(await aaveAdapter.getAddress());
+    await waitForConfirmations(tx1);
+    console.log("Added Aave adapter");
+
+    const tx2 = await insurance.addLendingAdapter(await moonwellAdapter.getAddress());
+    await waitForConfirmations(tx2);
+    console.log("Added Moonwell adapter");
+
+    const tx3 = await insurance.addLendingAdapter(await compoundAdapter.getAddress());
+    await waitForConfirmations(tx3);
+    console.log("Added Compound adapter");
+  } catch (error) {
+    console.error("Error adding lending adapters:", error);
+    throw error;
+  }
+
+  // Verify tranche creation
+  console.log("\nVerifying tranche contracts...");
 
   // Get tranche addresses
   const trancheA = await ethers.getContractAt("Tranche", await insurance.A());
   const trancheB = await ethers.getContractAt("Tranche", await insurance.B());
   const trancheC = await ethers.getContractAt("Tranche", await insurance.C());
 
-  // Verify contracts if on mainnet
-  if (["base-mainnet", "mainnet"].includes(network.name)) {
+  // Verify contracts
+  if (["base-mainnet", "mainnet", "base-sepolia"].includes(network.name)) {
     console.log("\nWaiting 30 seconds before verification...");
     await new Promise(resolve => setTimeout(resolve, 30000));
 
-    await verifyContract(await insurance.getAddress(), [addresses.USDC_ADDRESS]);
-    await verifyContract(await aaveAdapter.getAddress(), [addresses.AAVE_V3_POOL, addresses.AAVE_DATA_PROVIDER]);
-    await verifyContract(await moonwellAdapter.getAddress(), [addresses.MOONWELL_USDC]);
-    await verifyContract(await compoundAdapter.getAddress(), [addresses.COMPOUND_USDC_MARKET]);
-    await verifyContract(await trancheA.getAddress());
-    await verifyContract(await trancheB.getAddress());
-    await verifyContract(await trancheC.getAddress());
+    try {
+      console.log("\nVerifying contracts...");
+      await verifyContract(await insurance.getAddress(), [addresses.USDC_ADDRESS]);
+      await verifyContract(await aaveAdapter.getAddress(), [addresses.AAVE_V3_POOL, addresses.AAVE_DATA_PROVIDER]);
+      await verifyContract(await moonwellAdapter.getAddress(), [addresses.MOONWELL_USDC]);
+      await verifyContract(await compoundAdapter.getAddress(), [addresses.COMPOUND_USDC_MARKET]);
+      await verifyContract(await trancheA.getAddress(), ["Tranche A", "TRA"]);
+      await verifyContract(await trancheB.getAddress(), ["Tranche B", "TRB"]);
+      await verifyContract(await trancheC.getAddress(), ["Tranche C", "TRC"]);
+      console.log("All contracts verified successfully");
+    } catch (error) {
+      console.error("Error during contract verification:", error);
+      // Don't throw here as verification failure shouldn't fail deployment
+    }
   }
 
   console.log("\nCore contracts deployed:");

@@ -20,10 +20,10 @@ const NETWORK_CONFIG = {
       decimals: 18
     }
   },
-  sepolia: {
+  'base-sepolia': { // Changed from 'sepolia' to match contracts.json
     name: 'Base Sepolia',
     chainId: 84532,
-    rpcUrl: process.env.REACT_APP_SEPOLIA_RPC_URL,
+    rpcUrl: 'https://sepolia.base.org',
     nativeCurrency: {
       symbol: 'ETH',
       decimals: 18
@@ -32,7 +32,7 @@ const NETWORK_CONFIG = {
 };
 
 const getContractConfig = (contractName, currentNetwork) => {
-  const network = currentNetwork || process.env.REACT_APP_DEFAULT_NETWORK || 'mainnet';
+  const network = currentNetwork || process.env.REACT_APP_DEFAULT_NETWORK || 'base-sepolia';
   const networkContracts = contracts.networks[network];
 
   if (!networkContracts || !networkContracts[contractName]) {

@@ -23,7 +23,7 @@ contract Insurance is Ownable {
     uint256 constant TRANCHE_ALLOCATION = RAY / 3; // Equal 33.33% allocation per tranche
 
     /* Time periods */
-    uint256 public immutable S;  // Start/split end
+    uint256 public immutable S; // Start/split end
     uint256 public immutable T1; // Insurance end
     uint256 public immutable T2; // Claim start
     uint256 public immutable T3; // Final claim end
@@ -67,10 +67,10 @@ contract Insurance is Ownable {
         C = address(new Tranche("CM Tranche C", "CM-C"));
 
         // Set time periods
-        S = block.timestamp + 7 days;
-        T1 = S + 28 days;
+        S = block.timestamp + 2 days;
+        T1 = S + 5 days;
         T2 = T1 + 1 days;
-        T3 = T2 + 3 days;
+        T3 = T2 + 1 days;
     }
 
     /// @notice Add a new lending adapter
