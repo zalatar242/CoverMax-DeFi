@@ -5,6 +5,7 @@ A DeFi insurance protocol that provides yield-enhanced protection through tranch
 ## Overview
 
 CoverMax-DeFi is a decentralized insurance protocol that allows users to:
+
 - Deposit funds into risk-segmented tranches (A, B, C)
 - Earn yield from leading DeFi protocols (Aave, Compound, Moonwell)
 - Get protection against smart contract risks
@@ -24,21 +25,25 @@ The protocol consists of these main components:
 ## Quick Start
 
 1. Install dependencies:
+
 ```bash
 npm install --legacy-peer-deps --force
 ```
 
 2. Set up environment:
+
 ```bash
 cp .env.example .env
 ```
 
 3. Start local node:
+
 ```bash
 npx hardhat node
 ```
 
 4. Deploy contracts:
+
 ```bash
 npx hardhat run scripts/deploy-local.ts --network localhost
 ```
@@ -50,6 +55,7 @@ npx hardhat run scripts/deploy-local.ts --network localhost
 The deployment process sets up:
 
 1. Mock External Contracts:
+
    - Mock USDC
    - Mock Aave (Pool, DataProvider)
    - Mock Compound (Comet)
@@ -63,24 +69,28 @@ The deployment process sets up:
 ### Frontend Setup
 
 1. Install frontend dependencies:
+
 ```bash
 cd frontend
 npm install --legacy-peer-deps --force
 ```
 
 2. Set up frontend environment:
+
 ```bash
 cp .env.example .env
 ```
 
 3. Start the development server:
+
 ```bash
-npm run dev
+npm start
 ```
 
 ### MetaMask Configuration
 
 1. Configure MetaMask for local development:
+
    - Network Name: Hardhat Local
    - RPC URL: http://localhost:8545
    - Chain ID: 31337
@@ -95,10 +105,12 @@ npm run dev
 Common issues and solutions:
 
 1. "Nonce too high" error
+
    - Reset MetaMask account (Settings -> Advanced -> Reset Account)
    - Restart Hardhat node and redeploy
 
 2. Transaction failures
+
    - Check ETH balance for gas
    - Verify USDC approval and balance
    - Confirm correct signer/account
@@ -120,6 +132,7 @@ For more detailed instructions, see [Local Development Guide](LOCAL_DEVELOPMENT.
 ### Production Deployment
 
 1. Configure environment:
+
 ```bash
 # Set deployment private key
 DEPLOYER_PRIVATE_KEY=your_private_key
@@ -129,6 +142,7 @@ BASESCAN_API_KEY=your_api_key
 ```
 
 2. Deploy to mainnet:
+
 ```bash
 npx hardhat run scripts/deploy-mainnet.ts --network base-mainnet
 ```
@@ -157,10 +171,12 @@ npm run coverage
 ## Security
 
 ### Audits
+
 - Audit 1: [Link to audit report]
 - Audit 2: [Link to audit report]
 
 ### Bug Bounty
+
 Our bug bounty program details can be found at [Link to bug bounty]
 
 ## License
