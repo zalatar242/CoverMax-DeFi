@@ -1,0 +1,16 @@
+[build]
+  base = "frontend"
+  command = "CI=false npm install --legacy-peer-deps && CI=false npm run build"
+  publish = "frontend/build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
+
+[context.production]
+  command = "CI=false npm install --legacy-peer-deps && CI=false npm run build"
