@@ -4,7 +4,8 @@
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "18.x"
+  NODE_VERSION = "18.17.0"
+  NPM_VERSION = "9.6.7"
   NPM_FLAGS = "--legacy-peer-deps --no-audit --no-fund"
   CI = "false"
   NODE_ENV = "production"
