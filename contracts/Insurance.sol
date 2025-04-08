@@ -23,15 +23,15 @@ contract Insurance is Ownable {
     uint256 constant TRANCHE_ALLOCATION = RAY / 3; // Equal 33.33% allocation per tranche
 
     /* Time periods */
-    uint256 public immutable S;  // Start/split end
+    uint256 public immutable S; // Start/split end
     uint256 public immutable T1; // Insurance end
-    uint256 public immutable T2; // Claim start
-    uint256 public immutable T3; // Final claim end
+    uint256 public immutable T2; // A tokens claim start
+    uint256 public immutable T3; // A,B tokens claim start
+    uint256 public immutable T4; // A,B,C tokens claim end (final)
 
     /* State tracking */
     uint256 public totalTranches; // Total A + B + C tokens
-    bool public isInvested; // True if funds have been deposited to platforms
-    bool public inLiquidMode; // True: distribute USDC, False: platform tokens claimable
+    bool public isInvested; // True if funds have been invested in platforms, false after divest
 
     /* Liquid mode payouts */
     uint256 public usdcPayoutA; // Payout in USDC per A tranche
@@ -67,10 +67,11 @@ contract Insurance is Ownable {
         C = address(new Tranche("CM Tranche C", "CM-C"));
 
         // Set time periods
-        S = block.timestamp + 7 days;
-        T1 = S + 28 days;
+        S = block.timestamp + 2 days;
+        T1 = S + 5 days;
         T2 = T1 + 1 days;
-        T3 = T2 + 3 days;
+        T3 = T2 + 1 days;
+        T4 = T3 + 1 days;
     }
 
     /// @notice Add a new lending adapter
@@ -170,7 +171,6 @@ contract Insurance is Ownable {
     /// @notice Withdraw funds from lending platforms and calculate tranche payouts
     function divest() external {
         require(block.timestamp >= T1, "Insurance: still in insurance period");
-        require(block.timestamp < T2, "Insurance: in claim period");
 
         uint256 totalRecovered = 0;
         uint256 trancheSupply = totalTranches / 3;
@@ -197,8 +197,7 @@ contract Insurance is Ownable {
                 }
             }
         }
-
-        inLiquidMode = true;
+        isInvested = false;
 
         // Calculate payouts based on losses
         if (!isInvested) {
@@ -243,6 +242,106 @@ contract Insurance is Ownable {
         emit Divest(totalRecovered);
     }
 
+    /// @notice Check if the contract is in pre-investment period
+    function isPreInvestmentPeriod() public view returns (bool) {
+        return block.timestamp < T1 && !isInvested;
+    }
+
+    /// @notice Check if the contract is in normal claim period after successful divest
+    function isNormalClaimPeriod() public view returns (bool) {
+        return
+            block.timestamp >= T2 &&
+            block.timestamp <= T4 &&
+            !isInvested &&
+            usdcPayoutA == RAY &&
+            usdcPayoutB == RAY &&
+            usdcPayoutC == RAY;
+    }
+
+    /// @notice Validate withdrawal based on current period and amounts
+    /// @param amountA Amount of A tranche tokens to redeem
+    /// @param amountB Amount of B tranche tokens to redeem
+    /// @param amountC Amount of C tranche tokens to redeem
+    function validateWithdrawal(
+        uint256 amountA,
+        uint256 amountB,
+        uint256 amountC
+    ) internal view {
+        require(
+            amountA > 0 || amountB > 0 || amountC > 0,
+            "Insurance: no amount specified"
+        );
+
+        if (isPreInvestmentPeriod()) {
+            // Pre-investment: Allow withdrawing any tokens
+            return;
+        }
+
+        require(!isInvested, "Insurance: funds still invested");
+        require(block.timestamp >= T2, "Insurance: claim period not started");
+        require(block.timestamp <= T4, "Insurance: claim period ended");
+
+        if (!isNormalClaimPeriod()) {
+            // Emergency mode - tiered withdrawal system
+            if (block.timestamp < T3) {
+                require(
+                    amountB == 0 && amountC == 0,
+                    "Insurance: only A claims allowed"
+                );
+            } else if (block.timestamp < T4) {
+                require(amountC == 0, "Insurance: only A,B claims allowed");
+            }
+        }
+    }
+
+    /// @notice Process withdrawal by burning tokens and calculating payout
+    /// @param amountA Amount of A tranche tokens to redeem
+    /// @param amountB Amount of B tranche tokens to redeem
+    /// @param amountC Amount of C tranche tokens to redeem
+    /// @return payout The amount of USDC to be paid out
+    function calculateWithdrawalAmount(
+        uint256 amountA,
+        uint256 amountB,
+        uint256 amountC
+    ) internal returns (uint256) {
+        uint256 payout = 0;
+
+        if (amountA > 0) {
+            require(
+                ITranche(A).balanceOf(msg.sender) >= amountA,
+                "Insurance: insufficient A balance"
+            );
+            ITranche(A).burn(msg.sender, amountA);
+            payout += isPreInvestmentPeriod()
+                ? amountA
+                : (usdcPayoutA * amountA) / RAY;
+        }
+
+        if (amountB > 0) {
+            require(
+                ITranche(B).balanceOf(msg.sender) >= amountB,
+                "Insurance: insufficient B balance"
+            );
+            ITranche(B).burn(msg.sender, amountB);
+            payout += isPreInvestmentPeriod()
+                ? amountB
+                : (usdcPayoutB * amountB) / RAY;
+        }
+
+        if (amountC > 0) {
+            require(
+                ITranche(C).balanceOf(msg.sender) >= amountC,
+                "Insurance: insufficient C balance"
+            );
+            ITranche(C).burn(msg.sender, amountC);
+            payout += isPreInvestmentPeriod()
+                ? amountC
+                : (usdcPayoutC * amountC) / RAY;
+        }
+
+        return payout;
+    }
+
     /// @notice Internal function to handle claiming USDC for tranche tokens
     /// @param amountA Amount of A tranche tokens to redeem
     /// @param amountB Amount of B tranche tokens to redeem
@@ -252,45 +351,13 @@ contract Insurance is Ownable {
         uint256 amountB,
         uint256 amountC
     ) internal {
-        // Special case: after T1, if never invested, allow direct claims
-        if (block.timestamp >= T1 && !isInvested && !inLiquidMode) {
+        // Special case: after T1, if never invested, allow direct claims (via divest)
+        if (block.timestamp >= T1 && !isInvested) {
             this.divest();
         }
 
-        require(inLiquidMode, "Insurance: not in liquid mode");
-        require(
-            amountA > 0 || amountB > 0 || amountC > 0,
-            "Insurance: no amount specified"
-        );
-
-        uint256 payout = 0;
-
-        if (amountA > 0) {
-            require(
-                ITranche(A).balanceOf(msg.sender) >= amountA,
-                "Insurance: insufficient A balance"
-            );
-            ITranche(A).burn(msg.sender, amountA);
-            payout += (usdcPayoutA * amountA) / RAY;
-        }
-
-        if (amountB > 0) {
-            require(
-                ITranche(B).balanceOf(msg.sender) >= amountB,
-                "Insurance: insufficient B balance"
-            );
-            ITranche(B).burn(msg.sender, amountB);
-            payout += (usdcPayoutB * amountB) / RAY;
-        }
-
-        if (amountC > 0) {
-            require(
-                ITranche(C).balanceOf(msg.sender) >= amountC,
-                "Insurance: insufficient C balance"
-            );
-            ITranche(C).burn(msg.sender, amountC);
-            payout += (usdcPayoutC * amountC) / RAY;
-        }
+        validateWithdrawal(amountA, amountB, amountC);
+        uint256 payout = calculateWithdrawalAmount(amountA, amountB, amountC);
 
         if (payout > 0) {
             require(

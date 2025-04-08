@@ -485,3 +485,6 @@ describe("Insurance (Base Mainnet Fork)", function () {
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [USDC_WHALE]);
   });
 });
+
+
+//TODO! There should be tests for when people forget to call invest on or after T1, and tests for when people forget to call divest before T2 begins
