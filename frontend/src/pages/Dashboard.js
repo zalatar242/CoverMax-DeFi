@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Typography, Button, Card, CardContent, Stack, Divider, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, Stack, Divider, useTheme, useMediaQuery, Tooltip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { AccountBalance, SwapHoriz, ErrorOutline } from '@mui/icons-material';
+import { AccountBalance, SwapHoriz, ErrorOutline, InfoOutlined } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { formatUSDC, calculatePercentage } from '../utils/analytics';
 import { usePortfolioData, useProtocolStatus, useUSDCBalance } from '../utils/contracts';
@@ -186,12 +186,14 @@ const Dashboard = () => {
           gap: 2
         }}>
           <Box>
-            <Typography variant="h5" sx={{ color: colors.text, fontWeight: 600, mb: 0.5 }}>
-              Portfolio Overview
-            </Typography>
-            <Typography variant="body2" sx={{ color: colors.textLight }}>
-              {status}
-            </Typography>
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h5" sx={{ color: colors.text, fontWeight: 600, mb: 0.5 }}>
+                Portfolio Overview
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: colors.textLight }}>
+                {status}
+              </Typography>
+            </Box>
           </Box>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -240,7 +242,7 @@ const Dashboard = () => {
           mb: 4
         }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
+            <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 1 }}>
               Total Portfolio Value
             </Typography>
             <Typography variant="h4" sx={{ color: colors.text, fontWeight: 600 }}>
@@ -249,7 +251,7 @@ const Dashboard = () => {
           </Box>
           <Divider orientation={isTablet ? 'horizontal' : 'vertical'} flexItem sx={{ bgcolor: colors.border }} />
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
+            <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 1 }}>
               Available USDC
             </Typography>
             <Typography variant="h4" sx={{ color: colors.text, fontWeight: 600 }}>
@@ -259,6 +261,9 @@ const Dashboard = () => {
         </Box>
 
         <Box>
+          <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
+            Portfolio by Tranche
+          </Typography>
           <Box sx={{
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
@@ -301,7 +306,7 @@ const Dashboard = () => {
         borderColor: `${colors.primary}20`
       }}
     >
-      <Typography variant="body1" sx={{ color: colors.text, fontWeight: 600, mb: 2 }}>
+      <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
         Tranche {title}
       </Typography>
       <Typography variant="h6" sx={{ color: colors.text, fontWeight: 600, mb: 1 }}>
@@ -324,7 +329,7 @@ const Dashboard = () => {
         borderColor: `${colors.primary}20`
       }}
     >
-      <Typography variant="body1" sx={{ color: colors.text, fontWeight: 600, mb: 2 }}>
+      <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
         Tranche {title}
       </Typography>
       <Typography variant="h6" sx={{ color: colors.text, fontWeight: 600, mb: 1 }}>
@@ -368,7 +373,7 @@ const Dashboard = () => {
                 mb: 4
               }}>
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
+                  <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 1 }}>
                     Total Value Locked
                   </Typography>
                   <Typography variant="h4" sx={{ color: colors.text, fontWeight: 600 }}>
@@ -377,60 +382,87 @@ const Dashboard = () => {
                 </Box>
                 <Divider orientation={isTablet ? 'horizontal' : 'vertical'} flexItem sx={{ bgcolor: colors.border }} />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
+                  <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
                     Protocol Timeline
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {Object.entries(phases).map(([key, phase]) => (
-                      <Box
+                      <Tooltip
                         key={key}
-                        sx={{
-                          p: 2,
-                          borderRadius: 1,
-                          bgcolor: status === phase.name ? `${colors.primary}08` : 'transparent',
-                          border: '1px solid',
-                          borderColor: status === phase.name ? `${colors.primary}20` : colors.border
-                        }}
+                        title={(() => {
+                          console.log("Phase name:", phase.name);
+                          return phase.name === "Deposit Phase (2 days)" ?
+                            "2-day window to deposit USDC into the protocol. Your deposits are split into three tranches (A, B, C) each with different risk/reward profiles." :
+                          phase.name === "Insurance Phase (5 days)" ?
+                            "5-day period where your deposits are protected and earning yield across different lending protocols like Aave, Compound, and Moonwell." :
+                          phase.name === "Withdrawal Phase (3 days)" ?
+                            "3-day window to withdraw your funds. Withdrawals are processed in order of tranche priority: A (lowest risk) first, then B, then C (highest risk)." :
+                          "";
+                        })()
+                        }
+                        arrow
+                        placement="right"
                       >
-                        <Typography
-                          variant="subtitle1"
+                        <Box
                           sx={{
-                            color: status === phase.name ? colors.secondary : colors.text,
-                            fontWeight: status === phase.name ? 600 : 500,
-                            mb: 0.5
+                            p: 2,
+                            borderRadius: 1,
+                            bgcolor: status === phase.name ? `${colors.primary}08` : 'transparent',
+                            border: '1px solid',
+                            borderColor: status === phase.name ? `${colors.primary}20` : colors.border,
+                            cursor: 'help',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              bgcolor: `${colors.primary}15`
+                            }
                           }}
                         >
-                          {phase.name}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: colors.textLight, display: 'block' }}>
-                          {phase.start.toLocaleDateString()} - {phase.end ? phase.end.toLocaleDateString() : 'End'}
-                        </Typography>
-                      </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{
+                                color: status === phase.name ? colors.secondary : colors.text,
+                                fontWeight: status === phase.name ? 600 : 500
+                              }}
+                            >
+                              {phase.name}
+                            </Typography>
+                            <InfoOutlined sx={{ fontSize: 16, color: colors.textLight }} />
+                          </Box>
+                          <Typography variant="caption" sx={{ color: colors.textLight, display: 'block' }}>
+                            {phase.start.toLocaleDateString()} - {phase.end ? phase.end.toLocaleDateString() : 'End'}
+                          </Typography>
+                        </Box>
+                      </Tooltip>
                     ))}
                   </Box>
                 </Box>
               </Box>
-
-              <Box sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: { xs: 2, sm: 2, md: 3 },
-                '& > *': {
-                  flex: { xs: '1 1 100%', sm: '1 1 0', md: '1 1 0' }
-                }
-              }}>
-                <TVLSummary
-                  title="A"
-                  value={tvl.byTranche.A}
-                />
-                <TVLSummary
-                  title="B"
-                  value={tvl.byTranche.B}
-                />
-                <TVLSummary
-                  title="C"
-                  value={tvl.byTranche.C}
-                />
+              <Box>
+                <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
+                  TVL by Tranche
+                </Typography>
+                <Box sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: { xs: 2, sm: 2, md: 3 },
+                  '& > *': {
+                    flex: { xs: '1 1 100%', sm: '1 1 0', md: '1 1 0' }
+                  }
+                }}>
+                  <TVLSummary
+                    title="A"
+                    value={tvl.byTranche.A}
+                  />
+                  <TVLSummary
+                    title="B"
+                    value={tvl.byTranche.B}
+                  />
+                  <TVLSummary
+                    title="C"
+                    value={tvl.byTranche.C}
+                  />
+                </Box>
               </Box>
             </CardContent>
           </Card>
