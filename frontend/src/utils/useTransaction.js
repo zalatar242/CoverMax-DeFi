@@ -1,52 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useWaitForTransactionReceipt } from 'wagmi';
 
-export const useTransaction = ({ hash, onSuccess, onError }) => {
+export const useTransaction = ({ onSuccess }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [hash, setHash] = useState(null);
 
-  const { isLoading: isWaiting } = useWaitForTransactionReceipt({
+  const {
+    data: receipt,
+    isSuccess,
+    isError,
+    error: txError
+  } = useWaitForTransactionReceipt({
     hash,
-    enabled: Boolean(hash),
-    onSuccess: () => {
-      setSuccess(onSuccess || 'Transaction successful!');
-      onSuccess?.();
-    },
-    onError: (err) => {
-      setError(onError || 'Transaction failed');
-      onError?.(err);
-    },
-    onSettled: () => {
-      setIsProcessing(false);
-    }
+    enabled: Boolean(hash)
   });
 
-  // Reset loading state when no transaction hash
+  // Handle transaction status
   useEffect(() => {
-    if (!hash) {
+    if (isError || txError) {
+      setError(txError?.message || 'Transaction failed');
       setIsProcessing(false);
+      setHash(null);
+    } else if (receipt && isSuccess) {
+      setSuccess('Transaction successful!');
+      onSuccess?.();
+      setIsProcessing(false);
+      setHash(null);
     }
-  }, [hash]);
+  }, [receipt, isSuccess, onSuccess]);
 
-  const handleTransaction = async (transactionFn) => {
+  const handleTransaction = async (fn) => {
     try {
       setError('');
       setSuccess('');
       setIsProcessing(true);
-      await transactionFn();
+      const response = await fn();
+      if (typeof response === 'string') {
+        setHash(response);
+      } else {
+        setHash(response.hash);
+      }
     } catch (err) {
-      setError(err.message);
+      console.error('Transaction error:', err);
+      setError(err?.shortMessage || err?.message || 'Transaction failed');
       setIsProcessing(false);
+      setHash(null);
     }
   };
 
   return {
-    isProcessing: isProcessing || isWaiting,
+    isProcessing,
     error,
     success,
-    setError,
-    setSuccess,
     handleTransaction
   };
 };

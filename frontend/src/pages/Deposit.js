@@ -4,7 +4,7 @@ import { AccountBalance, CheckCircle } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useUSDCBalance } from '../utils/contracts';
 import { useMainConfig } from '../utils/contractConfig';
-import { useWriteContract, useReadContract } from 'wagmi';
+import { useWriteContract, useReadContract, usePrepareContractWrite } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
@@ -55,28 +55,45 @@ const Deposit = () => {
     enabled: Boolean(address && USDC && Insurance && isConnected),
   });
 
-  const { writeContract: approveUSDC } = useWriteContract();
-  const { writeContract: deposit } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
   const handleApproveClick = () => {
     handleApprove(async () => {
-      approveUSDC({
-        address: USDC.address,
-        abi: USDC.abi,
-        functionName: 'approve',
-        args: [Insurance.address, amountInWei],
-      });
+      try {
+        const hash = await writeContractAsync({
+          address: USDC.address,
+          abi: USDC.abi,
+          functionName: 'approve',
+          args: [Insurance.address, amountInWei],
+          chainId: 31337
+        });
+        console.log('Approve hash:', hash);
+        await refetchAllowance();
+        return hash;
+      } catch (err) {
+        console.error('Approval error:', err);
+        throw err;
+      }
     });
   };
 
   const handleDepositClick = () => {
     handleDeposit(async () => {
-      deposit({
-        address: Insurance.address,
-        abi: Insurance.abi,
-        functionName: 'splitRisk',
-        args: [amountInWei],
-      });
+      try {
+        const hash = await writeContractAsync({
+          address: Insurance.address,
+          abi: Insurance.abi,
+          functionName: 'splitRisk',
+          args: [amountInWei],
+          chainId: 31337
+        });
+        console.log('Deposit hash:', hash);
+        resetAmount();
+        return hash;
+      } catch (err) {
+        console.error('Deposit error:', err);
+        throw err;
+      }
     });
   };
 
@@ -112,8 +129,11 @@ const Deposit = () => {
               maxAmount={Number(formatUnits(balance, 6))}
               label="Amount to Deposit"
             />
-            <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
+            <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
               Available Balance: {isLoadingBalance ? 'Loading...' : formatUnits(balance, 6)} USDC
+            </Typography>
+            <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
+              Current Allowance: {formatUnits(allowance, 6)} USDC
             </Typography>
           </div>
 
