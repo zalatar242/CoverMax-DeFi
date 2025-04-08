@@ -43,7 +43,7 @@ const Withdraw = () => {
     : 'Loading...';
 
   // Read balances for each tranche
-  const { data: trancheABalance = 0n, isLoading: isLoadingBalanceA } = useReadContract({
+  const { data: trancheABalance = 0n, isLoading: isLoadingBalanceA, refetch: refetchBalanceA } = useReadContract({
     address: tranches.A?.address,
     abi: tranches.A?.abi,
     functionName: 'balanceOf',
@@ -51,7 +51,7 @@ const Withdraw = () => {
     enabled: Boolean(address && tranches.A && isConnected),
   });
 
-  const { data: trancheBBalance = 0n, isLoading: isLoadingBalanceB } = useReadContract({
+  const { data: trancheBBalance = 0n, isLoading: isLoadingBalanceB, refetch: refetchBalanceB } = useReadContract({
     address: tranches.B?.address,
     abi: tranches.B?.abi,
     functionName: 'balanceOf',
@@ -59,7 +59,7 @@ const Withdraw = () => {
     enabled: Boolean(address && tranches.B && isConnected),
   });
 
-  const { data: trancheCBalance = 0n, isLoading: isLoadingBalanceC } = useReadContract({
+  const { data: trancheCBalance = 0n, isLoading: isLoadingBalanceC, refetch: refetchBalanceC } = useReadContract({
     address: tranches.C?.address,
     abi: tranches.C?.abi,
     functionName: 'balanceOf',
@@ -81,24 +81,46 @@ const Withdraw = () => {
     amountInWei
   } = useAmountForm(totalBalance);
 
+  // Track when to update balances
+  const [shouldUpdateBalances, setShouldUpdateBalances] = React.useState(false);
+
   const { isProcessing: isWithdrawing, error: withdrawError, success: withdrawSuccess, handleTransaction: handleWithdraw } =
     useTransaction({
       onSuccess: () => {
         resetAmount();
+        setShouldUpdateBalances(true);
       }
     });
 
-  const { writeContract: claim } = useWriteContract();
+  // Effect to update balances after transaction is confirmed
+  React.useEffect(() => {
+    if (withdrawSuccess && shouldUpdateBalances) {
+      // Update balances only after transaction is confirmed
+      refetchBalanceA();
+      refetchBalanceB();
+      refetchBalanceC();
+      setShouldUpdateBalances(false);
+    }
+  }, [withdrawSuccess, shouldUpdateBalances, refetchBalanceA, refetchBalanceB, refetchBalanceC]);
+
+  const { writeContractAsync } = useWriteContract();
 
   const handleWithdrawClick = () => {
     handleWithdraw(async () => {
-      const individualAmount = amountInWei / 3n;
-      claim({
-        address: Insurance.address,
-        abi: Insurance.abi,
-        functionName: 'claim',
-        args: [individualAmount, individualAmount, individualAmount],
-      });
+      try {
+        const individualAmount = amountInWei / 3n;
+        const hash = await writeContractAsync({
+          address: Insurance.address,
+          abi: Insurance.abi,
+          functionName: 'claim',
+          args: [individualAmount, individualAmount, individualAmount],
+        });
+        console.log('Withdraw hash:', hash);
+        return hash;
+      } catch (err) {
+        console.error('Withdraw error:', err);
+        throw err;
+      }
     });
   };
 

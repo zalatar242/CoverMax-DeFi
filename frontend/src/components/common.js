@@ -53,12 +53,28 @@ export const WalletRequiredCard = ({ title, onConnect }) => (
   </ContentCard>
 );
 
-export const TransactionAlerts = ({ error, success }) => (
-  <Stack spacing={2} sx={{ mb: 3 }}>
-    {error && <Alert severity="error">{error}</Alert>}
-    {success && <Alert severity="success">{success}</Alert>}
-  </Stack>
-);
+export const TransactionAlerts = ({ error, success }) => {
+  const [showSuccess, setShowSuccess] = React.useState(false);
+
+  React.useEffect(() => {
+    if (success) {
+      // Wait for a short delay before showing success alert to ensure transaction is confirmed
+      const timer = setTimeout(() => {
+        setShowSuccess(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSuccess(false);
+    }
+  }, [success]);
+
+  return (
+    <Stack spacing={2} sx={{ mb: 3 }}>
+      {error && <Alert severity="error">{error}</Alert>}
+      {showSuccess && <Alert severity="success">{success}</Alert>}
+    </Stack>
+  );
+};
 
 export const InfoBox = ({ title, items }) => (
   <Box sx={{ bgcolor: `${colors.primary}08`, p: 3, borderRadius: 2 }}>
