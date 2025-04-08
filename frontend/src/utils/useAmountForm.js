@@ -20,13 +20,32 @@ export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 3) => {
   };
 
   const handleAmountChange = (value) => {
-    setAmount(value);
-    if (value && !validateAmount(value)) {
-      setError(`Amount must be divisible by ${minDivisibleBy}`);
-    } else if (value && parseUnits(value, 6) > maxAmount) {
-      setError('Amount exceeds balance');
-    } else {
-      setError('');
+    try {
+      setAmount(value);
+      if (!value) {
+        setError('');
+        return;
+      }
+
+      const numValue = parseFloat(value);
+      if (numValue < 0) {
+        setError('Please enter a positive amount');
+      } else if (!validateAmount(value)) {
+        setError(`Amount must be divisible by ${minDivisibleBy} to ensure equal distribution`);
+      } else {
+        const valueInWei = parseUnits(value, 6);
+        if (valueInWei > maxAmount) {
+          setError('Amount exceeds your available balance');
+        } else {
+          setError('');
+        }
+      }
+    } catch (err) {
+      if (err.message.includes('256-bit')) {
+        setError('Amount is too large');
+      } else {
+        setError('Invalid amount');
+      }
     }
   };
 

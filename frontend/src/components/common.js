@@ -105,14 +105,24 @@ export const AmountField = ({
     value={amount}
     onChange={(e) => {
       const value = e.target.value;
+      // Only allow numbers and decimal point
+      if (value && !/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
       setAmount(value);
-      if (value && !validateAmount(value)) {
-        setError('Amount must be divisible by 3');
-      } else {
-        setError('');
+    }}
+    onBlur={() => {
+      // Validate on blur for better UX
+      if (amount) {
+        const numValue = parseFloat(amount);
+        if (isNaN(numValue) || numValue === 0) {
+          setError('Please enter a valid amount');
+        } else {
+          setAmount(numValue.toString()); // Clean up the input
+        }
       }
     }}
-    type="number"
+    placeholder="0.00"
     InputProps={{
       endAdornment: maxAmount !== undefined && (
         <Button
