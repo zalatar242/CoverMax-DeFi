@@ -64,8 +64,7 @@ const Deposit = () => {
           address: USDC.address,
           abi: USDC.abi,
           functionName: 'approve',
-          args: [Insurance.address, amountInWei],
-          chainId: 31337
+          args: [Insurance.address, amountInWei]
         });
         console.log('Approve hash:', hash);
         await refetchAllowance();
@@ -84,8 +83,7 @@ const Deposit = () => {
           address: Insurance.address,
           abi: Insurance.abi,
           functionName: 'splitRisk',
-          args: [amountInWei],
-          chainId: 31337
+          args: [amountInWei]
         });
         console.log('Deposit hash:', hash);
         resetAmount();
