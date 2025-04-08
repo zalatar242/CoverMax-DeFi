@@ -2076,7 +2076,7 @@
         ]
       },
       "Insurance": {
-        "address": "0xafa7Ad1cc9f837e3cf1677eFA6A80399FA83B3a8",
+        "address": "0xDA045281b66E80EbfF07302fba34A90BffB39A57",
         "abi": [
           {
             "type": "constructor",
@@ -2465,6 +2465,25 @@
           },
           {
             "type": "function",
+            "inputs": [],
+            "name": "T4",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
             "inputs": [
               {
                 "name": "adapter",
@@ -2540,7 +2559,17 @@
           {
             "type": "function",
             "inputs": [],
-            "name": "inLiquidMode",
+            "name": "invest",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "isInvested",
             "constant": true,
             "outputs": [
               {
@@ -2559,17 +2588,26 @@
           {
             "type": "function",
             "inputs": [],
-            "name": "invest",
-            "constant": false,
-            "outputs": [],
-            "stateMutability": "nonpayable",
+            "name": "isNormalClaimPeriod",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "bool",
+                "baseType": "bool",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
             "payable": false,
             "gas": null
           },
           {
             "type": "function",
             "inputs": [],
-            "name": "isInvested",
+            "name": "isPreInvestmentPeriod",
             "constant": true,
             "outputs": [
               {
@@ -2797,7 +2835,7 @@
         ]
       },
       "TrancheA": {
-        "address": "0x38686597d4E007DE65e7188b8876785Ab02e2E1b",
+        "address": "0xa2F40FE46E00c448F019C30c48279aac0c890362",
         "abi": [
           {
             "type": "constructor",
@@ -3420,7 +3458,7 @@
         ]
       },
       "TrancheB": {
-        "address": "0xB891d4F56A897585589258Dc5629f2F34ece846F",
+        "address": "0xCc375BE1A001161e6f167e053e287A582A10B09a",
         "abi": [
           {
             "type": "constructor",
@@ -4043,7 +4081,7 @@
         ]
       },
       "TrancheC": {
-        "address": "0xCfa7f5267BeA68E196334A482a44f7d6E4D90F79",
+        "address": "0xBcCc5D03a8d0f6c4EcC358f937ad832745F473B6",
         "abi": [
           {
             "type": "constructor",
