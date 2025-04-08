@@ -7,7 +7,7 @@ export const useUSDCBalance = () => {
   const { address, isConnected } = useWalletConnection();
   const { USDC } = useMainConfig();
 
-  const { data, isError, isLoading } = useReadContract({
+  const { data, isError, isLoading, refetch } = useReadContract({
     address: USDC?.address,
     abi: USDC?.abi,
     functionName: 'balanceOf',
@@ -18,7 +18,8 @@ export const useUSDCBalance = () => {
   return {
     balance: data || 0n,
     isError,
-    isLoading
+    isLoading,
+    refetch
   };
 };
 

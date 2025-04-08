@@ -21,7 +21,7 @@ import { buttonStyles, colors } from '../utils/theme';
 const Deposit = () => {
   const { isConnected, address } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
-  const { balance, isLoading: isLoadingBalance } = useUSDCBalance();
+  const { balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useUSDCBalance();
   const { USDC, Insurance } = useMainConfig();
 
   const {
@@ -37,13 +37,18 @@ const Deposit = () => {
 
   const { isProcessing: isApproving, error: approveError, success: approveSuccess, handleTransaction: handleApprove } =
     useTransaction({
-      onSuccess: () => refetchAllowance()
+      onSuccess: () => {
+        refetchAllowance();
+        refetchBalance();
+      }
     });
 
   const { isProcessing: isDepositing, error: depositError, success: depositSuccess, handleTransaction: handleDeposit } =
     useTransaction({
       onSuccess: () => {
         resetAmount();
+        refetchBalance();
+        refetchAllowance();
       }
     });
 
