@@ -42,7 +42,9 @@ async function verifyContract(address: string, args: any[] = []) {
 }
 
 async function waitForConfirmations(tx: any) {
-  const receipt = await tx.wait(2); // Wait for 2 confirmations
+  console.log("Waiting for transaction confirmation...");
+  const receipt = await tx.wait(1); // Wait for 1 confirmation
+  console.log("Transaction confirmed!");
   return receipt;
 }
 
@@ -76,20 +78,59 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
 
   // Add lending adapters with proper error handling and confirmations
   console.log("\nAdding lending adapters...");
+  console.log("Insurance contract deployed at:", await insurance.getAddress());
+  console.log("Current block timestamp:", await ethers.provider.getBlock("latest").then(b => b!.timestamp));
+  console.log("Insurance S timestamp:", await insurance.S());
   try {
-    const tx1 = await insurance.addLendingAdapter(await aaveAdapter.getAddress());
-    await waitForConfirmations(tx1);
-    console.log("Added Aave adapter");
+    // Add Aave adapter
+    console.log("\nAttempting to add Aave adapter...");
+    const aaveAdapterAddress = await aaveAdapter.getAddress();
+    console.log("Aave adapter address:", aaveAdapterAddress);
+    try {
+      const tx1 = await insurance.addLendingAdapter(aaveAdapterAddress, { gasLimit: 500000 });
+      console.log("Transaction sent, waiting for confirmation...");
+      await tx1.wait();
+      console.log("Added Aave adapter successfully");
+    } catch (e: any) {
+      console.error("Error adding Aave adapter:", e.message);
+      if (e.data) console.error("Error data:", e.data);
+      throw e;
+    }
 
-    const tx2 = await insurance.addLendingAdapter(await moonwellAdapter.getAddress());
-    await waitForConfirmations(tx2);
-    console.log("Added Moonwell adapter");
+    // Add Moonwell adapter
+    console.log("\nAttempting to add Moonwell adapter...");
+    const moonwellAdapterAddress = await moonwellAdapter.getAddress();
+    console.log("Moonwell adapter address:", moonwellAdapterAddress);
+    try {
+      const tx2 = await insurance.addLendingAdapter(moonwellAdapterAddress, { gasLimit: 500000 });
+      console.log("Transaction sent, waiting for confirmation...");
+      await tx2.wait();
+      console.log("Added Moonwell adapter successfully");
+    } catch (e: any) {
+      console.error("Error adding Moonwell adapter:", e.message);
+      if (e.data) console.error("Error data:", e.data);
+      throw e;
+    }
 
-    const tx3 = await insurance.addLendingAdapter(await compoundAdapter.getAddress());
-    await waitForConfirmations(tx3);
-    console.log("Added Compound adapter");
-  } catch (error) {
-    console.error("Error adding lending adapters:", error);
+    // Add Compound adapter
+    console.log("\nAttempting to add Compound adapter...");
+    const compoundAdapterAddress = await compoundAdapter.getAddress();
+    console.log("Compound adapter address:", compoundAdapterAddress);
+    try {
+      const tx3 = await insurance.addLendingAdapter(compoundAdapterAddress, { gasLimit: 500000 });
+      console.log("Transaction sent, waiting for confirmation...");
+      await tx3.wait();
+      console.log("Added Compound adapter successfully");
+    } catch (e: any) {
+      console.error("Error adding Compound adapter:", e.message);
+      if (e.data) console.error("Error data:", e.data);
+      throw e;
+    }
+  } catch (error: any) {
+    console.error("\nFinal error adding lending adapters:");
+    console.error("Error message:", error.message);
+    if (error.error) console.error("Transaction error:", error.error);
+    if (error.transaction) console.error("Transaction details:", error.transaction);
     throw error;
   }
 
