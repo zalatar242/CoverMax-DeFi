@@ -10,7 +10,6 @@ import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
   PageContainer,
-  BackButton,
   ContentCard,
   WalletRequiredCard,
   TransactionAlerts,
@@ -84,7 +83,6 @@ const Deposit = () => {
   if (!isConnected) {
     return (
       <PageContainer>
-        <BackButton />
         <WalletRequiredCard title="Connect Wallet to Deposit" onConnect={openConnectModal} />
       </PageContainer>
     );
@@ -98,7 +96,6 @@ const Deposit = () => {
 
   return (
     <PageContainer>
-      <BackButton />
       <ContentCard title="Deposit USDC">
         <TransactionAlerts
           error={amountError || approveError || depositError}

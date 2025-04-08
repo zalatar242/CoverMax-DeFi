@@ -9,7 +9,6 @@ import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
   PageContainer,
-  BackButton,
   ContentCard,
   WalletRequiredCard,
   TransactionAlerts,
@@ -106,7 +105,6 @@ const Withdraw = () => {
   if (!isConnected) {
     return (
       <PageContainer>
-        <BackButton />
         <WalletRequiredCard title="Connect Wallet to Withdraw" onConnect={openConnectModal} />
       </PageContainer>
     );
@@ -128,7 +126,6 @@ const Withdraw = () => {
 
   return (
     <PageContainer>
-      <BackButton />
       <ContentCard title="Withdraw USDC">
         <TransactionAlerts
           error={amountError || withdrawError}
