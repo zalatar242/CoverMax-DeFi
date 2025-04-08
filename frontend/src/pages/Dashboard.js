@@ -28,7 +28,7 @@ const Dashboard = () => {
   const { openConnectModal } = useWalletModal();
   const { balance: usdcBalance, isLoading: usdcLoading } = useUSDCBalance();
   const { trancheA, trancheB, trancheC, isLoading: portfolioLoading } = usePortfolioData();
-  const { status, tvl, isLoading: protocolLoading } = useProtocolStatus();
+  const { status, tvl, phases, isLoading: protocolLoading } = useProtocolStatus();
 
   const loading = usdcLoading || portfolioLoading || protocolLoading;
 
@@ -377,12 +377,37 @@ const Dashboard = () => {
                 </Box>
                 <Divider orientation={isTablet ? 'horizontal' : 'vertical'} flexItem sx={{ bgcolor: colors.border }} />
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
-                    Current Phase
+                  <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
+                    Protocol Timeline
                   </Typography>
-                  <Typography variant="h6" sx={{ color: colors.secondary, fontWeight: 600 }}>
-                    {status}
-                  </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {Object.entries(phases).map(([key, phase]) => (
+                      <Box
+                        key={key}
+                        sx={{
+                          p: 2,
+                          borderRadius: 1,
+                          bgcolor: status === phase.name ? `${colors.primary}08` : 'transparent',
+                          border: '1px solid',
+                          borderColor: status === phase.name ? `${colors.primary}20` : colors.border
+                        }}
+                      >
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            color: status === phase.name ? colors.secondary : colors.text,
+                            fontWeight: status === phase.name ? 600 : 500,
+                            mb: 0.5
+                          }}
+                        >
+                          {phase.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: colors.textLight, display: 'block' }}>
+                          {phase.start.toLocaleDateString()} - {phase.end ? phase.end.toLocaleDateString() : 'End'}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
               </Box>
 

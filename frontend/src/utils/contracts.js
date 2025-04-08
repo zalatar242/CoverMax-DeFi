@@ -120,17 +120,39 @@ export const useProtocolStatus = () => {
   // Calculate total TVL
   const totalTVL = trancheASupply + trancheBSupply + trancheCSupply;
 
-  // Determine current phase based on timestamp
   const currentTimestamp = hexToBigInt(numberToHex(Math.floor(Date.now() / 1000)));
+
+  // Calculate phase durations according to contract
+  // S = block.timestamp + 2 days
+  // T1 = S + 5 days
+  // T2 = T1 + 1 days
+  // T3 = T2 + 1 days
+  // T4 = T3 + 1 days
+  const phases = {
+    deposit: {
+      name: "Deposit Phase (2 days)",
+      start: new Date(Number(startTime - 2n * 24n * 60n * 60n) * 1000),
+      end: new Date(Number(startTime) * 1000)
+    },
+    insurance: {
+      name: "Insurance Phase (5 days)",
+      start: new Date(Number(startTime) * 1000),
+      end: new Date(Number(t1Time) * 1000)
+    },
+    withdrawal: {
+      name: "Withdrawal Phase (3 days)",
+      start: new Date(Number(t1Time) * 1000),
+      end: new Date(Number(t2Time + 2n * 24n * 60n * 60n) * 1000)
+    }
+  };
+
   let status;
   if (currentTimestamp < startTime) {
-    status = "Deposit Period";
+    status = phases.deposit.name;
   } else if (currentTimestamp < t1Time) {
-    status = "Investment Period";
-  } else if (currentTimestamp < t2Time) {
-    status = "Withdrawal Period";
+    status = phases.insurance.name;
   } else {
-    status = "Claim Period";
+    status = phases.withdrawal.name;
   }
 
   const isLoading = loadingS || loadingT1 || loadingT2 ||
@@ -138,6 +160,7 @@ export const useProtocolStatus = () => {
 
   return {
     status,
+    phases,
     tvl: {
       total: formatUnits(totalTVL, 6),
       byTranche: {
