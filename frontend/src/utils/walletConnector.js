@@ -18,21 +18,6 @@ const metadata = {
 // Configure networks
 const networks = [
   {
-    ...hardhat,
-    id: 31337,
-    name: 'Hardhat Local',
-    network: 'hardhat',
-    nativeCurrency: {
-      decimals: 18,
-      name: 'Ether',
-      symbol: 'ETH',
-    },
-    rpcUrls: {
-      default: { http: ['http://127.0.0.1:8545'] },
-      public: { http: ['http://127.0.0.1:8545'] },
-    }
-  },
-  {
     id: 84532,
     name: 'Base Sepolia',
     network: 'base-sepolia',
@@ -52,6 +37,21 @@ const networks = [
       }
     },
     testnet: true
+  },
+  {
+    ...hardhat,
+    id: 31337,
+    name: 'Hardhat Local',
+    network: 'hardhat',
+    nativeCurrency: {
+      decimals: 18,
+      name: 'Ether',
+      symbol: 'ETH',
+    },
+    rpcUrls: {
+      default: { http: ['http://127.0.0.1:8545'] },
+      public: { http: ['http://127.0.0.1:8545'] },
+    }
   }
 ];
 
@@ -102,8 +102,9 @@ export const useNetwork = () => {
   console.log('Current Chain ID:', chainId);
 
   // Map chain ID to network key
-  const networkKey = NETWORK_KEYS[chainId] || 'hardhat';
-  const network = networks.find(n => n.id === chainId) || networks[0];
+  const networkKey = NETWORK_KEYS[chainId] || 'base-sepolia';
+  // Default to Base Sepolia if chain not found
+  const network = networks.find(n => n.id === chainId) || networks.find(n => n.id === 84532);
 
   console.log('Selected Network:', network, 'Network Key:', networkKey);
 

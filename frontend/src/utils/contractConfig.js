@@ -57,7 +57,7 @@ export const useMainConfig = () => {
   const { chainId } = useAppKitNetwork();
 
   // Map chain ID to network key
-  const currentNetwork = NETWORK_KEYS[chainId] || 'hardhat';
+  const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
 
   console.log('Current ChainId:', chainId, 'Mapped Network:', currentNetwork);
 
@@ -82,7 +82,7 @@ export const useTranchesConfig = () => {
   const { chainId } = useAppKitNetwork();
 
   // Map chain ID to network key
-  const currentNetwork = NETWORK_KEYS[chainId] || 'hardhat';
+  const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
 
   return {
     A: getContractConfig('TrancheA', currentNetwork),
@@ -95,7 +95,7 @@ export const useContractsConfig = () => {
   const { chainId } = useAppKitNetwork();
 
   // Map chain ID to network key
-  const currentNetwork = NETWORK_KEYS[chainId] || 'hardhat';
+  const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
 
   console.log('useContractsConfig - Network:', currentNetwork, 'ChainId:', chainId);
 
