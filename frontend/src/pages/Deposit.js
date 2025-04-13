@@ -109,9 +109,12 @@ const Deposit = () => {
   }
 
   const infoItems = [
-    'Your USDC will be distributed across Aave, Compound, and Moonwell',
-    'You\'ll receive tranche tokens (A, B, C) representing your deposit',
-    'Each tranche has different risk/reward profiles and withdrawal priorities'
+    'Your deposit is automatically split across three major lending protocols to reduce platform risk',
+    'Each protocol has been audited and battle-tested in DeFi for optimal security',
+    'You\'ll receive three tranche tokens (A, B, C) representing different risk levels',
+    'A Tranche: Lower risk, priority withdrawals, stable yields',
+    'B Tranche: Balanced risk-reward with medium priority',
+    'C Tranche: Higher potential yields with increased risk exposure'
   ];
 
   return (
@@ -164,7 +167,7 @@ const Deposit = () => {
           </Stack>
         </Stack>
 
-        <InfoBox title="What happens when you deposit?" items={infoItems} />
+        <InfoBox title="Understanding Your Deposit" items={infoItems} />
       </ContentCard>
     </PageContainer>
   );

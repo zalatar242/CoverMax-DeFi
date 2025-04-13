@@ -318,7 +318,7 @@ const Dashboard = () => {
     </Box>
   );
 
-  const TVLSummary = ({ title, value }) => (
+  const ProtocolTVLSummary = ({ name, value, description }) => (
     <Box
       sx={{
         height: '100%',
@@ -329,14 +329,17 @@ const Dashboard = () => {
         borderColor: `${colors.primary}20`
       }}
     >
-      <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
-        Tranche {title}
+      <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 600, mb: 1 }}>
+        {name}
       </Typography>
       <Typography variant="h6" sx={{ color: colors.text, fontWeight: 600, mb: 1 }}>
         {formatUSDC(value)}
       </Typography>
       <Typography variant="body2" sx={{ color: colors.textLight }}>
         {calculatePercentage(value, tvl.total)} of TVL
+      </Typography>
+      <Typography variant="caption" sx={{ color: colors.textLight, display: 'block', mt: 1 }}>
+        {description}
       </Typography>
     </Box>
   );
@@ -440,7 +443,7 @@ const Dashboard = () => {
               </Box>
               <Box>
                 <Typography variant="subtitle1" sx={{ color: colors.text, fontWeight: 500, mb: 2 }}>
-                  TVL by Tranche
+                  TVL by Yield Protocol
                 </Typography>
                 <Box sx={{
                   display: 'flex',
@@ -450,17 +453,20 @@ const Dashboard = () => {
                     flex: { xs: '1 1 100%', sm: '1 1 0', md: '1 1 0' }
                   }
                 }}>
-                  <TVLSummary
-                    title="A"
-                    value={tvl.byTranche.A}
+                  <ProtocolTVLSummary
+                    name="Aave"
+                    value={tvl.total / 3}
+                    description="Industry-leading lending protocol with robust security"
                   />
-                  <TVLSummary
-                    title="B"
-                    value={tvl.byTranche.B}
+                  <ProtocolTVLSummary
+                    name="Compound"
+                    value={tvl.total / 3}
+                    description="Time-tested protocol with stable performance"
                   />
-                  <TVLSummary
-                    title="C"
-                    value={tvl.byTranche.C}
+                  <ProtocolTVLSummary
+                    name="Moonwell"
+                    value={tvl.total / 3}
+                    description="Innovative Base protocol with competitive rates"
                   />
                 </Box>
               </Box>
@@ -471,5 +477,6 @@ const Dashboard = () => {
     </Box>
   );
 };
+
 
 export default Dashboard;

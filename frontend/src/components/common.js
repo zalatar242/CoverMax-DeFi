@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Button, Card, CardContent, Alert, Stack, TextField } from '@mui/material';
+import { Box, Typography, Button, Card, CardContent, Alert, Stack, TextField, Grid } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import { colors, cardStyles, buttonStyles } from '../utils/theme';
@@ -75,6 +75,38 @@ export const TransactionAlerts = ({ error, success }) => {
     </Stack>
   );
 };
+
+export const ProtocolBox = ({ protocols }) => (
+  <Box sx={{ mb: 4 }}>
+    <Typography variant="h6" sx={{ color: colors.text, fontWeight: 600, mb: 2 }}>
+      Your Deposit Distribution
+    </Typography>
+    <Grid container spacing={2}>
+      {protocols.map((protocol) => (
+        <Grid item xs={12} sm={4} key={protocol.name}>
+          <Card sx={{
+            p: 2,
+            bgcolor: `${colors.primary}08`,
+            border: `1px solid ${colors.primary}22`,
+            height: '100%'
+          }}>
+            <Stack spacing={1}>
+              <Typography variant="h6" sx={{ color: colors.text, fontWeight: 600 }}>
+                {protocol.name}
+              </Typography>
+              <Typography variant="body2" sx={{ color: colors.textLight }}>
+                {protocol.description}
+              </Typography>
+              <Typography variant="body2" sx={{ color: colors.primary, fontWeight: 500 }}>
+                Distribution: {protocol.distribution}
+              </Typography>
+            </Stack>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  </Box>
+);
 
 export const InfoBox = ({ title, items }) => (
   <Box sx={{ bgcolor: `${colors.primary}08`, p: 3, borderRadius: 2 }}>
