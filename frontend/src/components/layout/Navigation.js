@@ -129,26 +129,7 @@ const Navigation = () => {
           </Stack>
         </Box>
 
-        <Box sx={{
-          width: { xs: '100%', sm: 'auto' },
-          '& appkit-button': {
-            width: { xs: '100%', sm: 'auto' },
-          },
-          '& appkit-button::part(button)': {
-            color: 'text.primary',
-            borderColor: 'divider',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            textTransform: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            fontFamily: theme.typography.fontFamily,
-            width: { xs: '100%', sm: 'auto' },
-            '&:hover': {
-              borderColor: 'text.primary'
-            }
-          }
-        }}>
+        <Box >
           <appkit-button />
         </Box>
       </Toolbar>
