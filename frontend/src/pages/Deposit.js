@@ -1,22 +1,36 @@
 import React from 'react';
-import { Button, Stack, CircularProgress, Typography } from '@mui/material';
+import { Button, Stack, CircularProgress, Typography, Box } from '@mui/material';
 import { AccountBalance, CheckCircle } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useUSDCBalance } from '../utils/contracts';
 import { useMainConfig } from '../utils/contractConfig';
-import { useWriteContract, useReadContract, usePrepareContractWrite } from 'wagmi';
+import { useWriteContract, useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
-  PageContainer,
   ContentCard,
-  WalletRequiredCard,
+  AmountField,
   TransactionAlerts,
-  InfoBox,
-  AmountField
-} from '../components/common';
-import { buttonStyles, colors } from '../utils/theme';
+  InfoBox
+} from '../components/ui';
+
+const WalletRequiredPrompt = ({ openConnectModal }) => (
+  <ContentCard title="Connect Wallet to Deposit">
+    <Button
+      variant="contained"
+      onClick={openConnectModal}
+      size="large"
+      fullWidth
+      sx={{
+        py: 1.5,
+        px: 4
+      }}
+    >
+      Connect Wallet
+    </Button>
+  </ContentCard>
+);
 
 const Deposit = () => {
   const { isConnected, address } = useWalletConnection();
@@ -29,7 +43,6 @@ const Deposit = () => {
     error: amountError,
     setError,
     handleAmountChange,
-    handleMaxAmount,
     validateAmount,
     reset: resetAmount,
     amountInWei
@@ -101,11 +114,7 @@ const Deposit = () => {
   };
 
   if (!isConnected) {
-    return (
-      <PageContainer>
-        <WalletRequiredCard title="Connect Wallet to Deposit" onConnect={openConnectModal} />
-      </PageContainer>
-    );
+    return <WalletRequiredPrompt openConnectModal={openConnectModal} />;
   }
 
   const infoItems = [
@@ -118,58 +127,58 @@ const Deposit = () => {
   ];
 
   return (
-    <PageContainer>
-      <ContentCard title="Deposit USDC">
-        <TransactionAlerts
-          error={amountError || approveError || depositError}
-          success={approveSuccess || depositSuccess}
-        />
+    <ContentCard title="Deposit USDC">
+      <TransactionAlerts
+        error={amountError || approveError || depositError}
+        success={approveSuccess || depositSuccess}
+      />
 
-        <Stack spacing={3}>
-          <div>
-            <AmountField
-              amount={amount}
-              setAmount={handleAmountChange}
-              validateAmount={validateAmount}
-              setError={setError}
-              maxAmount={Number(formatUnits(balance, 6))}
-              label="Amount to Deposit"
-            />
-            <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
-              Available Balance: {isLoadingBalance ? 'Loading...' : formatUnits(balance, 6)} USDC
-            </Typography>
-            <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
-              Current Allowance: {formatUnits(allowance, 6)} USDC
-            </Typography>
-          </div>
+      <Stack spacing={3}>
+        <div>
+          <AmountField
+            amount={amount}
+            setAmount={handleAmountChange}
+            validateAmount={validateAmount}
+            setError={setError}
+            maxAmount={Number(formatUnits(balance, 6))}
+            label="Amount to Deposit"
+          />
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+            Available Balance: {isLoadingBalance ? 'Loading...' : formatUnits(balance, 6)} USDC
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            Current Allowance: {formatUnits(allowance, 6)} USDC
+          </Typography>
+        </div>
 
-          <Stack direction="row" spacing={2}>
-            <Button
-              fullWidth
-              variant={amountInWei > allowance ? "contained" : "outlined"}
-              onClick={handleApproveClick}
-              disabled={!amount || isApproving || !validateAmount(amount) || amountInWei <= allowance}
-              startIcon={isApproving ? <CircularProgress size={24} /> : <CheckCircle />}
-              sx={amountInWei > allowance ? buttonStyles.primary : buttonStyles.outlined}
-            >
-              1. Approve USDC
-            </Button>
-            <Button
-              fullWidth
-              variant={amountInWei <= allowance ? "contained" : "outlined"}
-              onClick={handleDepositClick}
-              disabled={!amount || isDepositing || amountInWei > allowance}
-              startIcon={isDepositing ? <CircularProgress size={24} /> : <AccountBalance />}
-              sx={amountInWei <= allowance ? buttonStyles.primary : buttonStyles.outlined}
-            >
-              2. Deposit
-            </Button>
-          </Stack>
+        <Stack direction="row" spacing={2}>
+          <Button
+            fullWidth
+            variant={amountInWei > allowance ? "contained" : "outlined"}
+            onClick={handleApproveClick}
+            disabled={!amount || isApproving || !validateAmount(amount) || amountInWei <= allowance}
+            startIcon={isApproving ? <CircularProgress size={24} /> : <CheckCircle />}
+            color="primary"
+          >
+            1. Approve USDC
+          </Button>
+          <Button
+            fullWidth
+            variant={amountInWei <= allowance ? "contained" : "outlined"}
+            onClick={handleDepositClick}
+            disabled={!amount || isDepositing || amountInWei > allowance}
+            startIcon={isDepositing ? <CircularProgress size={24} /> : <AccountBalance />}
+            color="primary"
+          >
+            2. Deposit
+          </Button>
         </Stack>
+      </Stack>
 
+      <Box sx={{ mt: 4 }}>
         <InfoBox title="Understanding Your Deposit" items={infoItems} />
-      </ContentCard>
-    </PageContainer>
+      </Box>
+    </ContentCard>
   );
 };
 

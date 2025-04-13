@@ -1,5 +1,5 @@
-import React from 'react';
-import { Button, Stack, CircularProgress, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Button, Stack, CircularProgress, Typography, Box } from '@mui/material';
 import { AccountBalance } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useMainConfig, useTranchesConfig } from '../utils/contractConfig';
@@ -8,14 +8,28 @@ import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
-  PageContainer,
   ContentCard,
-  WalletRequiredCard,
   TransactionAlerts,
   InfoBox,
   AmountField
-} from '../components/common';
-import { buttonStyles, colors } from '../utils/theme';
+} from '../components/ui';
+
+const WalletRequiredPrompt = ({ openConnectModal }) => (
+  <ContentCard title="Connect Wallet to Withdraw">
+    <Button
+      variant="contained"
+      onClick={openConnectModal}
+      size="large"
+      fullWidth
+      sx={{
+        py: 1.5,
+        px: 4
+      }}
+    >
+      Connect Wallet
+    </Button>
+  </ContentCard>
+);
 
 const Withdraw = () => {
   const { isConnected, address } = useWalletConnection();
@@ -75,14 +89,13 @@ const Withdraw = () => {
     error: amountError,
     setError,
     handleAmountChange,
-    handleMaxAmount,
     validateAmount,
     reset: resetAmount,
     amountInWei
   } = useAmountForm(totalBalance);
 
   // Track when to update balances
-  const [shouldUpdateBalances, setShouldUpdateBalances] = React.useState(false);
+  const [shouldUpdateBalances, setShouldUpdateBalances] = useState(false);
 
   const { isProcessing: isWithdrawing, error: withdrawError, success: withdrawSuccess, handleTransaction: handleWithdraw } =
     useTransaction({
@@ -93,7 +106,7 @@ const Withdraw = () => {
     });
 
   // Effect to update balances after transaction is confirmed
-  React.useEffect(() => {
+  useEffect(() => {
     if (withdrawSuccess && shouldUpdateBalances) {
       // Update balances only after transaction is confirmed
       refetchBalanceA();
@@ -125,11 +138,7 @@ const Withdraw = () => {
   };
 
   if (!isConnected) {
-    return (
-      <PageContainer>
-        <WalletRequiredCard title="Connect Wallet to Withdraw" onConnect={openConnectModal} />
-      </PageContainer>
-    );
+    return <WalletRequiredPrompt openConnectModal={openConnectModal} />;
   }
 
   const balanceItems = [
@@ -147,53 +156,53 @@ const Withdraw = () => {
   ];
 
   return (
-    <PageContainer>
-      <ContentCard title="Withdraw USDC">
-        <TransactionAlerts
-          error={amountError || withdrawError}
-          success={withdrawSuccess}
-        />
+    <ContentCard title="Withdraw USDC">
+      <TransactionAlerts
+        error={amountError || withdrawError}
+        success={withdrawSuccess}
+      />
 
-        <Stack spacing={3}>
-          <div>
-            <InfoBox title="Available in Tranches" items={balanceItems} />
-            <Typography variant="body2" sx={{ color: colors.text, fontWeight: 600, mt: 2, mb: 3 }}>
-              Total Available: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance, 6)} USDC
-            </Typography>
+      <Stack spacing={3}>
+        <Box>
+          <InfoBox title="Available in Tranches" items={balanceItems} />
+          <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 600, mt: 2, mb: 3 }}>
+            Total Available: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance, 6)} USDC
+          </Typography>
 
-            <AmountField
-              amount={amount}
-              setAmount={handleAmountChange}
-              validateAmount={validateAmount}
-              setError={setError}
-              maxAmount={Number(formatUnits(totalBalance, 6))}
-              label="Amount to Withdraw"
-            />
-          </div>
+          <AmountField
+            amount={amount}
+            setAmount={handleAmountChange}
+            validateAmount={validateAmount}
+            setError={setError}
+            maxAmount={Number(formatUnits(totalBalance, 6))}
+            label="Amount to Withdraw"
+          />
+        </Box>
 
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={handleWithdrawClick}
-            disabled={
-              !amount ||
-              isWithdrawing ||
-              !validateAmount(amount) ||
-              amountInWei > totalBalance ||
-              amountInWei / 3n > trancheABalance ||
-              amountInWei / 3n > trancheBBalance ||
-              amountInWei / 3n > trancheCBalance
-            }
-            startIcon={isWithdrawing ? <CircularProgress size={24} /> : <AccountBalance />}
-            sx={buttonStyles.primary}
-          >
-            Withdraw
-          </Button>
-        </Stack>
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={handleWithdrawClick}
+          disabled={
+            !amount ||
+            isWithdrawing ||
+            !validateAmount(amount) ||
+            amountInWei > totalBalance ||
+            amountInWei / 3n > trancheABalance ||
+            amountInWei / 3n > trancheBBalance ||
+            amountInWei / 3n > trancheCBalance
+          }
+          startIcon={isWithdrawing ? <CircularProgress size={24} /> : <AccountBalance />}
+          color="primary"
+        >
+          Withdraw
+        </Button>
+      </Stack>
 
+      <Box sx={{ mt: 4 }}>
         <InfoBox title="What happens when you withdraw?" items={infoItems} />
-      </ContentCard>
-    </PageContainer>
+      </Box>
+    </ContentCard>
   );
 };
 
