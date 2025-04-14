@@ -6,14 +6,12 @@ export interface DeploymentAddresses {
   AAVE_V3_POOL: string;
   AAVE_DATA_PROVIDER: string;
   MOONWELL_USDC: string;
-  COMPOUND_USDC_MARKET: string;
 }
 
 export interface DeployedContracts {
   insurance: BaseContract;
   aaveAdapter: BaseContract;
   moonwellAdapter: BaseContract;
-  compoundAdapter: BaseContract;
   trancheA: BaseContract;
   trancheB: BaseContract;
   trancheC: BaseContract;
@@ -65,12 +63,6 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
   );
   await moonwellAdapter.waitForDeployment();
 
-  const CompoundAdapter = await ethers.getContractFactory("CompoundLendingAdapter");
-  const compoundAdapter = await CompoundAdapter.deploy(
-    addresses.COMPOUND_USDC_MARKET
-  );
-  await compoundAdapter.waitForDeployment();
-
   // Deploy Insurance
   const Insurance = await ethers.getContractFactory("Insurance");
   const insurance = await Insurance.deploy(addresses.USDC_ADDRESS);
@@ -112,22 +104,8 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
       throw e;
     }
 
-    // Add Compound adapter
-    console.log("\nAttempting to add Compound adapter...");
-    const compoundAdapterAddress = await compoundAdapter.getAddress();
-    console.log("Compound adapter address:", compoundAdapterAddress);
-    try {
-      const tx3 = await insurance.addLendingAdapter(compoundAdapterAddress, { gasLimit: 500000 });
-      console.log("Transaction sent, waiting for confirmation...");
-      await tx3.wait();
-      console.log("Added Compound adapter successfully");
-    } catch (e: any) {
-      console.error("Error adding Compound adapter:", e.message);
-      if (e.data) console.error("Error data:", e.data);
-      throw e;
-    }
   } catch (error: any) {
-    console.error("\nFinal error adding lending adapters:");
+    console.error("\nError adding lending adapters:");
     console.error("Error message:", error.message);
     if (error.error) console.error("Transaction error:", error.error);
     if (error.transaction) console.error("Transaction details:", error.transaction);
@@ -152,7 +130,6 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
       await verifyContract(await insurance.getAddress(), [addresses.USDC_ADDRESS]);
       await verifyContract(await aaveAdapter.getAddress(), [addresses.AAVE_V3_POOL, addresses.AAVE_DATA_PROVIDER]);
       await verifyContract(await moonwellAdapter.getAddress(), [addresses.MOONWELL_USDC]);
-      await verifyContract(await compoundAdapter.getAddress(), [addresses.COMPOUND_USDC_MARKET]);
       await verifyContract(await trancheA.getAddress(), ["Tranche AAA", "TRA"]);
       await verifyContract(await trancheB.getAddress(), ["Tranche AA", "TRB"]);
       await verifyContract(await trancheC.getAddress(), ["Tranche A", "TRC"]);
@@ -167,7 +144,6 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
   console.log("Insurance:", await insurance.getAddress());
   console.log("Aave Adapter:", await aaveAdapter.getAddress());
   console.log("Moonwell Adapter:", await moonwellAdapter.getAddress());
-  console.log("Compound Adapter:", await compoundAdapter.getAddress());
   console.log("Tranche AAA:", await trancheA.getAddress());
   console.log("Tranche AA:", await trancheB.getAddress());
   console.log("Tranche A:", await trancheC.getAddress());
@@ -176,7 +152,6 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
     insurance,
     aaveAdapter,
     moonwellAdapter,
-    compoundAdapter,
     trancheA,
     trancheB,
     trancheC

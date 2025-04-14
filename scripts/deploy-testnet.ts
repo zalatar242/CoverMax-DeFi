@@ -58,19 +58,12 @@ async function main() {
     const mockComptroller = await waitForDeployment(await MockComptroller.deploy(await mockMToken.getAddress()));
     console.log("Mock Moonwell Comptroller deployed to:", await mockComptroller.getAddress());
 
-    // Deploy Mock Compound
-    console.log("\nDeploying Compound mock contracts...");
-    const MockComet = await ethers.getContractFactory("MockComet");
-    const mockComet = await waitForDeployment(await MockComet.deploy(await mockUSDC.getAddress()));
-    console.log("Mock Comet (Compound) deployed to:", await mockComet.getAddress());
-
     // Update addresses for core deployment
     const deploymentAddresses = {
       USDC_ADDRESS: await mockUSDC.getAddress(),
       AAVE_V3_POOL: await mockAavePool.getAddress(),
       AAVE_DATA_PROVIDER: await mockAaveDataProvider.getAddress(),
-      MOONWELL_USDC: await mockMToken.getAddress(),
-      COMPOUND_USDC_MARKET: await mockComet.getAddress()
+      MOONWELL_USDC: await mockMToken.getAddress()
     };
 
     console.log("\nDeploying core contracts...");
@@ -86,7 +79,6 @@ async function main() {
         AAVE_V3_POOL: await mockAavePool.getAddress(),
         AAVE_DATA_PROVIDER: await mockAaveDataProvider.getAddress(),
         MOONWELL_USDC: await mockMToken.getAddress(),
-        COMPOUND_USDC_MARKET: await mockComet.getAddress(),
         ATOKEN: aTokenAddress,
         MOONWELL_COMPTROLLER: await mockComptroller.getAddress()
       }
@@ -107,7 +99,6 @@ async function main() {
     const trancheArtifact = await ethers.getContractFactory("Tranche");
     const aaveAdapterArtifact = await ethers.getContractFactory("AaveLendingAdapter");
     const moonwellAdapterArtifact = await ethers.getContractFactory("MoonwellLendingAdapter");
-    const compoundAdapterArtifact = await ethers.getContractFactory("CompoundLendingAdapter");
 
     // Add Base Sepolia network configuration
     contractsJson.networks["base-sepolia"] = {
@@ -138,10 +129,6 @@ async function main() {
       MoonwellLendingAdapter: {
         address: await deployedContracts.moonwellAdapter.getAddress(),
         abi: moonwellAdapterArtifact.interface.fragments
-      },
-      CompoundLendingAdapter: {
-        address: await deployedContracts.compoundAdapter.getAddress(),
-        abi: compoundAdapterArtifact.interface.fragments
       }
     };
 

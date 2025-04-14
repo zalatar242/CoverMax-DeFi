@@ -30,11 +30,6 @@ export async function deployMocks() {
   const storedAToken = await mockDataProvider.getReserveTokensAddresses(usdcAddress);
   console.log("Stored aToken address:", storedAToken[0]);
 
-  // Deploy Compound contracts
-  const MockComet = await ethers.getContractFactory("MockComet");
-  const mockComet = await MockComet.deploy(await mockUSDC.getAddress());
-  await mockComet.waitForDeployment();
-
   // Deploy Moonwell contracts
   const MockMToken = await ethers.getContractFactory("MockMToken");
   const mockMToken = await MockMToken.deploy(await mockUSDC.getAddress());
@@ -53,8 +48,7 @@ export async function deployMocks() {
     aavePool: await mockAavePool.getAddress(),
     aaveDataProvider: await mockDataProvider.getAddress(),
     moonwellComptroller: await mockComptroller.getAddress(),
-    moonwellUsdc: await mockMToken.getAddress(),
-    compoundMarket: await mockComet.getAddress()
+    moonwellUsdc: await mockMToken.getAddress()
   };
 
   console.log("\nMock contracts deployed:");

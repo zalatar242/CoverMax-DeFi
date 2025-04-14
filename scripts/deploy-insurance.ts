@@ -42,8 +42,7 @@ async function main() {
     // Add existing adapters to Insurance contract
     const adapters = [
       contractsJson.networks["base-sepolia"].AaveLendingAdapter.address,
-      contractsJson.networks["base-sepolia"].MoonwellLendingAdapter.address,
-      contractsJson.networks["base-sepolia"].CompoundLendingAdapter.address
+      contractsJson.networks["base-sepolia"].MoonwellLendingAdapter.address
     ];
 
     console.log("\nAdding lending adapters...");

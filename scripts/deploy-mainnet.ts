@@ -16,8 +16,7 @@ async function main() {
     USDC_ADDRESS: addresses.USDC_ADDRESS,
     AAVE_V3_POOL: addresses.AAVE_V3_POOL,
     AAVE_DATA_PROVIDER: addresses.AAVE_DATA_PROVIDER,
-    MOONWELL_USDC: addresses.MOONWELL_USDC,
-    COMPOUND_USDC_MARKET: addresses.COMPOUND_USDC_MARKET
+    MOONWELL_USDC: addresses.MOONWELL_USDC
   });
 
   // Update contracts.json with deployed addresses for the current network
@@ -25,7 +24,6 @@ async function main() {
     { name: "Insurance", contract: contracts.insurance },
     { name: "AaveLendingAdapter", contract: contracts.aaveAdapter },
     { name: "MoonwellLendingAdapter", contract: contracts.moonwellAdapter },
-    { name: "CompoundLendingAdapter", contract: contracts.compoundAdapter },
     { name: "TrancheA", contract: contracts.trancheA },
     { name: "TrancheB", contract: contracts.trancheB },
     { name: "TrancheC", contract: contracts.trancheC }
