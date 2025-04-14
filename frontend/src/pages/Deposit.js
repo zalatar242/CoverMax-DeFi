@@ -120,7 +120,7 @@ const Deposit = () => {
   const infoItems = [
     'Your deposit is automatically split across three major lending protocols to reduce platform risk',
     'Each protocol has been audited and battle-tested in DeFi for optimal security',
-    'You\'ll receive three tranche tokens (A, B, C) representing different risk levels',
+    'You\'ll receive three tranche tokens (AAA, AA, A) representing different risk levels',
   ];
 
   return (
