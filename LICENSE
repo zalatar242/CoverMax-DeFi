@@ -1,0 +1,66 @@
+Business Source License 1.1
+
+Licensor: CoverMax Labs
+
+Licensed Work: CoverMax Protocol v1.0 — including smart contracts, tranching mechanisms, risk engine components, and any associated source code (the "Work").
+
+Licensor provides the Work to you under the terms of this Business Source License (the "License"). Your use of the Work constitutes acceptance of this License.
+
+1. License Grant
+
+Subject to the terms of this License, Licensor grants you a non-exclusive, worldwide, non-sublicensable, non-transferable license to use, copy, modify, and create derivative works of the Work for any purpose, **except a Commercial Use**, until the Change Date.
+
+2. Change Date
+
+The Change Date is **April 30, 2027**.
+
+On the Change Date, this License will automatically terminate and be replaced with the **GNU Affero General Public License version 3 (AGPL v3)**, as published by the Free Software Foundation.
+
+3. Commercial Use
+
+"Commercial Use" means any use of the Work:
+
+a. to deliver or include the Work, or any derivative work of it, in a product or service that is sold, licensed, hosted for a fee, or otherwise monetized;
+b. in or as part of any protocol, smart contract system, platform, or dApp that generates revenue, fees, or tokens, either directly or indirectly;
+c. by an entity (including DAOs) with over $50,000 in total value locked (TVL), unless explicitly granted a commercial license by the Licensor.
+
+4. Permitted Use
+
+You may use the Work for:
+
+- Research
+- Personal use
+- Non-commercial education
+- Public testnets or hackathons (unless monetized)
+
+5. Additional Terms
+
+- You must include this License with any copy of the Work you distribute.
+- You must preserve all copyright and license notices.
+- Modifications must be clearly marked as such.
+
+6. No Trademark License
+
+This License does not grant you any rights to use the names, logos, or trademarks of CoverMax Labs or any contributors.
+
+7. Disclaimer
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE LICENSOR DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+8. Patent Grant
+
+Subject to the terms and conditions of this License, each contributor hereby grants you a non-exclusive, worldwide, royalty-free patent license under the contributor's essential patent claims to make, use, sell, offer for sale, import, and otherwise run, modify, and propagate the Work.
+
+9. Limitation of Liability
+
+IN NO EVENT SHALL THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS IN THE WORK.
+
+10. Severability
+
+If any provision of this License is held to be unenforceable or invalid, that provision will be enforced to the maximum extent possible, and the other provisions will remain in full force and effect.
+
+---
+
+To request a commercial license, contact: legal@covermax.fi
+
+For more details: https://covermax.fi/license
