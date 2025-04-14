@@ -62,9 +62,9 @@ contract Insurance is Ownable {
         usdc = _usdc;
 
         // Create tranche tokens
-        A = address(new Tranche("CM Tranche A", "CM-A"));
-        B = address(new Tranche("CM Tranche B", "CM-B"));
-        C = address(new Tranche("CM Tranche C", "CM-C"));
+        A = address(new Tranche("CM Tranche AAA", "CM-AAA"));
+        B = address(new Tranche("CM Tranche AA", "CM-AA"));
+        C = address(new Tranche("CM Tranche A", "CM-A"));
 
         // Set time periods
         S = block.timestamp + 2 days;
@@ -259,9 +259,9 @@ contract Insurance is Ownable {
     }
 
     /// @notice Validate withdrawal based on current period and amounts
-    /// @param amountA Amount of A tranche tokens to redeem
-    /// @param amountB Amount of B tranche tokens to redeem
-    /// @param amountC Amount of C tranche tokens to redeem
+    /// @param amountA Amount of AAA tranche tokens to redeem
+    /// @param amountB Amount of AA tranche tokens to redeem
+    /// @param amountC Amount of A tranche tokens to redeem
     function validateWithdrawal(
         uint256 amountA,
         uint256 amountB,
@@ -391,3 +391,4 @@ contract Insurance is Ownable {
         _claim(balanceA, balanceB, balanceC);
     }
 }
+///TODO! need to change A,B,C to AAA,AA,A

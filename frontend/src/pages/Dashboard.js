@@ -55,7 +55,7 @@ const WithdrawalInfoBox = () => {
             }
           }}
         >
-          {['A', 'B', 'C'].map((tranche, index) => (
+          {['AAA', 'AA', 'A'].map((tranche, index) => (
             <Box key={tranche}>
               <Box
                 sx={{
@@ -258,9 +258,9 @@ const Dashboard = () => {
             },
             mb: 3
           }}>
-            <TrancheSummary title="A" value={trancheA} total={totalValue} />
-            <TrancheSummary title="B" value={trancheB} total={totalValue} />
-            <TrancheSummary title="C" value={trancheC} total={totalValue} />
+            <TrancheSummary title="AAA" value={trancheA} total={totalValue} />
+            <TrancheSummary title="AA" value={trancheB} total={totalValue} />
+            <TrancheSummary title="A" value={trancheC} total={totalValue} />
           </Box>
           <WithdrawalInfoBox />
         </Box>
@@ -292,7 +292,7 @@ const Dashboard = () => {
                   key={key}
                   title={
                     phase.name === "Deposit Phase (2 days)" ?
-                      "2-day window to deposit USDC into the protocol. Your deposits are split into three tranches (A, B, C) each with different risk/reward profiles." :
+                      "2-day window to deposit USDC into the protocol. Your deposits are split into three tranches (AAA, AA, A) each with different risk/reward profiles." :
                     phase.name === "Insurance Phase (5 days)" ?
                       "5-day period where your deposits are protected and earning yield across different lending protocols like Aave, Compound, and Moonwell." :
                     phase.name === "Withdrawal Phase (3 days)" ?

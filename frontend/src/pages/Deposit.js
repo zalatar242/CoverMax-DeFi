@@ -121,9 +121,6 @@ const Deposit = () => {
     'Your deposit is automatically split across three major lending protocols to reduce platform risk',
     'Each protocol has been audited and battle-tested in DeFi for optimal security',
     'You\'ll receive three tranche tokens (A, B, C) representing different risk levels',
-    'A Tranche: Lower risk, priority withdrawals, stable yields',
-    'B Tranche: Balanced risk-reward with medium priority',
-    'C Tranche: Higher potential yields with increased risk exposure'
   ];
 
   return (

@@ -86,9 +86,9 @@ async function main() {
 
     console.log("\nDeployment complete!");
     console.log("- Insurance contract deployed to:", insuranceAddress);
-    console.log("- Tranche A deployed to:", trancheA);
-    console.log("- Tranche B deployed to:", trancheB);
-    console.log("- Tranche C deployed to:", trancheC);
+    console.log("- Tranche AAA deployed to:", trancheA);
+    console.log("- Tranche AA deployed to:", trancheB);
+    console.log("- Tranche A deployed to:", trancheC);
     console.log("- Updated frontend/src/contracts.json with new addresses");
 
     if (["base-mainnet", "base-sepolia"].includes(network.name)) {

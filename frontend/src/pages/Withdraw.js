@@ -142,13 +142,13 @@ const Withdraw = () => {
   }
 
   const balanceItems = [
-    `Tranche A: ${isLoadingBalanceA ? 'Loading...' : formatUnits(trancheABalance, 6)} USDC`,
-    `Tranche B: ${isLoadingBalanceB ? 'Loading...' : formatUnits(trancheBBalance, 6)} USDC`,
-    `Tranche C: ${isLoadingBalanceC ? 'Loading...' : formatUnits(trancheCBalance, 6)} USDC`
+    `Tranche AAA: ${isLoadingBalanceA ? 'Loading...' : formatUnits(trancheABalance, 6)} USDC`,
+    `Tranche AA: ${isLoadingBalanceB ? 'Loading...' : formatUnits(trancheBBalance, 6)} USDC`,
+    `Tranche A: ${isLoadingBalanceC ? 'Loading...' : formatUnits(trancheCBalance, 6)} USDC`
   ];
 
   const infoItems = [
-    'Equal amounts are withdrawn from each tranche (A, B, C)',
+    'Equal amounts are withdrawn from each tranche (AAA, AA, A)',
     'Your tranche tokens are burned and you receive USDC in return',
     'USDC is withdrawn proportionally from Aave, Compound, and Moonwell',
     'The amount must be divisible by 3 to ensure equal withdrawal from tranches',
