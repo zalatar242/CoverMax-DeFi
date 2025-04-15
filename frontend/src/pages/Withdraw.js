@@ -57,24 +57,24 @@ const Withdraw = () => {
     : 'Loading...';
 
   // Read balances for each tranche
-  const { data: trancheABalance = 0n, isLoading: isLoadingBalanceA, refetch: refetchBalanceA } = useReadContract({
-    address: tranches.A?.address,
-    abi: tranches.A?.abi,
+  const { data: trancheAAABalance = 0n, isLoading: isLoadingBalanceAAA, refetch: refetchBalanceAAA } = useReadContract({
+    address: tranches.AAA?.address,
+    abi: tranches.AAA?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches.A && isConnected),
+    enabled: Boolean(address && tranches.AAA && isConnected),
   });
 
-  const { data: trancheBBalance = 0n, isLoading: isLoadingBalanceB, refetch: refetchBalanceB } = useReadContract({
-    address: tranches.B?.address,
-    abi: tranches.B?.abi,
+  const { data: trancheAABalance = 0n, isLoading: isLoadingBalanceAA, refetch: refetchBalanceAA } = useReadContract({
+    address: tranches.AA?.address,
+    abi: tranches.AA?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches.B && isConnected),
+    enabled: Boolean(address && tranches.AA && isConnected),
   });
 
-  const isLoadingBalances = isLoadingBalanceA || isLoadingBalanceB;
-  const totalBalance = trancheABalance + trancheBBalance;
+  const isLoadingBalances = isLoadingBalanceAAA || isLoadingBalanceAA;
+  const totalBalance = trancheAAABalance + trancheAABalance;
 
   const {
     amount,
@@ -101,11 +101,11 @@ const Withdraw = () => {
   useEffect(() => {
     if (withdrawSuccess && shouldUpdateBalances) {
       // Update balances only after transaction is confirmed
-      refetchBalanceA();
-      refetchBalanceB();
+      refetchBalanceAAA();
+      refetchBalanceAA();
       setShouldUpdateBalances(false);
     }
-  }, [withdrawSuccess, shouldUpdateBalances, refetchBalanceA, refetchBalanceB]);
+  }, [withdrawSuccess, shouldUpdateBalances, refetchBalanceAAA, refetchBalanceAA]);
 
   const { writeContractAsync } = useWriteContract();
 
@@ -133,8 +133,8 @@ const Withdraw = () => {
   }
 
   const balanceItems = [
-    `Tranche AAA: ${isLoadingBalanceA ? 'Loading...' : formatUnits(trancheABalance, 6)} USDC`,
-    `Tranche AA: ${isLoadingBalanceB ? 'Loading...' : formatUnits(trancheBBalance, 6)} USDC`
+    `Tranche AAA: $${isLoadingBalanceAAA ? 'Loading...' : formatUnits(trancheAAABalance, 6)}`,
+    `Tranche AA: $${isLoadingBalanceAA ? 'Loading...' : formatUnits(trancheAABalance, 6)}`
   ];
 
   const infoItems = [
@@ -156,7 +156,7 @@ const Withdraw = () => {
         <Box>
           <InfoBox title="Available in Tranches" items={balanceItems} />
           <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 600, mt: 2, mb: 3 }}>
-            Total Available: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance, 6)} USDC
+            Total Available to Withdraw: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance, 6)} USDC
           </Typography>
 
           <AmountField
@@ -178,8 +178,8 @@ const Withdraw = () => {
             isWithdrawing ||
             !validateAmount(amount) ||
             amountInWei > totalBalance ||
-            amountInWei / 2n > trancheABalance ||
-            amountInWei / 2n > trancheBBalance
+            amountInWei / 2n > trancheAAABalance ||
+            amountInWei / 2n > trancheAABalance
           }
           startIcon={isWithdrawing ? <CircularProgress size={24} /> : <AccountBalance />}
           color="primary"
