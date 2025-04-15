@@ -73,16 +73,8 @@ const Withdraw = () => {
     enabled: Boolean(address && tranches.B && isConnected),
   });
 
-  const { data: trancheCBalance = 0n, isLoading: isLoadingBalanceC, refetch: refetchBalanceC } = useReadContract({
-    address: tranches.C?.address,
-    abi: tranches.C?.abi,
-    functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && tranches.C && isConnected),
-  });
-
-  const isLoadingBalances = isLoadingBalanceA || isLoadingBalanceB || isLoadingBalanceC;
-  const totalBalance = trancheABalance + trancheBBalance + trancheCBalance;
+  const isLoadingBalances = isLoadingBalanceA || isLoadingBalanceB;
+  const totalBalance = trancheABalance + trancheBBalance;
 
   const {
     amount,
@@ -111,22 +103,21 @@ const Withdraw = () => {
       // Update balances only after transaction is confirmed
       refetchBalanceA();
       refetchBalanceB();
-      refetchBalanceC();
       setShouldUpdateBalances(false);
     }
-  }, [withdrawSuccess, shouldUpdateBalances, refetchBalanceA, refetchBalanceB, refetchBalanceC]);
+  }, [withdrawSuccess, shouldUpdateBalances, refetchBalanceA, refetchBalanceB]);
 
   const { writeContractAsync } = useWriteContract();
 
   const handleWithdrawClick = () => {
     handleWithdraw(async () => {
       try {
-        const individualAmount = amountInWei / 3n;
+        const individualAmount = amountInWei / 2n; // Split between AAA and AA
         const hash = await writeContractAsync({
           address: Insurance.address,
           abi: Insurance.abi,
           functionName: 'claim',
-          args: [individualAmount, individualAmount, individualAmount],
+          args: [individualAmount, individualAmount],
         });
         console.log('Withdraw hash:', hash);
         return hash;
@@ -143,15 +134,14 @@ const Withdraw = () => {
 
   const balanceItems = [
     `Tranche AAA: ${isLoadingBalanceA ? 'Loading...' : formatUnits(trancheABalance, 6)} USDC`,
-    `Tranche AA: ${isLoadingBalanceB ? 'Loading...' : formatUnits(trancheBBalance, 6)} USDC`,
-    `Tranche A: ${isLoadingBalanceC ? 'Loading...' : formatUnits(trancheCBalance, 6)} USDC`
+    `Tranche AA: ${isLoadingBalanceB ? 'Loading...' : formatUnits(trancheBBalance, 6)} USDC`
   ];
 
   const infoItems = [
-    'Equal amounts are withdrawn from each tranche (AAA, AA, A)',
+    'Equal amounts are withdrawn from both tranches (AAA and AA)',
     'Your tranche tokens are burned and you receive USDC in return',
-    'USDC is withdrawn proportionally from Aave, Compound, and Moonwell',
-    'The amount must be divisible by 3 to ensure equal withdrawal from tranches',
+    'USDC is withdrawn proportionally from Aave and Moonwell',
+    'The amount must be divisible by 2 to ensure equal withdrawal from tranches',
     `Withdrawals will be enabled starting ${formattedWithdrawalDate}`
   ];
 
@@ -188,9 +178,8 @@ const Withdraw = () => {
             isWithdrawing ||
             !validateAmount(amount) ||
             amountInWei > totalBalance ||
-            amountInWei / 3n > trancheABalance ||
-            amountInWei / 3n > trancheBBalance ||
-            amountInWei / 3n > trancheCBalance
+            amountInWei / 2n > trancheABalance ||
+            amountInWei / 2n > trancheBBalance
           }
           startIcon={isWithdrawing ? <CircularProgress size={24} /> : <AccountBalance />}
           color="primary"

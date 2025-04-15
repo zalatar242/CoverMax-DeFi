@@ -8,7 +8,7 @@ import "./ITranche.sol";
 import "./ILendingAdapter.sol";
 
 /// @title MultiTranche Insurance - A decentralized DeFi insurance protocol
-/// @notice Deposited funds are managed through lending adapters with three-tranche risk allocation
+/// @notice Deposited funds are managed through lending adapters with two-tranche risk allocation
 contract Insurance is Ownable {
     /* Internal and external contract addresses */
     address public AAA; // Tranche AAA token contract
@@ -24,9 +24,8 @@ contract Insurance is Ownable {
     /* Time periods */
     uint256 public immutable S; // Start/split end
     uint256 public immutable T1; // Insurance end
-    uint256 public immutable T2; // A tokens claim start
-    uint256 public immutable T3; // A,B tokens claim start
-    uint256 public immutable T4; // A,B,C tokens claim end (final)
+    uint256 public immutable T2; // AAA tokens claim start
+    uint256 public immutable T3; // Final claim end (AAA and AA)
 
     /* State tracking */
     uint256 public totalTranches; // Total AAA + AA tokens
@@ -66,8 +65,7 @@ contract Insurance is Ownable {
         S = block.timestamp + 2 days;
         T1 = S + 5 days;
         T2 = T1 + 1 days;
-        T3 = T2 + 1 days;
-        T4 = T3 + 1 days;
+        T3 = T2 + 2 days; // Combined previous T3 and T4 periods
     }
 
     /// @notice Add a new lending adapter
@@ -203,7 +201,7 @@ contract Insurance is Ownable {
             return;
         }
 
-        // For losses, start filling tranches from A to C
+        // For losses, start filling tranches from AAA to AA
         if (totalRecovered >= totalTranches) {
             // No losses, equal distribution
             uint256 payout = (RAY * totalRecovered) / totalTranches;
@@ -213,7 +211,9 @@ contract Insurance is Ownable {
             if (totalRecovered >= trancheSupply) {
                 usdcPayoutAAA = RAY; // AAA gets full payment
                 uint256 remaining = totalRecovered - trancheSupply;
-                usdcPayoutAA = remaining > 0 ? (RAY * remaining) / trancheSupply : 0;
+                usdcPayoutAA = remaining > 0
+                    ? (RAY * remaining) / trancheSupply
+                    : 0;
             } else {
                 // Not enough to cover AAA
                 usdcPayoutAAA = (RAY * totalRecovered) / trancheSupply;
@@ -233,7 +233,7 @@ contract Insurance is Ownable {
     function isNormalClaimPeriod() public view returns (bool) {
         return
             block.timestamp >= T2 &&
-            block.timestamp <= T4 &&
+            block.timestamp <= T3 &&
             !isInvested &&
             usdcPayoutAAA == RAY &&
             usdcPayoutAA == RAY;
@@ -258,15 +258,12 @@ contract Insurance is Ownable {
 
         require(!isInvested, "Insurance: funds still invested");
         require(block.timestamp >= T2, "Insurance: claim period not started");
-        require(block.timestamp <= T4, "Insurance: claim period ended");
+        require(block.timestamp <= T3, "Insurance: claim period ended");
 
         if (!isNormalClaimPeriod()) {
             // Emergency mode - tiered withdrawal system
             if (block.timestamp < T3) {
-                require(
-                    amountAA == 0,
-                    "Insurance: only AAA claims allowed"
-                );
+                require(amountAA == 0, "Insurance: only AAA claims allowed");
             }
         }
     }
@@ -303,17 +300,13 @@ contract Insurance is Ownable {
                 : (usdcPayoutAA * amountAA) / RAY;
         }
 
-
         return payout;
     }
 
     /// @notice Internal function to handle claiming USDC for tranche tokens
     /// @param amountAAA Amount of AAA tranche tokens to redeem
     /// @param amountAA Amount of AA tranche tokens to redeem
-    function _claim(
-        uint256 amountAAA,
-        uint256 amountAA
-    ) internal {
+    function _claim(uint256 amountAAA, uint256 amountAA) internal {
         // Special case: after T1, if never invested, allow direct claims (via divest)
         if (block.timestamp >= T1 && !isInvested) {
             this.divest();
@@ -344,10 +337,7 @@ contract Insurance is Ownable {
         uint256 balanceAAA = ITranche(AAA).balanceOf(msg.sender);
         uint256 balanceAA = ITranche(AA).balanceOf(msg.sender);
 
-        require(
-            balanceAAA > 0 || balanceAA > 0,
-            "Insurance: no balance"
-        );
+        require(balanceAAA > 0 || balanceAA > 0, "Insurance: no balance");
 
         _claim(balanceAAA, balanceAA);
     }

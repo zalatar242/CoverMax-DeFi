@@ -2,12 +2,13 @@ import React from 'react';
 import { Button, Stack, CircularProgress, Typography, Box } from '@mui/material';
 import { AccountBalance, CheckCircle } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
-import { useUSDCBalance } from '../utils/contracts';
+import { useUSDCBalance, usePortfolioData } from '../utils/contracts';
 import { useMainConfig } from '../utils/contractConfig';
 import { useWriteContract, useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
+
 import {
   ContentCard,
   AmountField,
@@ -37,6 +38,7 @@ const Deposit = () => {
   const { openConnectModal } = useWalletModal();
   const { balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useUSDCBalance();
   const { USDC, Insurance } = useMainConfig();
+  const { refetch: refetchTrancheBalances } = usePortfolioData();
 
   const {
     amount,
@@ -62,6 +64,7 @@ const Deposit = () => {
         resetAmount();
         refetchBalance();
         refetchAllowance();
+        refetchTrancheBalances();
       }
     });
 
@@ -118,9 +121,10 @@ const Deposit = () => {
   }
 
   const infoItems = [
-    'Your deposit is automatically split across three major lending protocols to reduce platform risk',
+    'Your deposit is split equally between AAA and AA tranches, so amount must be even',
+    'Deposits are automatically split across Aave and Moonwell lending protocols to reduce platform risk',
     'Each protocol has been audited and battle-tested in DeFi for optimal security',
-    'You\'ll receive three tranche tokens (AAA, AA, A) representing different risk levels',
+    'You\'ll receive two tranche tokens (AAA, AA) representing different risk levels',
   ];
 
   return (

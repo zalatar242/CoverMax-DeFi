@@ -1,4 +1,6 @@
 import { ethers } from "hardhat";
+import { formatUnits } from "ethers";
+import { Insurance } from "../typechain-types";
 import { deployMocks } from "./core/deployMocks";
 import { deployCoreContracts } from "./core/deployCore";
 import { updateNetworkConfig, updateContractsJson } from "./utils/config";
@@ -52,9 +54,8 @@ async function main() {
     { name: "Insurance", contract: contracts.insurance },
     { name: "AaveLendingAdapter", contract: contracts.aaveAdapter },
     { name: "MoonwellLendingAdapter", contract: contracts.moonwellAdapter },
-    { name: "TrancheA", contract: contracts.trancheA },
-    { name: "TrancheB", contract: contracts.trancheB },
-    { name: "TrancheC", contract: contracts.trancheC }
+    { name: "TrancheAAA", contract: contracts.trancheAAA },
+    { name: "TrancheAA", contract: contracts.trancheAA }
   ]);
 
   console.log("\nLocal deployment complete! The environment is ready for testing.");

@@ -85,9 +85,8 @@ export const useTranchesConfig = () => {
   const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
 
   return {
-    A: getContractConfig('TrancheA', currentNetwork),
-    B: getContractConfig('TrancheB', currentNetwork),
-    C: getContractConfig('TrancheC', currentNetwork)
+    AAA: getContractConfig('TrancheAAA', currentNetwork),
+    AA: getContractConfig('TrancheAA', currentNetwork)
   };
 };
 

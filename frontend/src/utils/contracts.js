@@ -28,31 +28,38 @@ export const usePortfolioData = () => {
   const { Insurance } = useMainConfig();
   const tranches = useTranchesConfig();
 
-  const { data: trancheAData, isLoading: loadingA, isError: errorA } = useReadContract({
-    address: tranches?.A?.address,
-    abi: tranches?.A?.abi,
+  const {
+    data: trancheAAAData,
+    isLoading: loadingAAA,
+    isError: errorAAA,
+    refetch: refetchAAA
+  } = useReadContract({
+    address: tranches?.AAA?.address,
+    abi: tranches?.AAA?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches?.A && isConnected),
+    enabled: Boolean(address && tranches?.AAA && isConnected),
   });
 
-  const { data: trancheBData, isLoading: loadingB, isError: errorB } = useReadContract({
-    address: tranches?.B?.address,
-    abi: tranches?.B?.abi,
+  const {
+    data: trancheAAData,
+    isLoading: loadingAA,
+    isError: errorAA,
+    refetch: refetchAA
+  } = useReadContract({
+    address: tranches?.AA?.address,
+    abi: tranches?.AA?.abi,
     functionName: 'balanceOf',
     args: [address],
-    enabled: Boolean(address && tranches?.B && isConnected),
+    enabled: Boolean(address && tranches?.AA && isConnected),
   });
 
-  const { data: trancheCData, isLoading: loadingC, isError: errorC } = useReadContract({
-    address: tranches?.C?.address,
-    abi: tranches?.C?.abi,
-    functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && tranches?.C && isConnected),
-  });
-
-  const { data: depositedValueData, isLoading: loadingDeposited, isError: errorDeposited } = useReadContract({
+  const {
+    data: depositedValueData,
+    isLoading: loadingDeposited,
+    isError: errorDeposited,
+    refetch: refetchDeposited
+  } = useReadContract({
     address: Insurance?.address,
     abi: Insurance?.abi,
     functionName: 'getUserDeposit',
@@ -60,13 +67,19 @@ export const usePortfolioData = () => {
     enabled: Boolean(address && Insurance && isConnected),
   });
 
+  const refetchAll = () => {
+    refetchAAA?.();
+    refetchAA?.();
+    refetchDeposited?.();
+  };
+
   return {
-    trancheA: trancheAData ? formatUnits(trancheAData, 6) : "0",
-    trancheB: trancheBData ? formatUnits(trancheBData, 6) : "0",
-    trancheC: trancheCData ? formatUnits(trancheCData, 6) : "0",
+    trancheAAA: trancheAAAData ? formatUnits(trancheAAAData, 6) : "0",
+    trancheAA: trancheAAData ? formatUnits(trancheAAData, 6) : "0",
     depositedValue: depositedValueData ? formatUnits(depositedValueData, 6) : "0",
-    isLoading: loadingA || loadingB || loadingC || loadingDeposited,
-    isError: errorA || errorB || errorC || errorDeposited
+    isLoading: loadingAAA || loadingAA || loadingDeposited,
+    isError: errorAAA || errorAA || errorDeposited,
+    refetch: refetchAll
   };
 };
 
@@ -97,29 +110,22 @@ export const useProtocolStatus = () => {
   });
 
   // Get total supply for each tranche
-  const { data: trancheASupply = 0n, isLoading: loadingSupplyA } = useReadContract({
-    address: tranches?.A?.address,
-    abi: tranches?.A?.abi,
+  const { data: trancheAAASupply = 0n, isLoading: loadingSupplyAAA } = useReadContract({
+    address: tranches?.AAA?.address,
+    abi: tranches?.AAA?.abi,
     functionName: 'totalSupply',
-    enabled: Boolean(tranches?.A),
+    enabled: Boolean(tranches?.AAA),
   });
 
-  const { data: trancheBSupply = 0n, isLoading: loadingSupplyB } = useReadContract({
-    address: tranches?.B?.address,
-    abi: tranches?.B?.abi,
+  const { data: trancheAASupply = 0n, isLoading: loadingSupplyAA } = useReadContract({
+    address: tranches?.AA?.address,
+    abi: tranches?.AA?.abi,
     functionName: 'totalSupply',
-    enabled: Boolean(tranches?.B),
-  });
-
-  const { data: trancheCSupply = 0n, isLoading: loadingSupplyC } = useReadContract({
-    address: tranches?.C?.address,
-    abi: tranches?.C?.abi,
-    functionName: 'totalSupply',
-    enabled: Boolean(tranches?.C),
+    enabled: Boolean(tranches?.AA),
   });
 
   // Calculate total TVL
-  const totalTVL = trancheASupply + trancheBSupply + trancheCSupply;
+  const totalTVL = trancheAAASupply + trancheAASupply;
 
   const currentTimestamp = hexToBigInt(numberToHex(Math.floor(Date.now() / 1000)));
 
@@ -128,7 +134,6 @@ export const useProtocolStatus = () => {
   // T1 = S + 5 days
   // T2 = T1 + 1 days
   // T3 = T2 + 1 days
-  // T4 = T3 + 1 days
   const phases = {
     deposit: {
       name: "Deposit Phase (2 days)",
@@ -157,7 +162,7 @@ export const useProtocolStatus = () => {
   }
 
   const isLoading = loadingS || loadingT1 || loadingT2 ||
-                    loadingSupplyA || loadingSupplyB || loadingSupplyC;
+                    loadingSupplyAAA || loadingSupplyAA;
 
   return {
     status,
@@ -165,9 +170,8 @@ export const useProtocolStatus = () => {
     tvl: {
       total: formatUnits(totalTVL, 6),
       byTranche: {
-        A: formatUnits(trancheASupply, 6),
-        B: formatUnits(trancheBSupply, 6),
-        C: formatUnits(trancheCSupply, 6)
+        AAA: formatUnits(trancheAAASupply, 6),
+        AA: formatUnits(trancheAASupply, 6)
       }
     },
     isLoading,

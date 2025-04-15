@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { parseUnits, formatUnits } from 'viem';
 
-export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 3) => {
+export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 2) => {
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
 
@@ -31,7 +31,7 @@ export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 3) => {
       if (numValue < 0) {
         setError('Please enter a positive amount');
       } else if (!validateAmount(value)) {
-        setError(`Amount must be divisible by ${minDivisibleBy} to ensure equal distribution`);
+        setError('Amount must be even to ensure equal distribution between AAA and AA tranches');
       } else {
         const valueInWei = parseUnits(value, 6);
         if (valueInWei > maxAmount) {

@@ -61,12 +61,14 @@ export async function updateContractsJson(network: string, contracts: ContractIn
     config.networks[network] = {};
   }
 
-  // Update contract addresses
+  // Update contract addresses and ABIs
   for (const { name, contract } of contracts) {
     if (!config.networks[network][name]) {
-      config.networks[network][name] = { address: "" };
+      config.networks[network][name] = { address: "", abi: [] };
     }
     config.networks[network][name].address = await contract.getAddress();
+    // @ts-ignore - getInterface is available but not typed
+    config.networks[network][name].abi = JSON.parse(contract.interface.formatJson());
   }
 
   fs.writeFileSync(contractsPath, JSON.stringify(config, null, 2));

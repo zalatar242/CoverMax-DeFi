@@ -12,9 +12,8 @@ export interface DeployedContracts {
   insurance: BaseContract;
   aaveAdapter: BaseContract;
   moonwellAdapter: BaseContract;
-  trancheA: BaseContract;
-  trancheB: BaseContract;
-  trancheC: BaseContract;
+  trancheAAA: BaseContract;
+  trancheAA: BaseContract;
 }
 
 async function verifyContract(address: string, args: any[] = []) {
@@ -116,9 +115,12 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
   console.log("\nVerifying tranche contracts...");
 
   // Get tranche addresses
-  const trancheA = await ethers.getContractAt("Tranche", await insurance.A());
-  const trancheB = await ethers.getContractAt("Tranche", await insurance.B());
-  const trancheC = await ethers.getContractAt("Tranche", await insurance.C());
+  // Get the addresses first, then create contract instances
+  const aaaAddress = await insurance.AAA();
+  const aaAddress = await insurance.AA();
+
+  const trancheAAA = await ethers.getContractAt("Tranche", aaaAddress);
+  const trancheAA = await ethers.getContractAt("Tranche", aaAddress);
 
   // Verify contracts
   if (["base-mainnet", "mainnet", "base-sepolia"].includes(network.name)) {
@@ -130,9 +132,8 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
       await verifyContract(await insurance.getAddress(), [addresses.USDC_ADDRESS]);
       await verifyContract(await aaveAdapter.getAddress(), [addresses.AAVE_V3_POOL, addresses.AAVE_DATA_PROVIDER]);
       await verifyContract(await moonwellAdapter.getAddress(), [addresses.MOONWELL_USDC]);
-      await verifyContract(await trancheA.getAddress(), ["Tranche AAA", "TRA"]);
-      await verifyContract(await trancheB.getAddress(), ["Tranche AA", "TRB"]);
-      await verifyContract(await trancheC.getAddress(), ["Tranche A", "TRC"]);
+      await verifyContract(await trancheAAA.getAddress(), ["Tranche AAA", "TRA"]);
+      await verifyContract(await trancheAA.getAddress(), ["Tranche AA", "TRB"]);
       console.log("All contracts verified successfully");
     } catch (error) {
       console.error("Error during contract verification:", error);
@@ -144,16 +145,14 @@ export async function deployCoreContracts(addresses: DeploymentAddresses): Promi
   console.log("Insurance:", await insurance.getAddress());
   console.log("Aave Adapter:", await aaveAdapter.getAddress());
   console.log("Moonwell Adapter:", await moonwellAdapter.getAddress());
-  console.log("Tranche AAA:", await trancheA.getAddress());
-  console.log("Tranche AA:", await trancheB.getAddress());
-  console.log("Tranche A:", await trancheC.getAddress());
+  console.log("Tranche AAA:", await trancheAAA.getAddress());
+  console.log("Tranche AA:", await trancheAA.getAddress());
 
   return {
     insurance,
     aaveAdapter,
     moonwellAdapter,
-    trancheA,
-    trancheB,
-    trancheC
+    trancheAAA,
+    trancheAA
   };
 }

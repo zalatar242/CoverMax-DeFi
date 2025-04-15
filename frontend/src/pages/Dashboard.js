@@ -55,7 +55,7 @@ const WithdrawalInfoBox = () => {
             }
           }}
         >
-          {['AAA', 'AA', 'A'].map((tranche, index) => (
+          {['AAA', 'AA'].map((tranche, index) => (
             <Box key={tranche}>
               <Box
                 sx={{
@@ -71,7 +71,7 @@ const WithdrawalInfoBox = () => {
                 Tranche {tranche}
               </Box>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {index === 0 ? 'First' : index === 1 ? 'Second' : 'Third'}
+                {index === 0 ? 'First' : 'Second'}
               </Typography>
             </Box>
           ))}
@@ -160,10 +160,10 @@ const Dashboard = () => {
   const { isConnected } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
   const { balance: usdcBalance } = useUSDCBalance();
-  const { trancheA, trancheB, trancheC } = usePortfolioData();
+  const { trancheAAA, trancheAA } = usePortfolioData();
   const { status, tvl, phases } = useProtocolStatus();
 
-  const totalValue = parseFloat(trancheA) + parseFloat(trancheB) + parseFloat(trancheC);
+  const totalValue = parseFloat(trancheAAA) + parseFloat(trancheAA);
 
   if (!isConnected) {
     return <ConnectWalletPrompt openConnectModal={openConnectModal} />;
@@ -258,9 +258,8 @@ const Dashboard = () => {
             },
             mb: 3
           }}>
-            <TrancheSummary title="AAA" value={trancheA} total={totalValue} />
-            <TrancheSummary title="AA" value={trancheB} total={totalValue} />
-            <TrancheSummary title="A" value={trancheC} total={totalValue} />
+            <TrancheSummary title="AAA" value={trancheAAA} total={totalValue} />
+            <TrancheSummary title="AA" value={trancheAA} total={totalValue} />
           </Box>
           <WithdrawalInfoBox />
         </Box>
@@ -292,11 +291,11 @@ const Dashboard = () => {
                   key={key}
                   title={
                     phase.name === "Deposit Phase (2 days)" ?
-                      "2-day window to deposit USDC into the protocol. Your deposits are split into three tranches (AAA, AA, A) each with different risk/reward profiles." :
+                      "2-day window to deposit USDC into the protocol. Your deposits are split into two tranches (AAA, AA) each with different risk/reward profiles." :
                     phase.name === "Insurance Phase (5 days)" ?
-                      "5-day period where your deposits are protected and earning yield across different lending protocols like Aave, Compound, and Moonwell." :
+                      "5-day period where your deposits are protected and earning yield across Aave and Moonwell lending protocols." :
                     phase.name === "Withdrawal Phase (3 days)" ?
-                      "3-day window to withdraw your funds. Withdrawals are processed in order of tranche priority: A (lowest risk) first, then B, then C (highest risk)." :
+                      "3-day window to withdraw your funds. Withdrawals are processed in order of tranche priority: AAA (lowest risk) first, then AA (higher risk)." :
                     ""
                   }
                   arrow
@@ -354,19 +353,13 @@ const Dashboard = () => {
           }}>
             <ProtocolTVLSummary
               name="Aave"
-              value={tvl.total / 3}
+              value={tvl.total / 2}
               tvl={tvl}
               description="Industry-leading lending protocol with robust security"
             />
             <ProtocolTVLSummary
-              name="Compound"
-              value={tvl.total / 3}
-              tvl={tvl}
-              description="Time-tested protocol with stable performance"
-            />
-            <ProtocolTVLSummary
               name="Moonwell"
-              value={tvl.total / 3}
+              value={tvl.total / 2}
               tvl={tvl}
               description="Innovative Base protocol with competitive rates"
             />
