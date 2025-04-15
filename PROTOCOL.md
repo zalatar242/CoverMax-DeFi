@@ -2,7 +2,7 @@
 
 ## Protocol Overview
 
-CoverMax DeFi is a decentralized insurance protocol that implements a three-tranche risk allocation system for DeFi lending. The protocol allows users to deposit USDC and receive three different types of risk tranches, which are then deployed across multiple lending platforms. This innovative approach provides users with different risk-reward profiles while maximizing capital efficiency.
+CoverMax DeFi is a decentralized insurance protocol that implements a two-tranche risk allocation system for DeFi lending. The protocol allows users to deposit USDC and receive two different types of risk tranches, which are then deployed across multiple lending platforms. This innovative approach provides users with different risk-reward profiles while maximizing capital efficiency.
 
 ## Core Components
 
@@ -17,18 +17,16 @@ The main contract that orchestrates the entire protocol. It:
 
 ### 2. Tranche Tokens
 
-Three ERC20 tokens (A, B, C) representing different risk levels:
+Two ERC20 tokens representing different risk levels:
 
-- **Tranche A (Senior)**: Lowest risk, first to be paid out
-- **Tranche B (Mezzanine)**: Medium risk, second in line for payouts
-- **Tranche C (Junior)**: Highest risk, last to be paid out
+- **Tranche AAA (Senior)**: Lowest risk, first to be paid out
+- **Tranche AA (Junior)**: Higher risk, absorbs first losses
 
 ### 3. Lending Adapters
 
 Modular components that integrate with various DeFi lending platforms:
 
 - Aave Adapter
-- Compound Adapter
 - Moonwell Adapter
 - Extensible to add more platforms
 
@@ -36,29 +34,23 @@ Modular components that integrate with various DeFi lending platforms:
 
 ### Structure
 
-- When users deposit USDC, they receive equal amounts of A, B, and C tranches
+- When users deposit USDC, they receive equal amounts of AAA and AA tranches
 - Each tranche represents a different risk level and priority in loss absorption
-- Total deposit is split equally among the three tranches
+- Total deposit is split equally between the two tranches
 
 ### Risk Allocation
 
-1. **Tranche A (Senior)**
+1. **Tranche AAA (Senior)**
 
    - First priority for repayment
    - Lowest risk profile
    - Suitable for conservative investors
 
-2. **Tranche B (Mezzanine)**
-
-   - Second priority for repayment
-   - Medium risk profile
-   - Balanced risk-reward ratio
-
-3. **Tranche C (Junior)**
+2. **Tranche AA (Junior)**
    - Last priority for repayment
-   - Highest risk profile
+   - Higher risk profile
    - Absorbs first losses
-   - Potential for highest returns
+   - Potential for higher returns
 
 ## Time Periods
 
@@ -68,13 +60,13 @@ The protocol operates on a fixed timeline with four key periods:
 
    - Users can deposit USDC and receive tranche tokens
    - Lending adapters can be added or removed
-   - Duration: 7 days
+   - Duration: 2 days
 
 2. **Insurance Period (S → T1)**
 
    - Funds are invested across lending platforms
    - No new deposits accepted
-   - Duration: 28 days
+   - Duration: 5 days
 
 3. **Divestment Period (T1 → T2)**
 
@@ -85,7 +77,7 @@ The protocol operates on a fixed timeline with four key periods:
 4. **Claim Period (T2 → T3)**
    - Users can redeem their tranche tokens for USDC
    - Payouts based on risk allocation
-   - Duration: 3 days
+   - Duration: 1 day
 
 ## Integration with Lending Platforms
 
@@ -107,14 +99,8 @@ function getBalance(address asset) external view returns (uint256);
    - Handles aToken mechanics
    - Supports supply and withdraw operations
 
-2. **Compound**
-
-   - Integration with Comet (Compound v3)
-   - Handles cToken mechanics
-   - Supports supply and withdraw operations
-
-3. **Moonwell**
-   - Similar to Compound v2 architecture
+2. **Moonwell**
+   - Based on Compound v2 architecture
    - Handles mToken mechanics
    - Supports supply and withdraw operations
 
@@ -124,7 +110,7 @@ function getBalance(address asset) external view returns (uint256);
 
 1. User approves USDC spending
 2. User calls `splitRisk(amount)`
-3. Equal amounts of A, B, C tokens are minted
+3. Equal amounts of AAA and AA tokens are minted
 4. USDC is held until investment period
 
 ### Investment Process
@@ -153,33 +139,25 @@ function getBalance(address asset) external view returns (uint256);
 ### No Loss Scenario
 
 - All tranches receive 100% of their initial deposit
-- Equal distribution across A, B, and C
+- Equal distribution across AAA and AA
 
 ### Partial Loss Scenarios
 
 1. **Minor Loss**
 
-   - Tranche A: 100% recovery
-   - Tranche B: 100% recovery
-   - Tranche C: Partial recovery
+   - Tranche AAA: 100% recovery
+   - Tranche AA: Partial recovery
 
-2. **Moderate Loss**
-
-   - Tranche A: 100% recovery
-   - Tranche B: Partial recovery
-   - Tranche C: No recovery
-
-3. **Severe Loss**
-   - Tranche A: Partial recovery
-   - Tranche B: No recovery
-   - Tranche C: No recovery
+2. **Severe Loss**
+   - Tranche AAA: Partial recovery
+   - Tranche AA: No recovery
 
 ## User Flow
 
 1. **Deposit**
 
    - User deposits USDC during issuance period
-   - Receives equal amounts of A, B, C tranches
+   - Receives equal amounts of AAA and AA tranches
    - Can trade tranches if desired
 
 2. **Wait Period**
@@ -216,9 +194,19 @@ function getBalance(address asset) external view returns (uint256);
 ## Protocol Parameters
 
 - **RAY**: 1e27 (Used for floating point math)
-- **TRANCHE_ALLOCATION**: RAY/3 (Equal allocation per tranche)
+- **TRANCHE_ALLOCATION**: RAY/2 (Equal allocation per tranche)
 - **Decimals**: 6 (Matches USDC decimals)
-- **Minimum Deposit**: 3 USDC (Must be divisible by 3)
+- **Minimum Deposit**: 2 USDC (Must be divisible by 2)
 - **Time Periods**: Fixed durations (7/28/1/3 days)
+
+## Planned Features
+
+1. **Self-Restarting Cycles**
+   - Protocol will automatically restart in 1-week cycles
+   - Enables continuous operation without manual intervention
+
+2. **Flexible Withdrawals**
+   - Users will be able to withdraw at any point
+   - Rewards will be calculated and distributed appropriately based on time in protocol
 
 This documentation provides a comprehensive overview of the CoverMax DeFi protocol, its components, mechanisms, and implementation details. For specific implementation details, refer to the smart contract code and comments.

@@ -6,20 +6,21 @@ A DeFi insurance protocol that provides yield-enhanced protection through tranch
 
 CoverMax-DeFi is a decentralized insurance protocol that allows users to:
 
-- Deposit funds into risk-segmented tranches (A, B, C)
-- Earn yield from leading DeFi protocols (Aave, Compound, Moonwell)
+- Deposit funds into risk-segmented tranches (AAA, AA)
+- Earn yield from leading DeFi protocols (Aave, Moonwell)
 - Get protection against smart contract risks
 - Trade risk/reward preferences through tranche positions
+
+For detailed protocol documentation, see [PROTOCOL.md](PROTOCOL.md).
 
 ## Architecture
 
 The protocol consists of these main components:
 
 - `Insurance.sol` - Core insurance contract managing deposits and risk tranches
-- `Tranche.sol` - Risk-segmented token contracts (A, B, C tranches)
+- `Tranche.sol` - Risk-segmented token contracts (AAA, AA tranches)
 - Lending Adapters:
   - `AaveLendingAdapter.sol` - Integration with Aave V3
-  - `CompoundLendingAdapter.sol` - Integration with Compound V3
   - `MoonwellLendingAdapter.sol` - Integration with Moonwell
 
 ## Quick Start
@@ -58,13 +59,12 @@ The deployment process sets up:
 
    - Mock USDC
    - Mock Aave (Pool, DataProvider)
-   - Mock Compound (Comet)
    - Mock Moonwell (mToken, Comptroller)
 
 2. Core Protocol:
    - Insurance contract
-   - Lending adapters (Aave, Compound, Moonwell)
-   - Tranches (A, B, C)
+   - Lending adapters (Aave, Moonwell)
+   - Tranches (AAA, AA)
 
 ### Frontend Setup
 

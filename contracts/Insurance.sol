@@ -65,7 +65,7 @@ contract Insurance is Ownable {
         S = block.timestamp + 2 days;
         T1 = S + 5 days;
         T2 = T1 + 1 days;
-        T3 = T2 + 2 days; // Combined previous T3 and T4 periods
+        T3 = T2 + 1 days; // Combined previous T3 and T4 periods
     }
 
     /// @notice Add a new lending adapter
