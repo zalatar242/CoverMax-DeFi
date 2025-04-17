@@ -9,12 +9,12 @@ import {
   useMediaQuery,
   Tooltip
 } from '@mui/material';
-import { AccountBalance, SwapHoriz, ErrorOutline, InfoOutlined } from '@mui/icons-material';
+import { AccountBalance, SwapHoriz, ErrorOutline, InfoOutlined, TrendingDown } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { formatUSDC, calculatePercentage } from '../utils/analytics';
 import { usePortfolioData, useProtocolStatus, useUSDCBalance } from '../utils/contracts';
-import { ContentCard } from '../components/ui';
+import { ContentCard, RiskChart } from '../components/ui';
 
 const WithdrawalInfoBox = () => {
   const theme = useTheme();
@@ -262,6 +262,35 @@ const Dashboard = () => {
             <TrancheSummary title="AA" value={trancheAA} total={totalValue} />
           </Box>
           <WithdrawalInfoBox />
+
+          {/* Risk Visualization */}
+          <Box sx={{ mt: 4, mb: 2 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'text.primary',
+                fontWeight: 600,
+                mb: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1
+              }}
+            >
+              <TrendingDown />
+              Risk Analysis
+            </Typography>
+            <Box
+              sx={{
+                bgcolor: 'background.paper',
+                p: { xs: 3, sm: 4 },
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider'
+              }}
+            >
+              <RiskChart aaaTokens={parseFloat(trancheAAA)} aaTokens={parseFloat(trancheAA)} />
+            </Box>
+          </Box>
         </Box>
       </ContentCard>
 
