@@ -11,15 +11,15 @@ import "./ILendingAdapter.sol";
 /// @notice Deposited funds are managed through lending adapters with two-tranche risk allocation
 contract Insurance is Ownable {
     /* Internal and external contract addresses */
-    address public AAA; // Tranche AAA token contract
-    address public AA; // Tranche AA token contract
-
+    address public immutable AAA; // Tranche AAA token contract
+    address public immutable AA; // Tranche AA token contract
     address public immutable usdc; // USDC token
     ILendingAdapter[] public lendingAdapters; // Array of platform adapters
 
     /* Math helper for decimal numbers */
-    uint256 constant RAY = 1e27; // Used for floating point math
-    uint256 constant TRANCHE_ALLOCATION = RAY / 2; // Equal 50% allocation per tranche
+    uint256 private constant RAY = 1e27; // Used for floating point math
+    uint256 private constant TRANCHE_ALLOCATION = RAY / 2; // Equal 50% allocation per tranche
+    uint256 private constant MINIMUM_AMOUNT = 2; // Minimum split amount
 
     /* Time periods */
     uint256 public immutable S; // Start/split end
@@ -29,16 +29,10 @@ contract Insurance is Ownable {
 
     /* State tracking */
     uint256 public totalTranches; // Total AAA + AA tokens
-    bool public isInvested; // True if funds have been invested in platforms, false after divest
-
-    /* Liquid mode payouts */
-    uint256 public usdcPayoutAAA; // Payout in USDC per AAA tranche
-    uint256 public usdcPayoutAA; // Payout in USDC per AA tranche
+    uint256 public totalInvested; // Total amount invested across adapters
 
     /* Events */
     event RiskSplit(address indexed splitter, uint256 amountUsdc);
-    event Invest(uint256 amountUsdc);
-    event Divest(uint256 amountUsdc);
     event AdapterAdded(address adapter);
     event AdapterRemoved(address adapter);
     event Claim(
@@ -55,6 +49,7 @@ contract Insurance is Ownable {
     );
 
     constructor(address _usdc) Ownable(msg.sender) {
+        require(_usdc != address(0), "Insurance: invalid USDC");
         usdc = _usdc;
 
         // Create tranche tokens
@@ -65,11 +60,139 @@ contract Insurance is Ownable {
         S = block.timestamp + 2 days;
         T1 = S + 5 days;
         T2 = T1 + 1 days;
-        T3 = T2 + 1 days; // Combined previous T3 and T4 periods
+        T3 = T2 + 1 days;
     }
 
-    /// @notice Add a new lending adapter
-    /// @param adapter The address of the lending adapter to add
+    // Investment Operations
+    function _depositToAdapter(
+        ILendingAdapter adapter,
+        uint256 amount
+    ) internal returns (bool) {
+        IERC20 usdcToken = IERC20(usdc);
+
+        if (amount == 0) return true;
+
+        if (!usdcToken.approve(address(adapter), amount)) {
+            return false;
+        }
+
+        try adapter.deposit(usdc, amount) returns (uint256) {
+            totalInvested += amount;
+            return true;
+        } catch {
+            emit LendingError(address(adapter), usdc, amount, 1);
+            usdcToken.approve(address(adapter), 0);
+            return false;
+        }
+    }
+
+    function _withdrawFromAdapter(
+        ILendingAdapter adapter,
+        uint256 primaryAmount,
+        uint256 remainingAmount
+    ) internal returns (uint256 amountReceived) {
+        if (primaryAmount == 0) return 0;
+
+        try adapter.withdraw(usdc, primaryAmount) returns (uint256 amount) {
+            amountReceived = amount;
+            totalInvested -= primaryAmount;
+        } catch {
+            if (remainingAmount > 0) {
+                try adapter.withdraw(usdc, remainingAmount) returns (
+                    uint256 amount
+                ) {
+                    amountReceived = amount;
+                    totalInvested -= remainingAmount;
+                } catch {
+                    emit LendingError(
+                        address(adapter),
+                        usdc,
+                        remainingAmount,
+                        2
+                    );
+                }
+            } else {
+                emit LendingError(address(adapter), usdc, primaryAmount, 2);
+            }
+        }
+    }
+
+    // Risk Calculations
+    function _calculateWithdrawalShare(
+        uint256 totalTokens
+    ) internal view returns (uint256) {
+        if (totalTranches == 0) return 0;
+        return (totalTokens * RAY) / totalTranches;
+    }
+
+    function _calculateWithdrawalAmounts(
+        uint256 totalToWithdraw
+    )
+        internal
+        view
+        returns (
+            uint256[] memory primaryAmounts,
+            uint256[] memory remainingAmounts
+        )
+    {
+        uint256 adapterCount = lendingAdapters.length;
+        primaryAmounts = new uint256[](adapterCount);
+        remainingAmounts = new uint256[](adapterCount);
+
+        if (totalToWithdraw == 0) return (primaryAmounts, remainingAmounts);
+
+        uint256 baseAmount = totalToWithdraw / adapterCount;
+        uint256 remainder = totalToWithdraw % adapterCount;
+
+        for (uint256 i = 0; i < adapterCount; ) {
+            primaryAmounts[i] = baseAmount;
+            if (i < remainder) {
+                primaryAmounts[i]++;
+            }
+            remainingAmounts[i] = totalToWithdraw;
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    // Token Operations
+    function _mintTranches(address recipient, uint256 amount) internal {
+        uint256 trancheAmount = amount / 2;
+        ITranche(AAA).mint(recipient, trancheAmount);
+        ITranche(AA).mint(recipient, trancheAmount);
+        totalTranches += amount;
+    }
+
+    function _burnTranches(
+        address account,
+        uint256 amountAAA,
+        uint256 amountAA
+    ) internal {
+        require(
+            amountAAA > 0 || amountAA > 0,
+            "Insurance: no amount specified"
+        );
+
+        if (amountAAA > 0) {
+            require(
+                ITranche(AAA).balanceOf(account) >= amountAAA,
+                "Insurance: insufficient AAA balance"
+            );
+            ITranche(AAA).burn(account, amountAAA);
+        }
+        if (amountAA > 0) {
+            require(
+                ITranche(AA).balanceOf(account) >= amountAA,
+                "Insurance: insufficient AA balance"
+            );
+            ITranche(AA).burn(account, amountAA);
+        }
+
+        totalTranches -= (amountAAA + amountAA);
+    }
+
+    // External Functions
     function addLendingAdapter(address adapter) external onlyOwner {
         require(block.timestamp < S, "Insurance: past issuance period");
         require(adapter != address(0), "Insurance: invalid adapter");
@@ -77,262 +200,92 @@ contract Insurance is Ownable {
         emit AdapterAdded(adapter);
     }
 
-    /// @notice Remove a lending adapter
-    /// @param index The index of the adapter to remove
     function removeLendingAdapter(uint256 index) external onlyOwner {
         require(block.timestamp < S, "Insurance: past issuance period");
         require(index < lendingAdapters.length, "Insurance: invalid index");
+
         emit AdapterRemoved(address(lendingAdapters[index]));
         lendingAdapters[index] = lendingAdapters[lendingAdapters.length - 1];
         lendingAdapters.pop();
     }
 
-    /// @notice Deposit USDC into the protocol. Receive equal amounts of AAA and AA tranches.
-    /// @dev Requires approval for USDC
-    /// @param amountUsdc The amount of USDC to invest into the protocol
     function splitRisk(uint256 amountUsdc) external {
         require(block.timestamp < S, "Insurance: issuance ended");
-        require(amountUsdc > 1, "Insurance: amount too low");
+        require(amountUsdc > MINIMUM_AMOUNT, "Insurance: amount too low");
         require(
             amountUsdc % 2 == 0,
             "Insurance: amount must be divisible by 2"
         );
-
-        require(
-            IERC20(usdc).transferFrom(msg.sender, address(this), amountUsdc),
-            "Insurance: USDC transfer failed"
-        );
-
-        uint256 trancheAmount = amountUsdc / 2;
-        ITranche(AAA).mint(msg.sender, trancheAmount);
-        ITranche(AA).mint(msg.sender, trancheAmount);
-
-        emit RiskSplit(msg.sender, amountUsdc);
-    }
-
-    /// @notice Invest deposited funds across lending platforms
-    function invest() external {
-        require(!isInvested, "Insurance: already invested");
-        require(block.timestamp >= S, "Insurance: still in issuance");
-        require(block.timestamp < T1, "Insurance: past insurance period");
         require(lendingAdapters.length > 0, "Insurance: no adapters");
 
         IERC20 usdcToken = IERC20(usdc);
-        uint256 balance = usdcToken.balanceOf(address(this));
-        require(balance > 0, "Insurance: no USDC");
-
-        totalTranches = ITranche(AAA).totalSupply() * 2;
-        uint256 amountPerAdapter = balance / lendingAdapters.length;
-
-        for (uint i = 0; i < lendingAdapters.length; i++) {
-            // Reset any existing approvals
-            require(
-                IERC20(usdc).approve(address(lendingAdapters[i]), 0),
-                "Insurance: USDC approval reset failed"
-            );
-            // Approve the adapter to spend USDC
-            require(
-                IERC20(usdc).approve(
-                    address(lendingAdapters[i]),
-                    amountPerAdapter
-                ),
-                "Insurance: USDC approval failed"
-            );
-
-            try lendingAdapters[i].deposit(usdc, amountPerAdapter) returns (
-                uint256
-            ) {
-                // Deposit succeeded
-            } catch Error(string memory reason) {
-                // Log the error and continue to next adapter
-                emit LendingError(
-                    address(lendingAdapters[i]),
-                    usdc,
-                    amountPerAdapter,
-                    1
-                );
-                // Reset approval
-                IERC20(usdc).approve(address(lendingAdapters[i]), 0);
-                continue;
-            }
-        }
-
-        isInvested = true;
-        emit Invest(balance);
-    }
-
-    /// @notice Withdraw funds from lending platforms and calculate tranche payouts
-    function divest() external {
-        require(block.timestamp >= T1, "Insurance: still in insurance period");
-
-        uint256 totalRecovered = 0;
-        uint256 trancheSupply = totalTranches / 2;
-
-        if (!isInvested) {
-            // If never invested, funds are still held by the contract
-            totalRecovered = IERC20(usdc).balanceOf(address(this));
-        } else {
-            // Withdraw from lending adapters
-            for (uint i = 0; i < lendingAdapters.length; i++) {
-                try
-                    lendingAdapters[i].withdraw(usdc, type(uint256).max)
-                returns (uint256 amount) {
-                    totalRecovered += amount;
-                } catch Error(string memory reason) {
-                    // Log the error and continue to next adapter
-                    emit LendingError(
-                        address(lendingAdapters[i]),
-                        usdc,
-                        type(uint256).max,
-                        2
-                    );
-                    continue;
-                }
-            }
-        }
-        isInvested = false;
-
-        // Calculate payouts based on losses
-        if (!isInvested) {
-            // Return original amounts untouched
-            usdcPayoutAAA = RAY;
-            usdcPayoutAA = RAY;
-            emit Divest(totalRecovered);
-            return;
-        }
-
-        // For losses, start filling tranches from AAA to AA
-        if (totalRecovered >= totalTranches) {
-            // No losses, equal distribution
-            uint256 payout = (RAY * totalRecovered) / totalTranches;
-            usdcPayoutAAA = payout;
-            usdcPayoutAA = payout;
-        } else {
-            if (totalRecovered >= trancheSupply) {
-                usdcPayoutAAA = RAY; // AAA gets full payment
-                uint256 remaining = totalRecovered - trancheSupply;
-                usdcPayoutAA = remaining > 0
-                    ? (RAY * remaining) / trancheSupply
-                    : 0;
-            } else {
-                // Not enough to cover AAA
-                usdcPayoutAAA = (RAY * totalRecovered) / trancheSupply;
-                usdcPayoutAA = 0;
-            }
-        }
-
-        emit Divest(totalRecovered);
-    }
-
-    /// @notice Check if the contract is in pre-investment period
-    function isPreInvestmentPeriod() public view returns (bool) {
-        return block.timestamp < T1 && !isInvested;
-    }
-
-    /// @notice Check if the contract is in normal claim period after successful divest
-    function isNormalClaimPeriod() public view returns (bool) {
-        return
-            block.timestamp >= T2 &&
-            block.timestamp <= T3 &&
-            !isInvested &&
-            usdcPayoutAAA == RAY &&
-            usdcPayoutAA == RAY;
-    }
-
-    /// @notice Validate withdrawal based on current period and amounts
-    /// @param amountAAA Amount of AAA tranche tokens to redeem
-    /// @param amountAA Amount of AA tranche tokens to redeem
-    function validateWithdrawal(
-        uint256 amountAAA,
-        uint256 amountAA
-    ) internal view {
         require(
-            amountAAA > 0 || amountAA > 0,
-            "Insurance: no amount specified"
+            usdcToken.transferFrom(msg.sender, address(this), amountUsdc),
+            "Insurance: USDC transfer failed"
         );
 
-        if (isPreInvestmentPeriod()) {
-            // Pre-investment: Allow withdrawing any tokens
-            return;
-        }
+        uint256 amountPerAdapter = amountUsdc / lendingAdapters.length;
+        uint256 remainder = amountUsdc % lendingAdapters.length;
 
-        require(!isInvested, "Insurance: funds still invested");
-        require(block.timestamp >= T2, "Insurance: claim period not started");
-        require(block.timestamp <= T3, "Insurance: claim period ended");
-
-        if (!isNormalClaimPeriod()) {
-            // Emergency mode - tiered withdrawal system
-            if (block.timestamp < T3) {
-                require(amountAA == 0, "Insurance: only AAA claims allowed");
+        // Deposit to adapters
+        for (uint256 i = 0; i < lendingAdapters.length; ) {
+            uint256 amount = amountPerAdapter;
+            if (i < remainder) {
+                amount++;
+            }
+            _depositToAdapter(lendingAdapters[i], amount);
+            unchecked {
+                ++i;
             }
         }
+
+        _mintTranches(msg.sender, amountUsdc);
+        emit RiskSplit(msg.sender, amountUsdc);
     }
 
-    /// @notice Process withdrawal by burning tokens and calculating payout
-    /// @param amountAAA Amount of AAA tranche tokens to redeem
-    /// @param amountAA Amount of AA tranche tokens to redeem
-    /// @return payout The amount of USDC to be paid out
-    function calculateWithdrawalAmount(
-        uint256 amountAAA,
-        uint256 amountAA
-    ) internal returns (uint256) {
-        uint256 payout = 0;
-
-        if (amountAAA > 0) {
-            require(
-                ITranche(AAA).balanceOf(msg.sender) >= amountAAA,
-                "Insurance: insufficient AAA balance"
-            );
-            ITranche(AAA).burn(msg.sender, amountAAA);
-            payout += isPreInvestmentPeriod()
-                ? amountAAA
-                : (usdcPayoutAAA * amountAAA) / RAY;
-        }
-
-        if (amountAA > 0) {
-            require(
-                ITranche(AA).balanceOf(msg.sender) >= amountAA,
-                "Insurance: insufficient AA balance"
-            );
-            ITranche(AA).burn(msg.sender, amountAA);
-            payout += isPreInvestmentPeriod()
-                ? amountAA
-                : (usdcPayoutAA * amountAA) / RAY;
-        }
-
-        return payout;
-    }
-
-    /// @notice Internal function to handle claiming USDC for tranche tokens
-    /// @param amountAAA Amount of AAA tranche tokens to redeem
-    /// @param amountAA Amount of AA tranche tokens to redeem
     function _claim(uint256 amountAAA, uint256 amountAA) internal {
-        // Special case: after T1, if never invested, allow direct claims (via divest)
-        if (block.timestamp >= T1 && !isInvested) {
-            this.divest();
-        }
+        require(
+            block.timestamp <= S || block.timestamp > T1,
+            "Insurance: can only claim before insurance phase starts or after it ends"
+        );
 
-        validateWithdrawal(amountAAA, amountAA);
-        uint256 payout = calculateWithdrawalAmount(amountAAA, amountAA);
+        uint256 totalTokens = amountAAA + amountAA;
+        uint256 withdrawalShare = _calculateWithdrawalShare(totalTokens);
+        uint256 totalToWithdraw = (totalInvested * withdrawalShare) / RAY;
 
-        if (payout > 0) {
-            require(
-                IERC20(usdc).transfer(msg.sender, payout),
-                "Insurance: USDC transfer failed"
+        (
+            uint256[] memory primaryAmounts,
+            uint256[] memory remainingAmounts
+        ) = _calculateWithdrawalAmounts(totalToWithdraw);
+
+        uint256 totalWithdrawn;
+        for (uint256 i = 0; i < lendingAdapters.length; ) {
+            totalWithdrawn += _withdrawFromAdapter(
+                lendingAdapters[i],
+                primaryAmounts[i],
+                remainingAmounts[i]
             );
+            unchecked {
+                ++i;
+            }
         }
 
-        emit Claim(msg.sender, amountAAA, amountAA, payout);
+        require(totalWithdrawn > 0, "Insurance: no funds withdrawn");
+
+        _burnTranches(msg.sender, amountAAA, amountAA);
+
+        require(
+            IERC20(usdc).transfer(msg.sender, totalWithdrawn),
+            "Insurance: USDC transfer failed"
+        );
+
+        emit Claim(msg.sender, amountAAA, amountAA, totalWithdrawn);
     }
 
-    /// @notice Claim USDC for tranche tokens
-    /// @param amountAAA Amount of AAA tranche tokens to redeem
-    /// @param amountAA Amount of AA tranche tokens to redeem
     function claim(uint256 amountAAA, uint256 amountAA) external {
         _claim(amountAAA, amountAA);
     }
 
-    /// @notice Claim all available tranche tokens
     function claimAll() external {
         uint256 balanceAAA = ITranche(AAA).balanceOf(msg.sender);
         uint256 balanceAA = ITranche(AA).balanceOf(msg.sender);
