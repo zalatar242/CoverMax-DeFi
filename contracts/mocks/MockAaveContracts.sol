@@ -7,17 +7,45 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // Mock aToken for tracking user deposits
 contract MockAToken is ERC20 {
     address public immutable underlying;
+    uint256 public constant INTEREST_RATE = 8.38e9; // ~30% APY when divided by 1e18
+    uint256 private lastUpdateTimestamp;
+    uint256 private interestAccumulator;
 
     constructor(address _underlying) ERC20("Aave Interest Bearing USDC", "aUSDC") {
         underlying = _underlying;
+        lastUpdateTimestamp = block.timestamp;
+        interestAccumulator = 1e18; // Start with 1.0
+    }
+
+    function _updateInterest() internal {
+        if (block.timestamp > lastUpdateTimestamp) {
+            uint256 timeElapsed = block.timestamp - lastUpdateTimestamp;
+            // Calculate interest: (1 + rate)^time
+            uint256 interest = ((INTEREST_RATE * timeElapsed) + 1e18);
+            interestAccumulator = (interestAccumulator * interest) / 1e18;
+            lastUpdateTimestamp = block.timestamp;
+        }
     }
 
     function mint(address account, uint256 amount) external {
+        _updateInterest();
         _mint(account, amount);
     }
 
     function burn(address account, uint256 amount) external {
+        _updateInterest();
         _burn(account, amount);
+    }
+
+    function balanceOf(address account) public view override returns (uint256) {
+        uint256 rawBalance = super.balanceOf(account);
+        if (block.timestamp > lastUpdateTimestamp && rawBalance > 0) {
+            uint256 timeElapsed = block.timestamp - lastUpdateTimestamp;
+            uint256 interest = ((INTEREST_RATE * timeElapsed) + 1e18);
+            uint256 currentAccumulator = (interestAccumulator * interest) / 1e18;
+            return (rawBalance * currentAccumulator) / 1e18;
+        }
+        return (rawBalance * interestAccumulator) / 1e18;
     }
 }
 
@@ -63,14 +91,20 @@ contract MockAavePool {
         MockAToken aToken = aTokenContracts[asset];
         require(address(aToken) != address(0), "Unsupported asset");
 
+        uint256 currentBalance = aToken.balanceOf(msg.sender);
+        require(currentBalance >= amount, "Insufficient balance");
+
         // Burn aTokens
         aToken.burn(msg.sender, amount);
 
-        // Return underlying tokens
-        require(IERC20(asset).transfer(to, amount), "Transfer failed");
+        // Calculate accrued interest and total amount to return
+        uint256 totalAmount = amount;
 
-        emit Withdraw(asset, amount, to);
-        return amount;
+        // Return underlying tokens with accrued interest
+        require(IERC20(asset).transfer(to, totalAmount), "Transfer failed");
+
+        emit Withdraw(asset, totalAmount, to);
+        return totalAmount;
     }
 }
 

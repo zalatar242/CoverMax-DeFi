@@ -5,6 +5,13 @@ export async function deployMocks() {
   console.log("\nDeploying mock contracts...");
   const [deployer] = await ethers.getSigners();
 
+  // Deploy CoverMax Token
+  console.log("Deploying CoverMax Token...");
+  const CoverMaxToken = await ethers.getContractFactory("CoverMaxToken");
+  const coverMaxToken = await CoverMaxToken.deploy();
+  await coverMaxToken.waitForDeployment();
+  console.log("CoverMax Token deployed to:", await coverMaxToken.getAddress());
+
   // Deploy USDC
   const MockUSDC = await ethers.getContractFactory("MockUSDC");
   const mockUSDC = await MockUSDC.deploy();
@@ -44,6 +51,7 @@ export async function deployMocks() {
   await mockUSDC.mint(deployer.address, mintAmount);
 
   const addresses = {
+    coverMaxToken: await coverMaxToken.getAddress(),
     usdcAddress: await mockUSDC.getAddress(),
     aavePool: await mockAavePool.getAddress(),
     aaveDataProvider: await mockDataProvider.getAddress(),

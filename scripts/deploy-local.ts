@@ -43,8 +43,12 @@ async function main() {
   console.log("Adding aToken to contracts.json:", aTokenAddress);
   const mockAToken = await ethers.getContractAt("MockAToken", aTokenAddress);
 
+  // Get CoverMax token contract instance
+  const coverMaxToken = await ethers.getContractAt("CoverMaxToken", mockAddresses.coverMaxToken);
+
   await updateContractsJson("hardhat", [
     // Mock contracts first
+    { name: "CoverMaxToken", contract: coverMaxToken },
     { name: "USDC", contract: mockUSDC },
     { name: "AavePool", contract: mockAavePool },
     { name: "AavePoolDataProvider", contract: mockAaveDataProvider },

@@ -46,6 +46,12 @@ async function main() {
     console.log("- aToken:", aTokenAddress);
     console.log("- MockAaveDataProvider:", await mockAaveDataProvider.getAddress());
 
+    // Deploy CoverMax Token
+    console.log("\nDeploying CoverMax Token...");
+    const CoverMaxToken = await ethers.getContractFactory("CoverMaxToken");
+    const coverMaxToken = await waitForDeployment(await CoverMaxToken.deploy());
+    console.log("CoverMax Token deployed to:", await coverMaxToken.getAddress());
+
     // Deploy Mock Moonwell
     console.log("\nDeploying Moonwell mock contracts...");
     const MockMToken = await ethers.getContractFactory("MockMToken");
@@ -75,6 +81,7 @@ async function main() {
       ...networks,
       "base-sepolia": {
         ...networks["base-sepolia"],
+        COVERMAX_TOKEN: await coverMaxToken.getAddress(),
         USDC_ADDRESS: await mockUSDC.getAddress(),
         AAVE_V3_POOL: await mockAavePool.getAddress(),
         AAVE_DATA_PROVIDER: await mockAaveDataProvider.getAddress(),
@@ -94,6 +101,7 @@ async function main() {
     const contractsJson = JSON.parse(readFileSync(contractsPath, 'utf8'));
 
     // Get contract artifacts for ABIs
+    const coverMaxArtifact = await ethers.getContractFactory("CoverMaxToken");
     const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
     const insuranceArtifact = await ethers.getContractFactory("Insurance");
     const trancheArtifact = await ethers.getContractFactory("Tranche");
@@ -102,6 +110,10 @@ async function main() {
 
     // Add Base Sepolia network configuration
     contractsJson.networks["base-sepolia"] = {
+      CoverMaxToken: {
+        address: await coverMaxToken.getAddress(),
+        abi: coverMaxArtifact.interface.fragments
+      },
       USDC: {
         address: await mockUSDC.getAddress(),
         abi: mockUsdcArtifact.interface.fragments
@@ -110,16 +122,12 @@ async function main() {
         address: await deployedContracts.insurance.getAddress(),
         abi: insuranceArtifact.interface.fragments
       },
-      TrancheA: {
-        address: await deployedContracts.trancheA.getAddress(),
+      TrancheAAA: {
+        address: await deployedContracts.trancheAAA.getAddress(),
         abi: trancheArtifact.interface.fragments
       },
-      TrancheB: {
-        address: await deployedContracts.trancheB.getAddress(),
-        abi: trancheArtifact.interface.fragments
-      },
-      TrancheC: {
-        address: await deployedContracts.trancheC.getAddress(),
+      TrancheAA: {
+        address: await deployedContracts.trancheAA.getAddress(),
         abi: trancheArtifact.interface.fragments
       },
       AaveLendingAdapter: {
