@@ -1,3 +1,4 @@
+import React from 'react';
 import { useWalletConnection } from './walletConnector';
 import { useMainConfig, useTranchesConfig } from './contractConfig';
 import { useReadContract } from 'wagmi';
@@ -81,6 +82,44 @@ export const usePortfolioData = () => {
     isError: errorAAA || errorAA || errorDeposited,
     refetch: refetchAll
   };
+};
+
+export const useProtocolAPY = () => {
+  return {
+    aave: 0.30, // 30% APY from MockAaveContracts
+    moonwell: 0.30 // 30% APY from MockMoonwell
+  };
+};
+
+export const useEarnedInterest = (totalValue) => {
+  const { status } = useProtocolStatus();
+  const protocolAPY = useProtocolAPY();
+
+  // Calculate average APY across protocols
+  const averageAPY = (protocolAPY.aave + protocolAPY.moonwell) / 2;
+
+  // Only calculate interest during insurance phase
+  const isEarningInterest = status === "Insurance Phase (5 days)";
+
+  // Calculate interest per second based on APY
+  const interestPerSecond = averageAPY / (365 * 24 * 60 * 60);
+
+  const [earnedInterest, setEarnedInterest] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!isEarningInterest || !totalValue) return;
+
+    const calculateInterest = () => {
+      const interest = totalValue * interestPerSecond;
+      setEarnedInterest(prev => prev + interest);
+    };
+
+    // Update every second
+    const interval = setInterval(calculateInterest, 1000);
+    return () => clearInterval(interval);
+  }, [totalValue, interestPerSecond, isEarningInterest]);
+
+  return earnedInterest;
 };
 
 export const useProtocolStatus = () => {

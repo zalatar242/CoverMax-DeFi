@@ -13,7 +13,13 @@ import { AccountBalance, SwapHoriz, ErrorOutline, InfoOutlined, TrendingDown } f
 import { useNavigate } from 'react-router-dom';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { formatUSDC, calculatePercentage } from '../utils/analytics';
-import { usePortfolioData, useProtocolStatus, useUSDCBalance } from '../utils/contracts';
+import {
+  usePortfolioData,
+  useProtocolStatus,
+  useUSDCBalance,
+  useProtocolAPY,
+  useEarnedInterest
+} from '../utils/contracts';
 import { ContentCard, RiskChart } from '../components/ui';
 
 const WithdrawalInfoBox = () => {
@@ -27,56 +33,18 @@ const WithdrawalInfoBox = () => {
         bgcolor: `${theme.palette.primary.main}08`,
         border: '1px dashed',
         borderColor: `${theme.palette.primary.main}20`,
-        mb: 3,
-        display: 'flex',
-        alignItems: { xs: 'flex-start', sm: 'center' },
-        gap: 2
+        mb: 3
       }}
     >
-      <ErrorOutline sx={{ color: 'primary.main', mt: { xs: 0.5, sm: 0 } }} />
-      <Box>
-        <Typography variant="body2" sx={{
-          color: 'text.primary',
-          fontWeight: 500,
-          mb: 0.5
-        }}>
-          Emergency Withdrawal Priority
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+        <ErrorOutline sx={{ color: 'primary.main' }} />
+        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+          Testnet Rewards Info
         </Typography>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            gap: { xs: 1, sm: 2 },
-            '& > div': {
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1
-            }
-          }}
-        >
-          {['AAA', 'AA'].map((tranche, index) => (
-            <Box key={tranche}>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 1,
-                  bgcolor: `${theme.palette.primary.main}10`,
-                  color: 'primary.main',
-                  fontSize: '0.875rem',
-                  fontWeight: 500
-                }}
-              >
-                Tranche {tranche}
-              </Box>
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                {index === 0 ? 'First' : 'Second'}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
       </Box>
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        During testnet phase, APY is distributed as CoverMax tokens to reward early protocol testers.
+      </Typography>
     </Box>
   );
 };
@@ -125,7 +93,7 @@ const TrancheSummary = ({ title, value, total }) => (
   </Box>
 );
 
-const ProtocolTVLSummary = ({ name, value, tvl, description }) => (
+const ProtocolTVLSummary = ({ name, value, tvl, description, apy }) => (
   <Box
     sx={{
       height: '100%',
@@ -143,7 +111,7 @@ const ProtocolTVLSummary = ({ name, value, tvl, description }) => (
       {formatUSDC(value)}
     </Typography>
     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-      {calculatePercentage(value, tvl.total)} of TVL
+      {calculatePercentage(value, tvl.total)} of TVL • {(apy * 100).toFixed(2)}% APY in CoverMax
     </Typography>
     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
       {description}
@@ -162,8 +130,11 @@ const Dashboard = () => {
   const { balance: usdcBalance } = useUSDCBalance();
   const { trancheAAA, trancheAA } = usePortfolioData();
   const { status, tvl, phases } = useProtocolStatus();
-
+  const protocolAPY = useProtocolAPY();
   const totalValue = parseFloat(trancheAAA) + parseFloat(trancheAA);
+  const earnedInterest = useEarnedInterest(totalValue);
+  const averageAPY = (protocolAPY.aave + protocolAPY.moonwell) / 2;
+
 
   if (!isConnected) {
     return <ConnectWalletPrompt openConnectModal={openConnectModal} />;
@@ -229,18 +200,29 @@ const Dashboard = () => {
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, mb: 1 }}>
               Total Portfolio Value
+              <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
+                • Available USDC: {formatUSDC(usdcBalance)}
+              </Typography>
             </Typography>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600 }}>
               {formatUSDC(totalValue)}
             </Typography>
+            {status === "Insurance Phase (5 days)" && earnedInterest > 0 && (
+              <Typography variant="subtitle2" sx={{ color: 'success.main', mt: 0.5 }}>
+                +{formatUSDC(earnedInterest)} earned
+              </Typography>
+            )}
           </Box>
           <Divider orientation={isTablet ? 'horizontal' : 'vertical'} flexItem />
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, mb: 1 }}>
-              Available USDC
+              Total Earnings
+              <Typography component="span" variant="caption" sx={{ ml: 1, color: 'success.main' }}>
+                • {(averageAPY * 100).toFixed(2)}% APY in CoverMax Tokens
+              </Typography>
             </Typography>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600 }}>
-              {formatUSDC(usdcBalance)}
+              {formatUSDC(earnedInterest)}
             </Typography>
           </Box>
         </Box>
@@ -385,12 +367,14 @@ const Dashboard = () => {
               value={tvl.total / 2}
               tvl={tvl}
               description="Industry-leading lending protocol with robust security"
+              apy={protocolAPY.aave}
             />
             <ProtocolTVLSummary
               name="Moonwell"
               value={tvl.total / 2}
               tvl={tvl}
               description="Innovative Base protocol with competitive rates"
+              apy={protocolAPY.moonwell}
             />
           </Box>
         </Box>
