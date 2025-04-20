@@ -12,7 +12,7 @@ import {
 import { AccountBalance, SwapHoriz, ErrorOutline, InfoOutlined, TrendingDown } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
-import { formatUSDC, calculatePercentage } from '../utils/analytics';
+import { formatUSDC, formatCMX, calculatePercentage } from '../utils/analytics';
 import {
   usePortfolioData,
   useProtocolStatus,
@@ -209,7 +209,7 @@ const Dashboard = () => {
             </Typography>
             {status === "Insurance Phase (5 days)" && earnedInterest > 0 && (
               <Typography variant="subtitle2" sx={{ color: 'success.main', mt: 0.5 }}>
-                +{formatUSDC(earnedInterest)} earned
+                +{formatCMX(earnedInterest)} earned
               </Typography>
             )}
           </Box>
@@ -222,7 +222,7 @@ const Dashboard = () => {
               </Typography>
             </Typography>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600 }}>
-              {formatUSDC(earnedInterest)}
+              {formatCMX(earnedInterest)}
             </Typography>
           </Box>
         </Box>

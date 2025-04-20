@@ -1,6 +1,17 @@
 import { formatUnits } from 'viem';
 
 // Format helpers
+export const formatCMX = (value) => {
+  const formattedValue = typeof value === 'bigint'
+    ? Number(formatUnits(value, 6))
+    : Number(value);
+
+  return `${new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(formattedValue)} CMX`;
+};
+
 export const formatUSDC = (value) => {
   // Convert bigint to string with proper decimals
   const formattedValue = typeof value === 'bigint'
