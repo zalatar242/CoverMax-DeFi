@@ -59,7 +59,6 @@ export const useMainConfig = () => {
   // Map chain ID to network key
   const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
 
-  console.log('Current ChainId:', chainId, 'Mapped Network:', currentNetwork);
 
   return {
     Insurance: getContractConfig('Insurance', currentNetwork),
@@ -96,7 +95,6 @@ export const useContractsConfig = () => {
   // Map chain ID to network key
   const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
 
-  console.log('useContractsConfig - Network:', currentNetwork, 'ChainId:', chainId);
 
   const networkContracts = contracts.networks[currentNetwork];
   if (!networkContracts) {

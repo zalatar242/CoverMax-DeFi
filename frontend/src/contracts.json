@@ -986,30 +986,6 @@
           {
             "type": "event",
             "anonymous": false,
-            "name": "Divest",
-            "inputs": [
-              {
-                "type": "uint256",
-                "name": "amountUsdc",
-                "indexed": false
-              }
-            ]
-          },
-          {
-            "type": "event",
-            "anonymous": false,
-            "name": "Invest",
-            "inputs": [
-              {
-                "type": "uint256",
-                "name": "amountUsdc",
-                "indexed": false
-              }
-            ]
-          },
-          {
-            "type": "event",
-            "anonymous": false,
             "name": "LendingError",
             "inputs": [
               {
@@ -1192,64 +1168,6 @@
           },
           {
             "type": "function",
-            "name": "divest",
-            "constant": false,
-            "payable": false,
-            "inputs": [],
-            "outputs": []
-          },
-          {
-            "type": "function",
-            "name": "invest",
-            "constant": false,
-            "payable": false,
-            "inputs": [],
-            "outputs": []
-          },
-          {
-            "type": "function",
-            "name": "isInvested",
-            "constant": true,
-            "stateMutability": "view",
-            "payable": false,
-            "inputs": [],
-            "outputs": [
-              {
-                "type": "bool",
-                "name": ""
-              }
-            ]
-          },
-          {
-            "type": "function",
-            "name": "isNormalClaimPeriod",
-            "constant": true,
-            "stateMutability": "view",
-            "payable": false,
-            "inputs": [],
-            "outputs": [
-              {
-                "type": "bool",
-                "name": ""
-              }
-            ]
-          },
-          {
-            "type": "function",
-            "name": "isPreInvestmentPeriod",
-            "constant": true,
-            "stateMutability": "view",
-            "payable": false,
-            "inputs": [],
-            "outputs": [
-              {
-                "type": "bool",
-                "name": ""
-              }
-            ]
-          },
-          {
-            "type": "function",
             "name": "lendingAdapters",
             "constant": true,
             "stateMutability": "view",
@@ -1317,6 +1235,20 @@
           },
           {
             "type": "function",
+            "name": "totalInvested",
+            "constant": true,
+            "stateMutability": "view",
+            "payable": false,
+            "inputs": [],
+            "outputs": [
+              {
+                "type": "uint256",
+                "name": ""
+              }
+            ]
+          },
+          {
+            "type": "function",
             "name": "totalTranches",
             "constant": true,
             "stateMutability": "view",
@@ -1352,34 +1284,6 @@
             "outputs": [
               {
                 "type": "address",
-                "name": ""
-              }
-            ]
-          },
-          {
-            "type": "function",
-            "name": "usdcPayoutAA",
-            "constant": true,
-            "stateMutability": "view",
-            "payable": false,
-            "inputs": [],
-            "outputs": [
-              {
-                "type": "uint256",
-                "name": ""
-              }
-            ]
-          },
-          {
-            "type": "function",
-            "name": "usdcPayoutAAA",
-            "constant": true,
-            "stateMutability": "view",
-            "payable": false,
-            "inputs": [],
-            "outputs": [
-              {
-                "type": "uint256",
                 "name": ""
               }
             ]

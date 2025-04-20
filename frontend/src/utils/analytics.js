@@ -2,14 +2,23 @@ import { formatUnits } from 'viem';
 
 // Format helpers
 export const formatCMX = (value) => {
-  const formattedValue = typeof value === 'bigint'
+  // Ensure we're working with a number
+  const numericValue = typeof value === 'bigint'
     ? Number(formatUnits(value, 6))
-    : Number(value);
+    : Number(value) || 0;
 
-  return `${new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(formattedValue)} CMX`;
+  // Always use 8 decimal places for small values to show micro-earnings
+  // Switch to 2 decimals for values >= 0.01
+  const useSmallFormat = numericValue < 0.01 && numericValue > 0;
+  const decimals = useSmallFormat ? 8 : 2;
+
+  const formatted = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+    useGrouping: true,
+  }).format(Math.max(0, numericValue)); // Ensure we don't show negative values
+
+  return `${formatted} CMX`;
 };
 
 export const formatUSDC = (value) => {

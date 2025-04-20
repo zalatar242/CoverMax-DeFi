@@ -132,8 +132,39 @@ const Dashboard = () => {
   const { status, tvl, phases } = useProtocolStatus();
   const protocolAPY = useProtocolAPY();
   const totalValue = parseFloat(trancheAAA) + parseFloat(trancheAA);
-  const earnedInterest = useEarnedInterest(totalValue);
+  const { total: earnedInterest, ratePerSecond, isEarning } = useEarnedInterest(totalValue);
   const averageAPY = (protocolAPY.aave + protocolAPY.moonwell) / 2;
+
+  // State for animated earnings display
+  const [displayedEarnings, setDisplayedEarnings] = React.useState(0);
+
+  // Reset displayed earnings when actual earnings change
+  React.useEffect(() => {
+    setDisplayedEarnings(earnedInterest);
+  }, [earnedInterest]);
+
+  React.useEffect(() => {
+    if (!isEarning) {
+      setDisplayedEarnings(earnedInterest);
+      return;
+    }
+
+    // Update displayed earnings more frequently for smooth animation
+    const animate = () => {
+      setDisplayedEarnings(prev => prev + (ratePerSecond / 10)); // Update every 100ms
+    };
+
+    const intervalId = setInterval(animate, 100);
+    return () => clearInterval(intervalId);
+  }, [isEarning, ratePerSecond]);
+
+  // Sync displayed earnings with actual earnings periodically
+  React.useEffect(() => {
+    const syncInterval = setInterval(() => {
+      setDisplayedEarnings(earnedInterest);
+    }, 5000); // Sync every 5 seconds
+    return () => clearInterval(syncInterval);
+  }, [earnedInterest]);
 
 
   if (!isConnected) {
@@ -207,10 +238,48 @@ const Dashboard = () => {
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600 }}>
               {formatUSDC(totalValue)}
             </Typography>
-            {status === "Insurance Phase (5 days)" && earnedInterest > 0 && (
-              <Typography variant="subtitle2" sx={{ color: 'success.main', mt: 0.5 }}>
-                +{formatCMX(earnedInterest)} earned
-              </Typography>
+            {status === "Insurance Phase (5 days)" && (
+              <Box sx={{ mt: 0.5 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    color: 'success.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5
+                  }}
+                >
+                  +{formatCMX(displayedEarnings)} earned
+                  {isEarning && (
+                    <Box
+                      component="span"
+                      sx={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: 'success.main',
+                        animation: 'pulse 1.5s infinite',
+                        '@keyframes pulse': {
+                          '0%': {
+                            opacity: 0.4,
+                          },
+                          '50%': {
+                            opacity: 1,
+                          },
+                          '100%': {
+                            opacity: 0.4,
+                          },
+                        },
+                      }}
+                    />
+                  )}
+                </Typography>
+                {isEarning && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    +{formatCMX(ratePerSecond)} per second
+                  </Typography>
+                )}
+              </Box>
             )}
           </Box>
           <Divider orientation={isTablet ? 'horizontal' : 'vertical'} flexItem />
@@ -222,8 +291,43 @@ const Dashboard = () => {
               </Typography>
             </Typography>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600 }}>
-              {formatCMX(earnedInterest)}
+              {formatCMX(displayedEarnings)}
             </Typography>
+            {isEarning && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  mt: 0.5
+                }}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: 'success.main',
+                    animation: 'pulse 1.5s infinite',
+                    '@keyframes pulse': {
+                      '0%': {
+                        opacity: 0.4,
+                      },
+                      '50%': {
+                        opacity: 1,
+                      },
+                      '100%': {
+                        opacity: 0.4,
+                      },
+                    },
+                  }}
+                />
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Earning {formatCMX(ratePerSecond)} per second
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
 

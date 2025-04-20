@@ -92,34 +92,54 @@ export const useProtocolAPY = () => {
 };
 
 export const useEarnedInterest = (totalValue) => {
-  const { status } = useProtocolStatus();
   const protocolAPY = useProtocolAPY();
+
+  // Parse total value to ensure it's a number
+  const parsedValue = parseFloat(totalValue) || 0;
 
   // Calculate average APY across protocols
   const averageAPY = (protocolAPY.aave + protocolAPY.moonwell) / 2;
 
-  // Only calculate interest during insurance phase
-  const isEarningInterest = status === "Insurance Phase (5 days)";
-
   // Calculate interest per second based on APY
   const interestPerSecond = averageAPY / (365 * 24 * 60 * 60);
 
+  // Start earning as soon as funds are deposited
+  const isEarningInterest = parsedValue > 0;
+
+  // State for tracking earnings
   const [earnedInterest, setEarnedInterest] = React.useState(0);
+  const [instantRate, setInstantRate] = React.useState(0);
+  const lastUpdate = React.useRef(Date.now());
 
   React.useEffect(() => {
-    if (!isEarningInterest || !totalValue) return;
+    if (!isEarningInterest) {
+      setInstantRate(0);
+      return;
+    }
 
     const calculateInterest = () => {
-      const interest = totalValue * interestPerSecond;
+      const now = Date.now();
+      const timeDiff = (now - lastUpdate.current) / 1000;
+
+      // Calculate continuous interest
+      const interest = parsedValue * interestPerSecond * timeDiff;
+      const rate = parsedValue * interestPerSecond;
+
+      setInstantRate(rate);
       setEarnedInterest(prev => prev + interest);
+      lastUpdate.current = now;
     };
 
-    // Update every second
-    const interval = setInterval(calculateInterest, 1000);
+    calculateInterest();
+    const interval = setInterval(calculateInterest, 100);
     return () => clearInterval(interval);
-  }, [totalValue, interestPerSecond, isEarningInterest]);
+  }, [parsedValue, interestPerSecond, isEarningInterest]);
 
-  return earnedInterest;
+  return {
+    total: earnedInterest,
+    ratePerSecond: instantRate,
+    isEarning: isEarningInterest
+  };
 };
 
 export const useProtocolStatus = () => {
@@ -191,6 +211,7 @@ export const useProtocolStatus = () => {
     }
   };
 
+  // Calculate current phase
   let status;
   if (currentTimestamp < startTime) {
     status = phases.deposit.name;
