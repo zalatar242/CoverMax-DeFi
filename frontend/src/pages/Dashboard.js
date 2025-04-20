@@ -245,34 +245,6 @@ const Dashboard = () => {
           </Box>
           <WithdrawalInfoBox />
 
-          {/* Risk Visualization */}
-          <Box sx={{ mt: 4, mb: 2 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                color: 'text.primary',
-                fontWeight: 600,
-                mb: 3,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1
-              }}
-            >
-              <TrendingDown />
-              Risk Analysis
-            </Typography>
-            <Box
-              sx={{
-                bgcolor: 'background.paper',
-                p: { xs: 3, sm: 4 },
-                borderRadius: 2,
-                border: '1px solid',
-                borderColor: 'divider'
-              }}
-            >
-              <RiskChart aaaTokens={parseFloat(trancheAAA)} aaTokens={parseFloat(trancheAA)} />
-            </Box>
-          </Box>
         </Box>
       </ContentCard>
 
@@ -377,6 +349,20 @@ const Dashboard = () => {
               apy={protocolAPY.moonwell}
             />
           </Box>
+        </Box>
+      </ContentCard>
+
+      <ContentCard title="Risk Analysis" icon={<TrendingDown sx={{ color: 'text.primary' }} />}>
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            p: { xs: 3, sm: 4 },
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <RiskChart aaaTokens={parseFloat(trancheAAA)} aaTokens={parseFloat(trancheAA)} />
         </Box>
       </ContentCard>
     </Box>

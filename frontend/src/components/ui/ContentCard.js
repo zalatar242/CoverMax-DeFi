@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, Typography, useTheme, useMediaQuery } from '@mui/material';
 import PropTypes from 'prop-types';
 
-const ContentCard = ({ children, title }) => {
+const ContentCard = ({ children, title, icon }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -29,9 +29,13 @@ const ContentCard = ({ children, title }) => {
                 xs: '1.125rem',
                 sm: '1.25rem',
                 md: '1.5rem'
-              }
+              },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1
             }}
           >
+            {icon}
             {title}
           </Typography>
         )}
@@ -43,7 +47,8 @@ const ContentCard = ({ children, title }) => {
 
 ContentCard.propTypes = {
   children: PropTypes.node.isRequired,
-  title: PropTypes.string
+  title: PropTypes.string,
+  icon: PropTypes.node
 };
 
 export default ContentCard;
