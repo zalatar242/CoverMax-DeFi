@@ -19,6 +19,8 @@ async function main() {
     AAVE_DATA_PROVIDER: mockAddresses.aaveDataProvider,
     MOONWELL_COMPTROLLER: mockAddresses.moonwellComptroller,
     MOONWELL_USDC: mockAddresses.moonwellUsdc,
+    UNISWAP_FACTORY: mockAddresses.uniswapFactory,
+    UNISWAP_ROUTER: mockAddresses.uniswapRouter,
     chainId: 31337,
     blockExplorerUrl: "http://localhost:8545",
     defaultRpcUrl: "http://localhost:8545",
@@ -46,6 +48,21 @@ async function main() {
   // Get CoverMax token contract instance
   const coverMaxToken = await ethers.getContractAt("CoverMaxToken", mockAddresses.coverMaxToken);
 
+  // Create Uniswap pairs for AAA and AA tokens
+  console.log("\nCreating Uniswap pairs...");
+  const factory = await ethers.getContractAt("MockUniswapV2Factory", mockAddresses.uniswapFactory);
+
+  await factory.createPair(await contracts.trancheAAA.getAddress(), mockAddresses.usdcAddress);
+  console.log("Created AAA/USDC pair");
+  await factory.createPair(await contracts.trancheAA.getAddress(), mockAddresses.usdcAddress);
+  console.log("Created AA/USDC pair");
+
+  // Get pair addresses
+  const aaaUsdcPair = await factory.getPair(await contracts.trancheAAA.getAddress(), mockAddresses.usdcAddress);
+  const aaUsdcPair = await factory.getPair(await contracts.trancheAA.getAddress(), mockAddresses.usdcAddress);
+  console.log("AAA/USDC pair:", aaaUsdcPair);
+  console.log("AA/USDC pair:", aaUsdcPair);
+
   await updateContractsJson("hardhat", [
     // Mock contracts first
     { name: "CoverMaxToken", contract: coverMaxToken },
@@ -59,7 +76,13 @@ async function main() {
     { name: "AaveLendingAdapter", contract: contracts.aaveAdapter },
     { name: "MoonwellLendingAdapter", contract: contracts.moonwellAdapter },
     { name: "TrancheAAA", contract: contracts.trancheAAA },
-    { name: "TrancheAA", contract: contracts.trancheAA }
+    { name: "TrancheAA", contract: contracts.trancheAA },
+
+    // Uniswap contracts
+    { name: "UniswapV2Factory", contract: factory },
+    { name: "UniswapV2Router02", contract: await ethers.getContractAt("MockUniswapV2Router02", mockAddresses.uniswapRouter) },
+    { name: "AAAUSDCPair", contract: await ethers.getContractAt("MockUniswapV2Pair", aaaUsdcPair) },
+    { name: "AAUSDCPair", contract: await ethers.getContractAt("MockUniswapV2Pair", aaUsdcPair) }
   ]);
 
   console.log("\nLocal deployment complete! The environment is ready for testing.");

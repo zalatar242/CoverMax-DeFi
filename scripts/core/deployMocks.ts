@@ -46,6 +46,22 @@ export async function deployMocks() {
   const mockComptroller = await MockMoonwellComptroller.deploy(await mockMToken.getAddress());
   await mockComptroller.waitForDeployment();
 
+  // Deploy Uniswap mocks
+  console.log("\nDeploying Uniswap mock contracts...");
+  const MockUniswapV2Factory = await ethers.getContractFactory("MockUniswapV2Factory");
+  const factory = await MockUniswapV2Factory.deploy(deployer.address);
+  await factory.waitForDeployment();
+  console.log("MockUniswapV2Factory deployed to:", await factory.getAddress());
+
+  const MockUniswapV2Router02 = await ethers.getContractFactory("MockUniswapV2Router02");
+  const router = await MockUniswapV2Router02.deploy(
+    await factory.getAddress(),
+    ethers.ZeroAddress, // No WETH needed for our mock
+    await mockUSDC.getAddress()
+  );
+  await router.waitForDeployment();
+  console.log("MockUniswapV2Router02 deployed to:", await router.getAddress());
+
   // Mint initial USDC to deployer
   const mintAmount = ethers.parseUnits("1000000", 6); // 1M USDC
   await mockUSDC.mint(deployer.address, mintAmount);
@@ -56,7 +72,9 @@ export async function deployMocks() {
     aavePool: await mockAavePool.getAddress(),
     aaveDataProvider: await mockDataProvider.getAddress(),
     moonwellComptroller: await mockComptroller.getAddress(),
-    moonwellUsdc: await mockMToken.getAddress()
+    moonwellUsdc: await mockMToken.getAddress(),
+    uniswapFactory: await factory.getAddress(),
+    uniswapRouter: await router.getAddress()
   };
 
   console.log("\nMock contracts deployed:");
