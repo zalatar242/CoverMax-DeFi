@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-// Mock Moonwell Market implementation
+// Mock mToken implementation
 contract MockMToken is ERC20 {
     address public immutable underlying;
     uint256 public constant INTEREST_RATE = 8.38e9; // ~30% APY when divided by 1e18
@@ -76,6 +76,25 @@ contract MockMToken is ERC20 {
     // Mock comptroller - always returns success
     function comptroller() external pure returns (address) {
         return address(1);
+    }
+}
+
+// Mock Moonwell Factory
+contract MockMoonwell {
+    address public immutable underlyingToken;
+    address public mToken;
+    MockMoonwellComptroller public comptroller;
+
+    event MarketCreated(address mToken);
+
+    constructor(address _underlyingToken) {
+        underlyingToken = _underlyingToken;
+        // Create the mToken market
+        MockMToken newMToken = new MockMToken(_underlyingToken);
+        mToken = address(newMToken);
+        // Create and initialize the comptroller
+        comptroller = new MockMoonwellComptroller(mToken);
+        emit MarketCreated(mToken);
     }
 }
 
