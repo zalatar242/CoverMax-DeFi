@@ -1,0 +1,365 @@
+import React, { useState } from 'react';
+import { useTranchesConfig } from '../utils/contractConfig';
+import { Button, Stack, CircularProgress, Typography } from '@mui/material';
+import { SwapHoriz, Pool } from '@mui/icons-material';
+import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
+import { useMainConfig } from '../utils/contractConfig';
+import { useWriteContract, useReadContract } from 'wagmi';
+import { formatUnits } from 'viem';
+import { useTransaction } from '../utils/useTransaction';
+import { useAmountForm } from '../utils/useAmountForm';
+import {
+  ContentCard,
+  AmountField,
+  TransactionAlerts,
+  TokenSelect
+} from '../components/ui';
+
+const WalletRequiredPrompt = ({ openConnectModal }) => (
+  <ContentCard title="Connect Wallet to Trade">
+    <Button
+      variant="contained"
+      onClick={openConnectModal}
+      size="large"
+      fullWidth
+      sx={{
+        py: 1.5,
+        px: 4
+      }}
+    >
+      Connect Wallet
+    </Button>
+  </ContentCard>
+);
+
+const Trade = () => {
+  const { isConnected, address } = useWalletConnection();
+  const { openConnectModal } = useWalletModal();
+  const { USDC, Insurance } = useMainConfig();
+  const { AAA, AA } = useTranchesConfig();
+
+  const [selectedFromToken, setSelectedFromToken] = useState('');
+  const [selectedToToken, setSelectedToToken] = useState('');
+  const [selectedLiquidityToken, setSelectedLiquidityToken] = useState('');
+
+  const {
+    amount: swapAmount,
+    error: swapAmountError,
+    setError: setSwapError,
+    handleAmountChange: handleSwapAmountChange,
+    validateAmount: validateSwapAmount,
+    reset: resetSwapAmount,
+    amountInWei: swapAmountInWei
+  } = useAmountForm();
+
+  const {
+    amount: liquidityAmount,
+    error: liquidityAmountError,
+    setError: setLiquidityError,
+    handleAmountChange: handleLiquidityAmountChange,
+    validateAmount: validateLiquidityAmount,
+    reset: resetLiquidityAmount,
+    amountInWei: liquidityAmountInWei
+  } = useAmountForm();
+
+  const { data: fromTokenAllowance = 0n, refetch: refetchFromTokenAllowance } = useReadContract({
+    address: selectedFromToken,
+    abi: ['function allowance(address,address) view returns (uint256)'],
+    functionName: 'allowance',
+    args: [address, Insurance?.UniswapRouter?.address],
+    enabled: Boolean(address && selectedFromToken && Insurance?.UniswapRouter && isConnected),
+  });
+
+  const { data: toTokenAllowance = 0n, refetch: refetchToTokenAllowance } = useReadContract({
+    address: selectedToToken,
+    abi: ['function allowance(address,address) view returns (uint256)'],
+    functionName: 'allowance',
+    args: [address, Insurance?.UniswapRouter?.address],
+    enabled: Boolean(address && selectedToToken && Insurance?.UniswapRouter && isConnected),
+  });
+
+  const { data: liquidityTokenAllowance = 0n, refetch: refetchLiquidityTokenAllowance } = useReadContract({
+    address: selectedLiquidityToken,
+    abi: ['function allowance(address,address) view returns (uint256)'],
+    functionName: 'allowance',
+    args: [address, Insurance?.UniswapRouter?.address],
+    enabled: Boolean(address && selectedLiquidityToken && Insurance?.UniswapRouter && isConnected),
+  });
+
+  const { data: usdcAllowance = 0n, refetch: refetchUSDCAllowance } = useReadContract({
+    address: USDC?.address,
+    abi: USDC?.abi,
+    functionName: 'allowance',
+    args: [address, Insurance?.UniswapRouter?.address],
+    enabled: Boolean(address && USDC && Insurance?.UniswapRouter && isConnected),
+  });
+
+  const { isProcessing: isApprovingSwap, error: approveSwapError, success: approveSwapSuccess, handleTransaction: handleApproveSwap } =
+    useTransaction({
+      onSuccess: () => {
+        refetchFromTokenAllowance();
+      }
+    });
+
+  const { isProcessing: isSwapping, error: swapError, success: swapSuccess, handleTransaction: handleSwapTransaction } =
+    useTransaction({
+      onSuccess: () => {
+        resetSwapAmount();
+        refetchFromTokenAllowance();
+        refetchToTokenAllowance();
+      }
+    });
+
+  const { isProcessing: isApprovingLiquidity, error: approveLiquidityError, success: approveLiquiditySuccess, handleTransaction: handleApproveLiquidity } =
+    useTransaction({
+      onSuccess: () => {
+        refetchLiquidityTokenAllowance();
+        refetchUSDCAllowance();
+      }
+    });
+
+  const { isProcessing: isAddingLiquidity, error: addLiquidityError, success: addLiquiditySuccess, handleTransaction: handleAddLiquidityTransaction } =
+    useTransaction({
+      onSuccess: () => {
+        resetLiquidityAmount();
+        refetchLiquidityTokenAllowance();
+        refetchUSDCAllowance();
+      }
+    });
+
+  const { writeContractAsync } = useWriteContract();
+
+  const handleSwap = async () => {
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
+    handleSwapTransaction(async () => {
+      try {
+        const hash = await writeContractAsync({
+          address: Insurance.UniswapRouter.address,
+          abi: Insurance.UniswapRouter.abi,
+          functionName: 'swapExactTokensForTokens',
+          args: [
+            swapAmountInWei,
+            0, // Min output amount
+            [selectedFromToken, selectedToToken],
+            address,
+            deadline
+          ]
+        });
+        console.log('Swap hash:', hash);
+        return hash;
+      } catch (err) {
+        console.error('Swap error:', err);
+        throw err;
+      }
+    });
+  };
+
+  const handleApproveSwapClick = () => {
+    handleApproveSwap(async () => {
+      try {
+        const hash = await writeContractAsync({
+          address: selectedFromToken,
+          abi: Insurance.AAA.abi, // Both AAA and AA have same ERC20 abi
+          functionName: 'approve',
+          args: [Insurance.UniswapRouter.address, swapAmountInWei]
+        });
+        console.log('Approve hash:', hash);
+        await refetchFromTokenAllowance();
+        return hash;
+      } catch (err) {
+        console.error('Approval error:', err);
+        throw err;
+      }
+    });
+  };
+
+  const handleApproveLiquidityClick = () => {
+    handleApproveLiquidity(async () => {
+      try {
+        const approveTokenHash = await writeContractAsync({
+          address: selectedLiquidityToken,
+          abi: Insurance.AAA.abi,
+          functionName: 'approve',
+          args: [Insurance.UniswapRouter.address, liquidityAmountInWei]
+        });
+        console.log('Approve token hash:', approveTokenHash);
+
+        const approveUSDCHash = await writeContractAsync({
+          address: USDC.address,
+          abi: USDC.abi,
+          functionName: 'approve',
+          args: [Insurance.UniswapRouter.address, liquidityAmountInWei]
+        });
+        console.log('Approve USDC hash:', approveUSDCHash);
+
+        await Promise.all([
+          refetchLiquidityTokenAllowance(),
+          refetchUSDCAllowance()
+        ]);
+
+        return approveTokenHash;
+      } catch (err) {
+        console.error('Approval error:', err);
+        throw err;
+      }
+    });
+  };
+
+  const handleAddLiquidity = () => {
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
+    handleAddLiquidityTransaction(async () => {
+      try {
+        const hash = await writeContractAsync({
+          address: Insurance.UniswapRouter.address,
+          abi: Insurance.UniswapRouter.abi,
+          functionName: 'addLiquidity',
+          args: [
+            selectedLiquidityToken,
+            USDC.address,
+            liquidityAmountInWei,
+            liquidityAmountInWei,
+            0, // Min amounts
+            0,
+            address,
+            deadline
+          ]
+        });
+        console.log('Add liquidity hash:', hash);
+        return hash;
+      } catch (err) {
+        console.error('Add liquidity error:', err);
+        throw err;
+      }
+    });
+  };
+
+  const trancheTokens = [
+    { address: AAA?.address, symbol: 'AAA' },
+    { address: AA?.address, symbol: 'AA' },
+    { address: USDC?.address, symbol: 'USDC' }
+  ].filter(token => token.address);
+
+  if (!isConnected) {
+    return <WalletRequiredPrompt openConnectModal={openConnectModal} />;
+  }
+
+  return (
+    <>
+      <ContentCard title="Swap Tranches">
+        <TransactionAlerts
+          error={swapAmountError || approveSwapError || swapError}
+          success={approveSwapSuccess || swapSuccess}
+        />
+
+        <Stack spacing={3}>
+          <div>
+            <TokenSelect
+              token={selectedFromToken}
+              onTokenChange={setSelectedFromToken}
+              tokens={trancheTokens}
+              label="From Token"
+            />
+            <TokenSelect
+              token={selectedToToken}
+              onTokenChange={setSelectedToToken}
+              tokens={trancheTokens.filter(t => t.address !== selectedFromToken)}
+              label="To Token"
+            />
+            <AmountField
+              amount={swapAmount}
+              setAmount={handleSwapAmountChange}
+              validateAmount={validateSwapAmount}
+              setError={setSwapError}
+              label="Amount to Swap"
+            />
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+              Current Allowance: {formatUnits(fromTokenAllowance, 18)} {trancheTokens.find(t => t.address === selectedFromToken)?.symbol}
+            </Typography>
+          </div>
+
+          <Stack direction="row" spacing={2}>
+            <Button
+              fullWidth
+              variant={swapAmountInWei > fromTokenAllowance ? "contained" : "outlined"}
+              onClick={handleApproveSwapClick}
+              disabled={!swapAmount || !selectedFromToken || !selectedToToken || isApprovingSwap || !validateSwapAmount(swapAmount) || swapAmountInWei <= fromTokenAllowance}
+              startIcon={isApprovingSwap ? <CircularProgress size={24} /> : <SwapHoriz />}
+              color="primary"
+            >
+              1. Approve Token
+            </Button>
+            <Button
+              fullWidth
+              variant={swapAmountInWei <= fromTokenAllowance ? "contained" : "outlined"}
+              onClick={handleSwap}
+              disabled={!swapAmount || !selectedFromToken || !selectedToToken || isSwapping || swapAmountInWei > fromTokenAllowance}
+              startIcon={isSwapping ? <CircularProgress size={24} /> : <SwapHoriz />}
+              color="primary"
+            >
+              2. Swap
+            </Button>
+          </Stack>
+        </Stack>
+      </ContentCard>
+
+      <ContentCard title="Add Liquidity" sx={{ mt: 3 }}>
+        <TransactionAlerts
+          error={liquidityAmountError || approveLiquidityError || addLiquidityError}
+          success={approveLiquiditySuccess || addLiquiditySuccess}
+        />
+
+        <Stack spacing={3}>
+          <div>
+            <TokenSelect
+              token={selectedLiquidityToken}
+              onTokenChange={setSelectedLiquidityToken}
+              tokens={trancheTokens.filter(t => t.address !== USDC.address)}
+              label="Select Token"
+            />
+            <AmountField
+              amount={liquidityAmount}
+              setAmount={handleLiquidityAmountChange}
+              validateAmount={validateLiquidityAmount}
+              setError={setLiquidityError}
+              label="Amount to Deposit"
+            />
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+              Token Allowance: {formatUnits(liquidityTokenAllowance, 18)} {trancheTokens.find(t => t.address === selectedLiquidityToken)?.symbol}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+              USDC Allowance: {formatUnits(usdcAllowance, 6)} USDC
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+              You will need to deposit equal amounts of tokens and USDC to provide liquidity
+            </Typography>
+          </div>
+
+          <Stack direction="row" spacing={2}>
+            <Button
+              fullWidth
+              variant={(liquidityAmountInWei > liquidityTokenAllowance || liquidityAmountInWei > usdcAllowance) ? "contained" : "outlined"}
+              onClick={handleApproveLiquidityClick}
+              disabled={!liquidityAmount || !selectedLiquidityToken || isApprovingLiquidity || !validateLiquidityAmount(liquidityAmount) || (liquidityAmountInWei <= liquidityTokenAllowance && liquidityAmountInWei <= usdcAllowance)}
+              startIcon={isApprovingLiquidity ? <CircularProgress size={24} /> : <Pool />}
+              color="primary"
+            >
+              1. Approve Tokens
+            </Button>
+            <Button
+              fullWidth
+              variant={(liquidityAmountInWei <= liquidityTokenAllowance && liquidityAmountInWei <= usdcAllowance) ? "contained" : "outlined"}
+              onClick={handleAddLiquidity}
+              disabled={!liquidityAmount || !selectedLiquidityToken || isAddingLiquidity || liquidityAmountInWei > liquidityTokenAllowance || liquidityAmountInWei > usdcAllowance}
+              startIcon={isAddingLiquidity ? <CircularProgress size={24} /> : <Pool />}
+              color="primary"
+            >
+              2. Add Liquidity
+            </Button>
+          </Stack>
+        </Stack>
+      </ContentCard>
+    </>
+  );
+};
+
+export default Trade;

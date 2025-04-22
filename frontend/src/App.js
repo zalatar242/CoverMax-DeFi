@@ -9,6 +9,7 @@ import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 import Deposit from './pages/Deposit';
 import Withdraw from './pages/Withdraw';
+import Trade from './pages/Trade';
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
               <Route path="/" element={<Dashboard />} />
               <Route path="/deposit" element={<Deposit />} />
               <Route path="/withdraw" element={<Withdraw />} />
+              <Route path="/trade" element={<Trade />} />
             </Routes>
           </Layout>
         </AppKitProvider>

@@ -110,6 +110,7 @@ const Navigation = () => {
               <NavButton to="/">Dashboard</NavButton>
               <NavButton to="/deposit">Deposit</NavButton>
               <NavButton to="/withdraw">Withdraw</NavButton>
+              <NavButton to="/trade">Trade</NavButton>
             </Stack>
           </Box>
 
@@ -126,6 +127,7 @@ const Navigation = () => {
             <MobileNavButton to="/">Dashboard</MobileNavButton>
             <MobileNavButton to="/deposit">Deposit</MobileNavButton>
             <MobileNavButton to="/withdraw">Withdraw</MobileNavButton>
+            <MobileNavButton to="/trade">Trade</MobileNavButton>
           </Stack>
         </Box>
 

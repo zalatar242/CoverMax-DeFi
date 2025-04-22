@@ -215,6 +215,7 @@ const Dashboard = () => {
               variant="outlined"
               fullWidth={isMobile}
               startIcon={<SwapHoriz />}
+              onClick={() => navigate('/trade')}
               sx={{ minWidth: { sm: '140px' } }}
             >
               Trade Tranches
