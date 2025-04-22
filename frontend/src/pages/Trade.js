@@ -62,6 +62,38 @@ const Trade = () => {
     amountInWei: liquidityAmountInWei
   } = useAmountForm();
 
+  const { data: fromTokenBalance = 0n } = useReadContract({
+    address: selectedFromToken,
+    abi: ['function balanceOf(address) view returns (uint256)'],
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && selectedFromToken && isConnected),
+  });
+
+  const { data: toTokenBalance = 0n } = useReadContract({
+    address: selectedToToken,
+    abi: ['function balanceOf(address) view returns (uint256)'],
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && selectedToToken && isConnected),
+  });
+
+  const { data: liquidityTokenBalance = 0n } = useReadContract({
+    address: selectedLiquidityToken,
+    abi: ['function balanceOf(address) view returns (uint256)'],
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && selectedLiquidityToken && isConnected),
+  });
+
+  const { data: usdcBalance = 0n } = useReadContract({
+    address: USDC?.address,
+    abi: USDC?.abi,
+    functionName: 'balanceOf',
+    args: [address],
+    enabled: Boolean(address && USDC && isConnected),
+  });
+
   const { data: fromTokenAllowance = 0n, refetch: refetchFromTokenAllowance } = useReadContract({
     address: selectedFromToken,
     abi: ['function allowance(address,address) view returns (uint256)'],
@@ -159,7 +191,7 @@ const Trade = () => {
       try {
         const hash = await writeContractAsync({
           address: selectedFromToken,
-          abi: Insurance.AAA.abi, // Both AAA and AA have same ERC20 abi
+          abi: selectedFromToken === USDC?.address ? USDC?.abi : Insurance.AAA.abi, // Use appropriate abi based on token
           functionName: 'approve',
           args: [Insurance.UniswapRouter.address, swapAmountInWei]
         });
@@ -178,7 +210,7 @@ const Trade = () => {
       try {
         const approveTokenHash = await writeContractAsync({
           address: selectedLiquidityToken,
-          abi: Insurance.AAA.abi,
+          abi: selectedLiquidityToken === USDC?.address ? USDC?.abi : Insurance.AAA.abi, // Use appropriate abi based on token
           functionName: 'approve',
           args: [Insurance.UniswapRouter.address, liquidityAmountInWei]
         });
@@ -272,8 +304,11 @@ const Trade = () => {
               setError={setSwapError}
               label="Amount to Swap"
             />
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+              Current Balance: {formatUnits(fromTokenBalance, 6)} {trancheTokens.find(t => t.address === selectedFromToken)?.symbol}
+            </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-              Current Allowance: {formatUnits(fromTokenAllowance, 18)} {trancheTokens.find(t => t.address === selectedFromToken)?.symbol}
+              Current Allowance: {formatUnits(fromTokenAllowance, 6)} {trancheTokens.find(t => t.address === selectedFromToken)?.symbol}
             </Typography>
           </div>
 
@@ -324,7 +359,13 @@ const Trade = () => {
               label="Amount to Deposit"
             />
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-              Token Allowance: {formatUnits(liquidityTokenAllowance, 18)} {trancheTokens.find(t => t.address === selectedLiquidityToken)?.symbol}
+              Token Balance: {formatUnits(liquidityTokenBalance, 6)} {trancheTokens.find(t => t.address === selectedLiquidityToken)?.symbol}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+              Token Allowance: {formatUnits(liquidityTokenAllowance, 6)} {trancheTokens.find(t => t.address === selectedLiquidityToken)?.symbol}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+              USDC Balance: {formatUnits(usdcBalance, 6)} USDC
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
               USDC Allowance: {formatUnits(usdcAllowance, 6)} USDC
