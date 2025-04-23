@@ -1,20 +1,19 @@
 import { useState } from 'react';
 import { parseUnits, formatUnits } from 'viem';
 
-export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 2) => {
+export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 2, decimals = 6) => {
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
 
   const validateAmount = (value) => {
     if (!value) return true; // Empty is valid (will be caught by disabled button)
     const numValue = parseFloat(value);
-    const decimalPlaces = 6; // USDC decimals
-    return Number.isInteger(numValue * (10 ** decimalPlaces) / minDivisibleBy);
+    return Number.isInteger(numValue * (10 ** decimals) / minDivisibleBy);
   };
 
   const handleMaxAmount = () => {
     if (!maxAmount) return;
-    const formattedMax = Number(formatUnits(maxAmount, 6));
+    const formattedMax = Number(formatUnits(maxAmount, decimals));
     const roundedAmount = Math.floor(formattedMax / minDivisibleBy) * minDivisibleBy;
     setAmount(roundedAmount.toString());
   };
@@ -33,8 +32,8 @@ export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 2) => {
       } else if (!validateAmount(value)) {
         setError('Amount must be even to ensure equal distribution between AAA and AA tranches');
       } else {
-        const valueInWei = parseUnits(value, 6);
-        if (valueInWei > maxAmount) {
+        const valueInWei = parseUnits(value, decimals);
+        if (maxAmount !== 0n && valueInWei > maxAmount) {
           setError('Amount exceeds your available balance');
         } else {
           setError('');
@@ -62,6 +61,6 @@ export const useAmountForm = (maxAmount = 0n, minDivisibleBy = 2) => {
     handleMaxAmount,
     validateAmount,
     reset,
-    amountInWei: amount ? parseUnits(amount, 6) : 0n
+    amountInWei: amount ? parseUnits(amount, decimals) : 0n
   };
 };

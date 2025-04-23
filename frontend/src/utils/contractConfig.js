@@ -63,6 +63,7 @@ export const useMainConfig = () => {
   return {
     Insurance: getContractConfig('Insurance', currentNetwork),
     USDC: getContractConfig('USDC', currentNetwork),
+    UniswapV2Router02: getContractConfig('UniswapV2Router02', currentNetwork),
     networks: NETWORK_CONFIG,
     currentNetwork,
     switchNetwork: async (networkKey) => {
