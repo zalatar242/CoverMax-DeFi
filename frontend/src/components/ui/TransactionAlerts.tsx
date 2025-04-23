@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Alert, Stack } from '@mui/material';
-import PropTypes from 'prop-types';
 
-const TransactionAlerts = ({ error, success }) => {
-  const [showSuccess, setShowSuccess] = useState(false);
+interface TransactionAlertsProps {
+  error?: string;
+  success?: string;
+}
 
-  useEffect(() => {
+const TransactionAlerts: React.FC<TransactionAlertsProps> = ({ error, success }) => {
+  const [showSuccess, setShowSuccess] = useState<boolean>(false);
+
+  useEffect((): (() => void) => {
     if (success) {
       // Wait for a short delay before showing success alert to ensure transaction is confirmed
       const timer = setTimeout(() => {
@@ -14,6 +18,7 @@ const TransactionAlerts = ({ error, success }) => {
       return () => clearTimeout(timer);
     } else {
       setShowSuccess(false);
+      return () => {}; // Empty cleanup function when no timer is set
     }
   }, [success]);
 
@@ -25,11 +30,6 @@ const TransactionAlerts = ({ error, success }) => {
       {showSuccess && <Alert severity="success">{success}</Alert>}
     </Stack>
   );
-};
-
-TransactionAlerts.propTypes = {
-  error: PropTypes.string,
-  success: PropTypes.string
 };
 
 export default TransactionAlerts;

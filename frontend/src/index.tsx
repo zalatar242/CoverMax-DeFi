@@ -2,8 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider, createTheme } from '@mui/material';
+import type { Theme, ThemeOptions } from '@mui/material/styles';
 
-const theme = createTheme({
+const theme: Theme = createTheme({
   palette: {
     primary: {
       main: '#1976d2',
@@ -23,9 +24,15 @@ const theme = createTheme({
       'sans-serif',
     ].join(','),
   },
-});
+} as ThemeOptions);
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+
+const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>

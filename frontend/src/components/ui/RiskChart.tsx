@@ -8,13 +8,35 @@ import {
   Tooltip,
   ReferenceLine,
   ResponsiveContainer,
-  Legend
+  Legend,
+  TooltipProps
 } from 'recharts';
-import { Box, Typography, useTheme, useMediaQuery } from '@mui/material';
+import { Box, Typography, useTheme, useMediaQuery, Theme } from '@mui/material';
 import { generateChartData, generateXAxisTicks } from '../../utils/riskCalculations';
 import { formatUSDC } from '../../utils/analytics';
 
-const CustomTooltip = ({ active, payload, label }) => {
+interface ChartData {
+  x: number;
+  recovery: number;
+  aaaRecovery?: number;
+  aaRecovery?: number;
+}
+
+interface CustomTooltipProps extends TooltipProps<number, string> {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    name: string;
+  }>;
+  label?: string;
+}
+
+interface RiskChartProps {
+  aaaTokens: number;
+  aaTokens: number;
+}
+
+const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (!active || !payload || !payload.length) return null;
 
   return (
@@ -30,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       }}
     >
       <Typography variant="body2" sx={{ mb: 1, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-        Exploit Severity: {(label * 100).toFixed(0)}%
+        Exploit Severity: {label && (parseFloat(label) * 100).toFixed(0)}%
       </Typography>
       <Typography
         variant="body2"
@@ -69,11 +91,11 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-const RiskChart = ({ aaaTokens, aaTokens }) => {
-  const theme = useTheme();
+const RiskChart: React.FC<RiskChartProps> = ({ aaaTokens, aaTokens }) => {
+  const theme: Theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const data = generateChartData(aaaTokens, aaTokens);
-  const xAxisTicks = generateXAxisTicks();
+  const data: ChartData[] = generateChartData(aaaTokens, aaTokens);
+  const xAxisTicks: number[] = generateXAxisTicks();
 
   return (
     <Box>
@@ -114,7 +136,7 @@ const RiskChart = ({ aaaTokens, aaTokens }) => {
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
               <XAxis
                 dataKey="x"
-                tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                tickFormatter={(value: number) => `${(value * 100).toFixed(0)}%`}
                 ticks={xAxisTicks}
                 domain={[0, 1]}
                 label={{

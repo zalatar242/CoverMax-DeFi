@@ -4,18 +4,22 @@ import { AccountBalance } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useMainConfig, useTranchesConfig } from '../utils/contractConfig';
 import { useWriteContract, useReadContract } from 'wagmi';
-import { formatUnits } from 'viem';
+import { formatUnits, type Address } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
   ContentCard,
   TransactionAlerts,
   InfoBox,
-  AmountField
+  AmountInput
 } from '../components/ui';
 
-const WalletRequiredPrompt = ({ openConnectModal }) => (
-  <ContentCard title="Connect Wallet to Withdraw">
+interface WalletRequiredPromptProps {
+  openConnectModal: () => void;
+}
+
+const WalletRequiredPrompt: React.FC<WalletRequiredPromptProps> = ({ openConnectModal }) => (
+  <ContentCard title="Connect Wallet to Withdraw" icon={<AccountBalance />}>
     <Button
       variant="contained"
       onClick={openConnectModal}
@@ -31,7 +35,7 @@ const WalletRequiredPrompt = ({ openConnectModal }) => (
   </ContentCard>
 );
 
-const Withdraw = () => {
+const Withdraw: React.FC = () => {
   const { isConnected, address } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
   const { Insurance } = useMainConfig();
@@ -39,11 +43,10 @@ const Withdraw = () => {
 
   // Get withdrawal start time
   const { data: withdrawalStart } = useReadContract({
-    address: Insurance?.address,
+    address: Insurance?.address as Address,
     abi: Insurance?.abi,
     functionName: 'T2',
-    enabled: Boolean(Insurance),
-  });
+  }) as { data: bigint | undefined };
 
   // Format date for display
   const formattedWithdrawalDate = withdrawalStart
@@ -58,20 +61,18 @@ const Withdraw = () => {
 
   // Read balances for each tranche
   const { data: trancheAAABalance = 0n, isLoading: isLoadingBalanceAAA, refetch: refetchBalanceAAA } = useReadContract({
-    address: tranches.AAA?.address,
+    address: tranches.AAA?.address as Address,
     abi: tranches.AAA?.abi,
     functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && tranches.AAA && isConnected),
-  });
+    args: [address as Address],
+  }) as { data: bigint; isLoading: boolean; refetch: () => void };
 
   const { data: trancheAABalance = 0n, isLoading: isLoadingBalanceAA, refetch: refetchBalanceAA } = useReadContract({
-    address: tranches.AA?.address,
+    address: tranches.AA?.address as Address,
     abi: tranches.AA?.abi,
     functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && tranches.AA && isConnected),
-  });
+    args: [address as Address],
+  }) as { data: bigint; isLoading: boolean; refetch: () => void };
 
   const isLoadingBalances = isLoadingBalanceAAA || isLoadingBalanceAA;
   const totalBalance = trancheAAABalance + trancheAABalance;
@@ -79,15 +80,14 @@ const Withdraw = () => {
   const {
     amount,
     error: amountError,
-    setError,
     handleAmountChange,
     validateAmount,
     reset: resetAmount,
     amountInWei
-  } = useAmountForm(totalBalance);
+  } = useAmountForm(totalBalance, 2, 6);
 
   // Track when to update balances
-  const [shouldUpdateBalances, setShouldUpdateBalances] = useState(false);
+  const [shouldUpdateBalances, setShouldUpdateBalances] = useState<boolean>(false);
 
   const { isProcessing: isWithdrawing, error: withdrawError, success: withdrawSuccess, handleTransaction: handleWithdraw } =
     useTransaction({
@@ -112,9 +112,10 @@ const Withdraw = () => {
   const handleWithdrawClick = () => {
     handleWithdraw(async () => {
       try {
+        if (!Insurance?.address) throw new Error('Insurance contract not found');
         const individualAmount = amountInWei / 2n; // Split between AAA and AA
         const hash = await writeContractAsync({
-          address: Insurance.address,
+          address: Insurance.address as Address,
           abi: Insurance.abi,
           functionName: 'claim',
           args: [individualAmount, individualAmount],
@@ -146,7 +147,7 @@ const Withdraw = () => {
   ];
 
   return (
-    <ContentCard title="Withdraw USDC">
+    <ContentCard title="Withdraw USDC" icon={<AccountBalance />}>
       <TransactionAlerts
         error={amountError || withdrawError}
         success={withdrawSuccess}
@@ -159,13 +160,13 @@ const Withdraw = () => {
             Total Available to Withdraw: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance, 6)} USDC
           </Typography>
 
-          <AmountField
+          <AmountInput
             amount={amount}
             setAmount={handleAmountChange}
-            validateAmount={validateAmount}
-            setError={setError}
+            errorMessage={amountError}
             maxAmount={Number(formatUnits(totalBalance, 6))}
-            label="Amount to Withdraw"
+            decimals={6}
+            symbol="USDC"
           />
         </Box>
 

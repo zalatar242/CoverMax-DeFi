@@ -7,7 +7,8 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  Tooltip
+  Tooltip,
+  Theme
 } from '@mui/material';
 import { AccountBalance, SwapHoriz, ErrorOutline, InfoOutlined, TrendingDown } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -22,8 +23,8 @@ import {
 } from '../utils/contracts';
 import { ContentCard, RiskChart } from '../components/ui';
 
-const WithdrawalInfoBox = () => {
-  const theme = useTheme();
+const WithdrawalInfoBox: React.FC = () => {
+  const theme = useTheme<Theme>();
 
   return (
     <Box
@@ -49,8 +50,12 @@ const WithdrawalInfoBox = () => {
   );
 };
 
-const ConnectWalletPrompt = ({ openConnectModal }) => (
-  <ContentCard title="Welcome to CoverMax">
+interface ConnectWalletPromptProps {
+  openConnectModal: () => void;
+}
+
+const ConnectWalletPrompt: React.FC<ConnectWalletPromptProps> = ({ openConnectModal }) => (
+  <ContentCard title="Welcome to CoverMax" icon={<AccountBalance />}>
     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
       Connect your wallet to view your portfolio and start protecting your assets
     </Typography>
@@ -70,15 +75,21 @@ const ConnectWalletPrompt = ({ openConnectModal }) => (
   </ContentCard>
 );
 
-const TrancheSummary = ({ title, value, total }) => (
+interface TrancheSummaryProps {
+  title: string;
+  value: number | string;
+  total: number;
+}
+
+const TrancheSummary: React.FC<TrancheSummaryProps> = ({ title, value, total }) => (
   <Box
     sx={{
       height: '100%',
       p: { xs: 2, sm: 3 },
       borderRadius: 2,
-      bgcolor: (theme) => `${theme.palette.primary.main}08`,
+      bgcolor: (theme: Theme) => `${theme.palette.primary.main}08`,
       border: '1px solid',
-      borderColor: (theme) => `${theme.palette.primary.main}20`
+      borderColor: (theme: Theme) => `${theme.palette.primary.main}20`
     }}
   >
     <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, mb: 2 }}>
@@ -93,15 +104,26 @@ const TrancheSummary = ({ title, value, total }) => (
   </Box>
 );
 
-const ProtocolTVLSummary = ({ name, value, tvl, description, apy }) => (
+interface ProtocolTVLSummaryProps {
+  name: string;
+  value: number;
+  tvl: {
+    total: number;
+    [key: string]: number;
+  };
+  description: string;
+  apy: number;
+}
+
+const ProtocolTVLSummary: React.FC<ProtocolTVLSummaryProps> = ({ name, value, tvl, description, apy }) => (
   <Box
     sx={{
       height: '100%',
       p: { xs: 2, sm: 3 },
       borderRadius: 2,
-      bgcolor: (theme) => `${theme.palette.primary.main}08`,
+      bgcolor: (theme: Theme) => `${theme.palette.primary.main}08`,
       border: '1px solid',
-      borderColor: (theme) => `${theme.palette.primary.main}20`
+      borderColor: (theme: Theme) => `${theme.palette.primary.main}20`
     }}
   >
     <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 600, mb: 1 }}>
@@ -119,9 +141,19 @@ const ProtocolTVLSummary = ({ name, value, tvl, description, apy }) => (
   </Box>
 );
 
-const Dashboard = () => {
+interface Phase {
+  name: string;
+  start: Date;
+  end?: Date;
+}
+
+interface Phases {
+  [key: string]: Phase;
+}
+
+const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
+  const theme = useTheme<Theme>();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -136,7 +168,7 @@ const Dashboard = () => {
   const averageAPY = (protocolAPY.aave + protocolAPY.moonwell) / 2;
 
   // State for animated earnings display
-  const [displayedEarnings, setDisplayedEarnings] = React.useState(0);
+  const [displayedEarnings, setDisplayedEarnings] = React.useState<number>(0);
 
   // Reset displayed earnings when actual earnings change
   React.useEffect(() => {
@@ -156,7 +188,7 @@ const Dashboard = () => {
 
     const intervalId = setInterval(animate, 100);
     return () => clearInterval(intervalId);
-  }, [isEarning, ratePerSecond]);
+  }, [isEarning, ratePerSecond, earnedInterest]);
 
   // Sync displayed earnings with actual earnings periodically
   React.useEffect(() => {
@@ -165,7 +197,6 @@ const Dashboard = () => {
     }, 5000); // Sync every 5 seconds
     return () => clearInterval(syncInterval);
   }, [earnedInterest]);
-
 
   if (!isConnected) {
     return <ConnectWalletPrompt openConnectModal={openConnectModal} />;
@@ -177,7 +208,7 @@ const Dashboard = () => {
       mx: 'auto',
       p: { xs: 2, sm: 3, md: 4 }
     }}>
-      <ContentCard>
+      <ContentCard title="Portfolio Overview" icon={<AccountBalance />}>
         <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
@@ -233,7 +264,7 @@ const Dashboard = () => {
             <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, mb: 1 }}>
               Total Portfolio Value
               <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
-                • Available USDC: {formatUSDC(usdcBalance)}
+                • Available USDC: {formatUSDC(Number(usdcBalance || 0))}
               </Typography>
             </Typography>
             <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 600 }}>
@@ -349,11 +380,10 @@ const Dashboard = () => {
             <TrancheSummary title="AA" value={trancheAA} total={totalValue} />
           </Box>
           <WithdrawalInfoBox />
-
         </Box>
       </ContentCard>
 
-      <ContentCard title="Protocol Status">
+      <ContentCard title="Protocol Status" icon={<InfoOutlined />}>
         <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
@@ -374,7 +404,7 @@ const Dashboard = () => {
               Protocol Timeline
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {Object.entries(phases).map(([key, phase]) => (
+              {Object.entries(phases as Phases).map(([key, phase]) => (
                 <Tooltip
                   key={key}
                   title={
@@ -441,15 +471,27 @@ const Dashboard = () => {
           }}>
             <ProtocolTVLSummary
               name="Aave"
-              value={tvl.total / 2}
-              tvl={tvl}
+              value={Number(tvl.total) / 2}
+              tvl={{
+                total: Number(tvl.total),
+                byTranche: {
+                  AAA: Number(tvl.byTranche.AAA),
+                  AA: Number(tvl.byTranche.AA)
+                }
+              }}
               description="Industry-leading lending protocol with robust security"
               apy={protocolAPY.aave}
             />
             <ProtocolTVLSummary
               name="Moonwell"
-              value={tvl.total / 2}
-              tvl={tvl}
+              value={Number(tvl.total) / 2}
+              tvl={{
+                total: Number(tvl.total),
+                byTranche: {
+                  AAA: Number(tvl.byTranche.AAA),
+                  AA: Number(tvl.byTranche.AA)
+                }
+              }}
               description="Innovative Base protocol with competitive rates"
               apy={protocolAPY.moonwell}
             />

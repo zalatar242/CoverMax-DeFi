@@ -5,19 +5,23 @@ import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useUSDCBalance, usePortfolioData } from '../utils/contracts';
 import { useMainConfig } from '../utils/contractConfig';
 import { useWriteContract, useReadContract } from 'wagmi';
-import { formatUnits } from 'viem';
+import { formatUnits, type Address } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 
 import {
   ContentCard,
-  AmountField,
   TransactionAlerts,
-  InfoBox
+  InfoBox,
+  AmountInput
 } from '../components/ui';
 
-const WalletRequiredPrompt = ({ openConnectModal }) => (
-  <ContentCard title="Connect Wallet to Deposit">
+interface WalletRequiredPromptProps {
+  openConnectModal: () => void;
+}
+
+const WalletRequiredPrompt: React.FC<WalletRequiredPromptProps> = ({ openConnectModal }) => (
+  <ContentCard title="Connect Wallet to Deposit" icon={<AccountBalance />}>
     <Button
       variant="contained"
       onClick={openConnectModal}
@@ -33,7 +37,7 @@ const WalletRequiredPrompt = ({ openConnectModal }) => (
   </ContentCard>
 );
 
-const Deposit = () => {
+const Deposit: React.FC = () => {
   const { isConnected, address } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
   const { balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useUSDCBalance();
@@ -43,12 +47,11 @@ const Deposit = () => {
   const {
     amount,
     error: amountError,
-    setError,
     handleAmountChange,
     validateAmount,
     reset: resetAmount,
     amountInWei
-  } = useAmountForm(balance);
+  } = useAmountForm(typeof balance === 'bigint' ? balance : 0n, 2, 6);
 
   const { isProcessing: isApproving, error: approveError, success: approveSuccess, handleTransaction: handleApprove } =
     useTransaction({
@@ -69,23 +72,23 @@ const Deposit = () => {
     });
 
   const { data: allowance = 0n, refetch: refetchAllowance } = useReadContract({
-    address: USDC?.address,
+    address: USDC?.address as Address,
     abi: USDC?.abi,
     functionName: 'allowance',
-    args: [address, Insurance?.address],
-    enabled: Boolean(address && USDC && Insurance && isConnected),
-  });
+    args: [address as Address, Insurance?.address as Address],
+  }) as { data: bigint; refetch: () => void };
 
   const { writeContractAsync } = useWriteContract();
 
   const handleApproveClick = () => {
     handleApprove(async () => {
       try {
+        if (!USDC?.address || !Insurance?.address) throw new Error('Contract addresses not found');
         const hash = await writeContractAsync({
-          address: USDC.address,
+          address: USDC.address as Address,
           abi: USDC.abi,
           functionName: 'approve',
-          args: [Insurance.address, amountInWei]
+          args: [Insurance.address as Address, amountInWei]
         });
         console.log('Approve hash:', hash);
         await refetchAllowance();
@@ -100,8 +103,9 @@ const Deposit = () => {
   const handleDepositClick = () => {
     handleDeposit(async () => {
       try {
+        if (!Insurance?.address) throw new Error('Insurance contract address not found');
         const hash = await writeContractAsync({
-          address: Insurance.address,
+          address: Insurance.address as Address,
           abi: Insurance.abi,
           functionName: 'splitRisk',
           args: [amountInWei]
@@ -128,7 +132,7 @@ const Deposit = () => {
   ];
 
   return (
-    <ContentCard title="Deposit USDC">
+    <ContentCard title="Deposit USDC" icon={<AccountBalance />}>
       <TransactionAlerts
         error={amountError || approveError || depositError}
         success={approveSuccess || depositSuccess}
@@ -136,17 +140,14 @@ const Deposit = () => {
 
       <Stack spacing={3}>
         <div>
-          <AmountField
+          <AmountInput
             amount={amount}
             setAmount={handleAmountChange}
-            validateAmount={validateAmount}
-            setError={setError}
-            maxAmount={Number(formatUnits(balance, 6))}
-            label="Amount to Deposit"
+            errorMessage={amountError}
+            maxAmount={Number(formatUnits(typeof balance === 'bigint' ? balance : 0n, 6))}
+            decimals={6}
+            symbol="USDC"
           />
-          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-            Available Balance: {isLoadingBalance ? 'Loading...' : formatUnits(balance, 6)} USDC
-          </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
             Current Allowance: {formatUnits(allowance, 6)} USDC
           </Typography>

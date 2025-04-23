@@ -1,8 +1,16 @@
-import React from 'react';
-import { TextField, Button, Box, useTheme, useMediaQuery } from '@mui/material';
-import PropTypes from 'prop-types';
+import React, { ChangeEvent, FocusEvent } from 'react';
+import { TextField, Button, Box, useTheme, useMediaQuery, Theme } from '@mui/material';
 
-const AmountField = ({
+interface AmountFieldProps {
+  amount: string;
+  setAmount: (value: string) => void;
+  setError: (error: string) => void;
+  maxAmount?: number;
+  label?: string;
+  disabled?: boolean;
+}
+
+const AmountField: React.FC<AmountFieldProps> = ({
   amount,
   setAmount,
   setError,
@@ -10,10 +18,10 @@ const AmountField = ({
   label = "Amount",
   disabled = false
 }) => {
-  const theme = useTheme();
+  const theme = useTheme<Theme>();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Only allow numbers and decimal point
     if (value && !/^\d*\.?\d*$/.test(value)) {
@@ -22,7 +30,7 @@ const AmountField = ({
     setAmount(value);
   };
 
-  const handleBlur = () => {
+  const handleBlur = (e: FocusEvent<HTMLInputElement>) => {
     if (amount) {
       const numValue = parseFloat(amount);
       if (isNaN(numValue) || numValue === 0) {
@@ -84,15 +92,6 @@ const AmountField = ({
       />
     </Box>
   );
-};
-
-AmountField.propTypes = {
-  amount: PropTypes.string.isRequired,
-  setAmount: PropTypes.func.isRequired,
-  setError: PropTypes.func.isRequired,
-  maxAmount: PropTypes.number,
-  label: PropTypes.string,
-  disabled: PropTypes.bool
 };
 
 export default AmountField;

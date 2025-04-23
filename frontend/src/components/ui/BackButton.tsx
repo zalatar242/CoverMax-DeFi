@@ -1,17 +1,21 @@
 import React from 'react';
 import { Button } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
+import { useNavigate, NavigateFunction, To } from 'react-router-dom';
 
-const BackButton = ({ text = "Back to Dashboard", to = -1 }) => {
-  const navigate = useNavigate();
+interface BackButtonProps {
+  text?: string;
+  to?: string | number;
+}
 
-  const handleClick = () => {
+const BackButton: React.FC<BackButtonProps> = ({ text = "Back to Dashboard", to = -1 }) => {
+  const navigate: NavigateFunction = useNavigate();
+
+  const handleClick = (): void => {
     if (typeof to === 'number') {
-      navigate(to);
+      navigate(to); // Use delta overload
     } else {
-      navigate(to);
+      navigate(to as To); // Use path overload
     }
   };
 
@@ -31,11 +35,6 @@ const BackButton = ({ text = "Back to Dashboard", to = -1 }) => {
       {text}
     </Button>
   );
-};
-
-BackButton.propTypes = {
-  text: PropTypes.string,
-  to: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 };
 
 export default BackButton;

@@ -1,9 +1,23 @@
 import React from 'react';
-import { Box, Typography, Card, Grid, Stack, useTheme } from '@mui/material';
-import PropTypes from 'prop-types';
+import { Box, Typography, Card, Grid, Stack, useTheme, Theme } from '@mui/material';
 
-const ProtocolCard = ({ protocol }) => {
-  const theme = useTheme();
+interface Protocol {
+  name: string;
+  description: string;
+  distribution: string;
+}
+
+interface ProtocolCardProps {
+  protocol: Protocol;
+}
+
+interface ProtocolBoxProps {
+  protocols: Protocol[];
+  title?: string;
+}
+
+const ProtocolCard: React.FC<ProtocolCardProps> = ({ protocol }) => {
+  const theme: Theme = useTheme();
 
   return (
     <Card sx={{
@@ -62,15 +76,7 @@ const ProtocolCard = ({ protocol }) => {
   );
 };
 
-ProtocolCard.propTypes = {
-  protocol: PropTypes.shape({
-    name: PropTypes.string.isRequired,
-    description: PropTypes.string.isRequired,
-    distribution: PropTypes.string.isRequired
-  }).isRequired
-};
-
-const ProtocolBox = ({ protocols, title = "Your Deposit Distribution" }) => (
+const ProtocolBox: React.FC<ProtocolBoxProps> = ({ protocols, title = "Your Deposit Distribution" }) => (
   <Box sx={{ mb: { xs: 3, sm: 4 } }}>
     <Typography
       variant="h6"
@@ -103,16 +109,5 @@ const ProtocolBox = ({ protocols, title = "Your Deposit Distribution" }) => (
     </Grid>
   </Box>
 );
-
-ProtocolBox.propTypes = {
-  protocols: PropTypes.arrayOf(
-    PropTypes.shape({
-      name: PropTypes.string.isRequired,
-      description: PropTypes.string.isRequired,
-      distribution: PropTypes.string.isRequired
-    })
-  ).isRequired,
-  title: PropTypes.string
-};
 
 export default ProtocolBox;

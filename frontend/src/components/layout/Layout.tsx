@@ -1,10 +1,13 @@
-import React from 'react';
-import { Container, Box, useTheme, useMediaQuery } from '@mui/material';
-import PropTypes from 'prop-types';
+import React, { ReactNode } from 'react';
+import { Container, Box, useTheme, useMediaQuery, Theme } from '@mui/material';
 import Navigation from './Navigation';
 
-const Layout = ({ children }) => {
-  const theme = useTheme();
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const theme: Theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
@@ -39,10 +42,6 @@ const Layout = ({ children }) => {
       </Container>
     </Box>
   );
-};
-
-Layout.propTypes = {
-  children: PropTypes.node.isRequired
 };
 
 export default Layout;

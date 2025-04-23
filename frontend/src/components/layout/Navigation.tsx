@@ -1,9 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Box, Stack, Button, useTheme, useMediaQuery } from '@mui/material';
-import PropTypes from 'prop-types';
+import { AppBar, Toolbar, Typography, Box, Stack, Button, useTheme, useMediaQuery, Theme } from '@mui/material';
 
-const NavButton = ({ to, children }) => (
+interface NavButtonProps {
+  to: string;
+  children: React.ReactNode;
+}
+
+const NavButton: React.FC<NavButtonProps> = ({ to, children }) => (
   <Button
     component={Link}
     to={to}
@@ -21,12 +25,7 @@ const NavButton = ({ to, children }) => (
   </Button>
 );
 
-NavButton.propTypes = {
-  to: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired
-};
-
-const MobileNavButton = ({ to, children }) => (
+const MobileNavButton: React.FC<NavButtonProps> = ({ to, children }) => (
   <Button
     component={Link}
     to={to}
@@ -47,13 +46,8 @@ const MobileNavButton = ({ to, children }) => (
   </Button>
 );
 
-MobileNavButton.propTypes = {
-  to: PropTypes.string.isRequired,
-  children: PropTypes.node.isRequired
-};
-
-const Navigation = () => {
-  const theme = useTheme();
+const Navigation: React.FC = () => {
+  const theme: Theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (

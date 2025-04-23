@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import { AppKitProvider } from './utils/walletConnector';
 import theme from './utils/theme';
 import Layout from './components/layout/Layout';
@@ -11,10 +12,10 @@ import Deposit from './pages/Deposit';
 import Withdraw from './pages/Withdraw';
 import Trade from './pages/Trade';
 
-const App = () => {
+const App: React.FC = () => {
   return (
     <Router>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={theme as Theme}>
         <AppKitProvider>
           <Layout>
             <Routes>

@@ -1,9 +1,13 @@
 import React from 'react';
-import { Box, Typography, Stack, useTheme } from '@mui/material';
-import PropTypes from 'prop-types';
+import { Box, Typography, Stack, useTheme, Theme } from '@mui/material';
 
-const InfoBox = ({ title, items }) => {
-  const theme = useTheme();
+interface InfoBoxProps {
+  title: string;
+  items: string[];
+}
+
+const InfoBox: React.FC<InfoBoxProps> = ({ title, items }) => {
+  const theme: Theme = useTheme();
 
   return (
     <Box sx={{
@@ -46,11 +50,6 @@ const InfoBox = ({ title, items }) => {
       </Stack>
     </Box>
   );
-};
-
-InfoBox.propTypes = {
-  title: PropTypes.string.isRequired,
-  items: PropTypes.arrayOf(PropTypes.string).isRequired
 };
 
 export default InfoBox;

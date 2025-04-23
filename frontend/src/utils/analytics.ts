@@ -1,7 +1,13 @@
 import { formatUnits } from 'viem';
 
-// Format helpers
-export const formatCMX = (value) => {
+type ValueType = string | number | bigint;
+
+/**
+ * Format a number as CMX token amount
+ * @param value - The value to format (can be bigint, number, or string)
+ * @returns Formatted string with CMX suffix
+ */
+export const formatCMX = (value: ValueType): string => {
   // Ensure we're working with a number
   const numericValue = typeof value === 'bigint'
     ? Number(formatUnits(value, 6))
@@ -21,7 +27,12 @@ export const formatCMX = (value) => {
   return `${formatted} CMX`;
 };
 
-export const formatUSDC = (value) => {
+/**
+ * Format a number as USDC currency amount
+ * @param value - The value to format (can be bigint, number, or string)
+ * @returns Formatted string with USD currency format
+ */
+export const formatUSDC = (value: ValueType): string => {
   // Convert bigint to string with proper decimals
   const formattedValue = typeof value === 'bigint'
     ? Number(formatUnits(value, 6))
@@ -35,12 +46,20 @@ export const formatUSDC = (value) => {
   }).format(formattedValue);
 };
 
-export const calculatePercentage = (value, total) => {
-  if (!total || parseFloat(total) === 0) return "0%";
-  return ((parseFloat(value) / parseFloat(total)) * 100).toFixed(2) + "%";
+/**
+ * Calculate percentage from two values
+ * @param value - Numerator value
+ * @param total - Denominator value
+ * @returns Formatted percentage string with % suffix
+ */
+export const calculatePercentage = (value: ValueType, total: ValueType): string => {
+  if (!total || parseFloat(String(total)) === 0) return "0%";
+  return ((parseFloat(String(value)) / parseFloat(String(total))) * 100).toFixed(2) + "%";
 };
 
-// Contract ABI fragments
+/**
+ * Contract ABI fragments for adapters
+ */
 export const ADAPTER_ABI = [
   'function getTotalValueLocked() view returns (uint256)'
-];
+] as const;

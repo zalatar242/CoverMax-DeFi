@@ -4,8 +4,8 @@ import { Button, Stack, CircularProgress, Typography } from '@mui/material';
 import { SwapHoriz, Pool } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useMainConfig } from '../utils/contractConfig';
-import { useWriteContract, useReadContract } from 'wagmi';
-import { formatUnits } from 'viem';
+import { useWriteContract, useReadContract, type UseReadContractReturnType } from 'wagmi';
+import { formatUnits, type Address } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
@@ -15,8 +15,23 @@ import {
   TokenSelect
 } from '../components/ui';
 
-const WalletRequiredPrompt = ({ openConnectModal }) => (
-  <ContentCard title="Connect Wallet to Trade">
+interface Token {
+  address: Address;
+  symbol: string;
+  abi?: any[];
+}
+
+interface WalletRequiredPromptProps {
+  openConnectModal: () => void;
+}
+
+interface TransactionResult {
+  approveTokenHash?: `0x${string}`;
+  approveUSDCHash?: `0x${string}`;
+}
+
+const WalletRequiredPrompt: React.FC<WalletRequiredPromptProps> = ({ openConnectModal }) => (
+  <ContentCard title="Connect Wallet to Trade" icon={<SwapHoriz />}>
     <Button
       variant="contained"
       onClick={openConnectModal}
@@ -32,60 +47,90 @@ const WalletRequiredPrompt = ({ openConnectModal }) => (
   </ContentCard>
 );
 
-const Trade = () => {
+const Trade: React.FC = () => {
   const { isConnected, address } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
   const { USDC, Insurance, UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
 
-  const [selectedFromToken, setSelectedFromToken] = useState('');
-  const [selectedToToken, setSelectedToToken] = useState('');
-  const [selectedLiquidityToken, setSelectedLiquidityToken] = useState('');
+  const [selectedFromToken, setSelectedFromToken] = useState<Address>('0x' as Address);
+  const [selectedToToken, setSelectedToToken] = useState<Address>('0x' as Address);
+  const [selectedLiquidityToken, setSelectedLiquidityToken] = useState<Address>('0x' as Address);
 
   const { data: fromTokenDecimals = 6 } = useReadContract({
     address: selectedFromToken,
     abi: ['function decimals() view returns (uint8)'],
     functionName: 'decimals',
-    enabled: Boolean(selectedFromToken),
-  });
+  }) as UseReadContractReturnType<readonly [{
+    name: 'decimals',
+    type: 'function',
+    inputs: [],
+    outputs: [{ type: 'uint8' }],
+    stateMutability: 'view'
+  }], [], 'decimals'>;
 
   const { data: toTokenDecimals = 6 } = useReadContract({
     address: selectedToToken,
     abi: ['function decimals() view returns (uint8)'],
     functionName: 'decimals',
-    enabled: Boolean(selectedToToken),
-  });
+  }) as UseReadContractReturnType<readonly [{
+    name: 'decimals',
+    type: 'function',
+    inputs: [],
+    outputs: [{ type: 'uint8' }],
+    stateMutability: 'view'
+  }], [], 'decimals'>;
 
   const { data: liquidityTokenDecimals = 6 } = useReadContract({
     address: selectedLiquidityToken,
     abi: ['function decimals() view returns (uint8)'],
     functionName: 'decimals',
-    enabled: Boolean(selectedLiquidityToken),
-  });
+  }) as UseReadContractReturnType<readonly [{
+    name: 'decimals',
+    type: 'function',
+    inputs: [],
+    outputs: [{ type: 'uint8' }],
+    stateMutability: 'view'
+  }], [], 'decimals'>;
 
   const { data: fromTokenBalance = 0n } = useReadContract({
     address: selectedFromToken,
     abi: ['function balanceOf(address) view returns (uint256)'],
     functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && selectedFromToken && isConnected),
-  });
+    args: [address as Address],
+  }) as UseReadContractReturnType<readonly [{
+    name: 'balanceOf',
+    type: 'function',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view'
+  }], [Address], 'balanceOf'>;
 
   const { data: toTokenBalance = 0n } = useReadContract({
     address: selectedToToken,
     abi: ['function balanceOf(address) view returns (uint256)'],
     functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && selectedToToken && isConnected),
-  });
+    args: [address as Address],
+  }) as UseReadContractReturnType<readonly [{
+    name: 'balanceOf',
+    type: 'function',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view'
+  }], [Address], 'balanceOf'>;
 
   const { data: liquidityTokenBalance = 0n } = useReadContract({
     address: selectedLiquidityToken,
     abi: ['function balanceOf(address) view returns (uint256)'],
     functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && selectedLiquidityToken && isConnected),
-  });
+    args: [address as Address],
+  }) as UseReadContractReturnType<readonly [{
+    name: 'balanceOf',
+    type: 'function',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'view'
+  }], [Address], 'balanceOf'>;
 
   const {
     amount: swapAmount,
@@ -108,44 +153,39 @@ const Trade = () => {
   } = useAmountForm(liquidityTokenBalance, 2, liquidityTokenDecimals);
 
   const { data: usdcBalance = 0n } = useReadContract({
-    address: USDC?.address,
+    address: USDC?.address as Address,
     abi: USDC?.abi,
     functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && USDC && isConnected),
-  });
+    args: [address as Address],
+  }) as UseReadContractReturnType<any>;
 
   const { data: fromTokenAllowance = 0n, refetch: refetchFromTokenAllowance } = useReadContract({
     address: selectedFromToken,
     abi: ['function allowance(address,address) view returns (uint256)'],
     functionName: 'allowance',
-    args: [address, UniswapV2Router02?.address],
-    enabled: Boolean(address && selectedFromToken && UniswapV2Router02 && isConnected),
-  });
+    args: [address as Address, UniswapV2Router02?.address as Address],
+  }) as UseReadContractReturnType<any>;
 
   const { data: toTokenAllowance = 0n, refetch: refetchToTokenAllowance } = useReadContract({
     address: selectedToToken,
     abi: ['function allowance(address,address) view returns (uint256)'],
     functionName: 'allowance',
-    args: [address, UniswapV2Router02?.address],
-    enabled: Boolean(address && selectedToToken && UniswapV2Router02 && isConnected),
-  });
+    args: [address as Address, UniswapV2Router02?.address as Address],
+  }) as UseReadContractReturnType<any>;
 
   const { data: liquidityTokenAllowance = 0n, refetch: refetchLiquidityTokenAllowance } = useReadContract({
     address: selectedLiquidityToken,
     abi: ['function allowance(address,address) view returns (uint256)'],
     functionName: 'allowance',
-    args: [address, UniswapV2Router02?.address],
-    enabled: Boolean(address && selectedLiquidityToken && UniswapV2Router02 && isConnected),
-  });
+    args: [address as Address, UniswapV2Router02?.address as Address],
+  }) as UseReadContractReturnType<any>;
 
   const { data: usdcAllowance = 0n, refetch: refetchUSDCAllowance } = useReadContract({
-    address: USDC?.address,
+    address: USDC?.address as Address,
     abi: USDC?.abi,
     functionName: 'allowance',
-    args: [address, UniswapV2Router02?.address],
-    enabled: Boolean(address && USDC && UniswapV2Router02 && isConnected),
-  });
+    args: [address as Address, UniswapV2Router02?.address as Address],
+  }) as UseReadContractReturnType<any, 'allowance'>;
 
   const { isProcessing: isApprovingSwap, error: approveSwapError, success: approveSwapSuccess, handleTransaction: handleApproveSwap } =
     useTransaction({
@@ -186,16 +226,17 @@ const Trade = () => {
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
     handleSwapTransaction(async () => {
       try {
+        if (!UniswapV2Router02?.address || !address) return;
         const hash = await writeContractAsync({
-          address: UniswapV2Router02.address,
+          address: UniswapV2Router02.address as Address,
           abi: UniswapV2Router02.abi,
           functionName: 'swapExactTokensForTokens',
           args: [
             swapAmountInWei,
-            0, // Min output amount
+            0n, // Min output amount
             [selectedFromToken, selectedToToken],
-            address,
-            deadline
+            address as Address,
+            BigInt(deadline)
           ]
         });
         console.log('Swap hash:', hash);
@@ -210,11 +251,12 @@ const Trade = () => {
   const handleApproveSwapClick = () => {
     handleApproveSwap(async () => {
       try {
+        if (!UniswapV2Router02?.address) return;
         const hash = await writeContractAsync({
           address: selectedFromToken,
-          abi: selectedFromToken === USDC?.address ? USDC?.abi : AAA?.abi, // Use appropriate abi based on token
+          abi: (selectedFromToken === USDC?.address ? USDC?.abi : AAA?.abi) || [],
           functionName: 'approve',
-          args: [UniswapV2Router02.address, swapAmountInWei]
+          args: [UniswapV2Router02?.address as Address, swapAmountInWei]
         });
         console.log('Approve hash:', hash);
         await refetchFromTokenAllowance();
@@ -232,9 +274,9 @@ const Trade = () => {
         // First approve the selected token
         const approveTokenHash = await writeContractAsync({
           address: selectedLiquidityToken,
-          abi: selectedLiquidityToken === USDC?.address ? USDC?.abi : AAA?.abi,
+          abi: (selectedLiquidityToken === USDC?.address ? USDC?.abi : AAA?.abi) || [],
           functionName: 'approve',
-          args: [UniswapV2Router02.address, liquidityAmountInWei]
+          args: [UniswapV2Router02?.address as Address, liquidityAmountInWei]
         });
         console.log('Approve token hash:', approveTokenHash);
 
@@ -242,11 +284,12 @@ const Trade = () => {
         await refetchLiquidityTokenAllowance();
 
         // Then approve USDC
+        if (!USDC?.address || !UniswapV2Router02?.address) return;
         const approveUSDCHash = await writeContractAsync({
-          address: USDC.address,
+          address: USDC.address as Address,
           abi: USDC.abi,
           functionName: 'approve',
-          args: [UniswapV2Router02.address, liquidityAmountInWei]
+          args: [UniswapV2Router02.address as Address, liquidityAmountInWei]
         });
         console.log('Approve USDC hash:', approveUSDCHash);
 
@@ -254,7 +297,7 @@ const Trade = () => {
         await refetchUSDCAllowance();
 
         // Return both hashes to track both transactions
-        return { approveTokenHash, approveUSDCHash };
+        return { approveTokenHash, approveUSDCHash } as TransactionResult;
       } catch (err) {
         console.error('Approval error:', err);
         throw err;
@@ -266,19 +309,20 @@ const Trade = () => {
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
     handleAddLiquidityTransaction(async () => {
       try {
+        if (!UniswapV2Router02?.address || !USDC?.address || !address) return;
         const hash = await writeContractAsync({
-          address: UniswapV2Router02.address,
+          address: UniswapV2Router02.address as Address,
           abi: UniswapV2Router02.abi,
           functionName: 'addLiquidity',
           args: [
-            selectedLiquidityToken,
-            USDC.address,
+            selectedLiquidityToken as Address,
+            USDC.address as Address,
             liquidityAmountInWei,
             liquidityAmountInWei,
-            0, // Min amounts
-            0,
-            address,
-            deadline
+            0n, // Min amounts
+            0n,
+            address as Address,
+            BigInt(deadline)
           ]
         });
         console.log('Add liquidity hash:', hash);
@@ -294,7 +338,7 @@ const Trade = () => {
     { address: AAA?.address, symbol: 'AAA' },
     { address: AA?.address, symbol: 'AA' },
     { address: USDC?.address, symbol: 'USDC' }
-  ].filter(token => token.address);
+  ].filter((token): token is Token => Boolean(token.address));
 
   if (!isConnected) {
     return <WalletRequiredPrompt openConnectModal={openConnectModal} />;
@@ -302,7 +346,7 @@ const Trade = () => {
 
   return (
     <>
-      <ContentCard title="Swap Tranches">
+      <ContentCard title="Swap Tranches" icon={<SwapHoriz />}>
         <TransactionAlerts
           error={swapAmountError || approveSwapError || swapError}
           success={approveSwapSuccess || swapSuccess}
@@ -325,8 +369,8 @@ const Trade = () => {
             <AmountField
               amount={swapAmount}
               setAmount={handleSwapAmountChange}
-              validateAmount={validateSwapAmount}
               setError={setSwapError}
+              maxAmount={Number(formatUnits(fromTokenBalance, fromTokenDecimals))}
               label="Amount to Swap"
             />
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
@@ -362,7 +406,7 @@ const Trade = () => {
         </Stack>
       </ContentCard>
 
-      <ContentCard title="Add Liquidity" sx={{ mt: 3 }}>
+      <ContentCard title="Add Liquidity" icon={<Pool />}>
         <TransactionAlerts
           error={liquidityAmountError || approveLiquidityError || addLiquidityError}
           success={approveLiquiditySuccess || addLiquiditySuccess}
@@ -373,14 +417,14 @@ const Trade = () => {
             <TokenSelect
               token={selectedLiquidityToken}
               onTokenChange={setSelectedLiquidityToken}
-              tokens={trancheTokens.filter(t => t.address !== USDC.address)}
+              tokens={trancheTokens.filter(t => t.address !== USDC?.address)}
               label="Select Token"
             />
             <AmountField
               amount={liquidityAmount}
               setAmount={handleLiquidityAmountChange}
-              validateAmount={validateLiquidityAmount}
               setError={setLiquidityError}
+              maxAmount={Number(formatUnits(liquidityTokenBalance, liquidityTokenDecimals))}
               label="Amount to Deposit"
             />
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
