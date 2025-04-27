@@ -613,7 +613,7 @@ const Dashboard = () => {
 
           <RiskChart aaaTokens={parseFloat(trancheAAA)} aaTokens={parseFloat(trancheAA)} />
       </ContentCard>
-      
+
       <ContentCard title="Protocol Status">
         <Box sx={{
           display: 'flex',

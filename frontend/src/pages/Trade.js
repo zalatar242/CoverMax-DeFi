@@ -4,7 +4,7 @@ import { Button, Stack, CircularProgress, Typography } from '@mui/material';
 import { SwapHoriz, Pool } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useMainConfig } from '../utils/contractConfig';
-import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
@@ -35,7 +35,7 @@ const WalletRequiredPrompt = ({ openConnectModal }) => (
 const Trade = () => {
   const { isConnected, address } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
-  const { USDC, Insurance, UniswapV2Router02 } = useMainConfig();
+  const { USDC, UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
 
   const [selectedFromToken, setSelectedFromToken] = useState('');
@@ -47,13 +47,6 @@ const Trade = () => {
     abi: ['function decimals() view returns (uint8)'],
     functionName: 'decimals',
     enabled: Boolean(selectedFromToken),
-  });
-
-  const { data: toTokenDecimals = 6 } = useReadContract({
-    address: selectedToToken,
-    abi: ['function decimals() view returns (uint8)'],
-    functionName: 'decimals',
-    enabled: Boolean(selectedToToken),
   });
 
   const { data: liquidityTokenDecimals = 6 } = useReadContract({
@@ -69,14 +62,6 @@ const Trade = () => {
     functionName: 'balanceOf',
     args: [address],
     enabled: Boolean(address && selectedFromToken && isConnected),
-  });
-
-  const { data: toTokenBalance = 0n } = useReadContract({
-    address: selectedToToken,
-    abi: ['function balanceOf(address) view returns (uint256)'],
-    functionName: 'balanceOf',
-    args: [address],
-    enabled: Boolean(address && selectedToToken && isConnected),
   });
 
   const { data: liquidityTokenBalance = 0n } = useReadContract({
@@ -123,7 +108,7 @@ const Trade = () => {
     enabled: Boolean(address && selectedFromToken && UniswapV2Router02 && isConnected),
   });
 
-  const { data: toTokenAllowance = 0n, refetch: refetchToTokenAllowance } = useReadContract({
+  const { refetch: refetchToTokenAllowance } = useReadContract({
     address: selectedToToken,
     abi: selectedToToken === USDC?.address ? USDC?.abi : AAA?.abi,
     functionName: 'allowance',
