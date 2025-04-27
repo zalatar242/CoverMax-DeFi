@@ -4,7 +4,7 @@ import { Button, Stack, CircularProgress, Typography } from '@mui/material';
 import { SwapHoriz, Pool } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useMainConfig } from '../utils/contractConfig';
-import { useWriteContract, useReadContract } from 'wagmi';
+import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
@@ -117,7 +117,7 @@ const Trade = () => {
 
   const { data: fromTokenAllowance = 0n, refetch: refetchFromTokenAllowance } = useReadContract({
     address: selectedFromToken,
-    abi: ['function allowance(address,address) view returns (uint256)'],
+    abi: selectedFromToken === USDC?.address ? USDC?.abi : AAA?.abi,
     functionName: 'allowance',
     args: [address, UniswapV2Router02?.address],
     enabled: Boolean(address && selectedFromToken && UniswapV2Router02 && isConnected),
@@ -125,7 +125,7 @@ const Trade = () => {
 
   const { data: toTokenAllowance = 0n, refetch: refetchToTokenAllowance } = useReadContract({
     address: selectedToToken,
-    abi: ['function allowance(address,address) view returns (uint256)'],
+    abi: selectedToToken === USDC?.address ? USDC?.abi : AAA?.abi,
     functionName: 'allowance',
     args: [address, UniswapV2Router02?.address],
     enabled: Boolean(address && selectedToToken && UniswapV2Router02 && isConnected),
@@ -133,10 +133,11 @@ const Trade = () => {
 
   const { data: liquidityTokenAllowance = 0n, refetch: refetchLiquidityTokenAllowance } = useReadContract({
     address: selectedLiquidityToken,
-    abi: ['function allowance(address,address) view returns (uint256)'],
+    abi: selectedLiquidityToken === USDC?.address ? USDC?.abi : AAA?.abi,
     functionName: 'allowance',
     args: [address, UniswapV2Router02?.address],
     enabled: Boolean(address && selectedLiquidityToken && UniswapV2Router02 && isConnected),
+    watch: true,
   });
 
   const { data: usdcAllowance = 0n, refetch: refetchUSDCAllowance } = useReadContract({
@@ -165,9 +166,12 @@ const Trade = () => {
 
   const { isProcessing: isApprovingLiquidity, error: approveLiquidityError, success: approveLiquiditySuccess, handleTransaction: handleApproveLiquidity } =
     useTransaction({
-      onSuccess: () => {
-        refetchLiquidityTokenAllowance();
-        refetchUSDCAllowance();
+      onSuccess: async () => {
+        // After USDC approval completes, update both allowances
+        await Promise.all([
+          refetchLiquidityTokenAllowance(),
+          refetchUSDCAllowance()
+        ]);
       }
     });
 
@@ -229,7 +233,7 @@ const Trade = () => {
   const handleApproveLiquidityClick = () => {
     handleApproveLiquidity(async () => {
       try {
-        // First approve the selected token
+        // First approve the tranche token
         const approveTokenHash = await writeContractAsync({
           address: selectedLiquidityToken,
           abi: selectedLiquidityToken === USDC?.address ? USDC?.abi : AAA?.abi,
@@ -238,8 +242,32 @@ const Trade = () => {
         });
         console.log('Approve token hash:', approveTokenHash);
 
-        // Wait for token approval to be mined
-        await refetchLiquidityTokenAllowance();
+        // Wait for the first transaction to complete and check for success
+        await new Promise((resolve, reject) => {
+          const checkReceipt = async () => {
+            try {
+              const provider = await window.ethereum;
+              const receipt = await provider.request({
+                method: 'eth_getTransactionReceipt',
+                params: [approveTokenHash],
+              });
+              if (receipt) {
+                if (receipt.status === '0x1') {
+                  await refetchLiquidityTokenAllowance();
+                  resolve();
+                } else {
+                  reject(new Error('First approval transaction failed'));
+                }
+              } else {
+                setTimeout(checkReceipt, 1000);
+              }
+            } catch (err) {
+              console.error('Error checking receipt:', err);
+              setTimeout(checkReceipt, 1000);
+            }
+          };
+          checkReceipt();
+        });
 
         // Then approve USDC
         const approveUSDCHash = await writeContractAsync({
@@ -250,11 +278,33 @@ const Trade = () => {
         });
         console.log('Approve USDC hash:', approveUSDCHash);
 
-        // Wait for USDC approval to be mined
-        await refetchUSDCAllowance();
+        // Wait for USDC transaction receipt
+        await new Promise((resolve, reject) => {
+          const checkReceipt = async () => {
+            try {
+              const provider = await window.ethereum;
+              const receipt = await provider.request({
+                method: 'eth_getTransactionReceipt',
+                params: [approveUSDCHash],
+              });
+              if (receipt && receipt.status === '0x1') {
+                await refetchUSDCAllowance();
+                resolve();
+              } else if (receipt && receipt.status !== '0x1') {
+                reject(new Error('USDC approval transaction failed'));
+              } else {
+                setTimeout(checkReceipt, 1000);
+              }
+            } catch (err) {
+              console.error('Error checking USDC receipt:', err);
+              setTimeout(checkReceipt, 1000);
+            }
+          };
+          checkReceipt();
+        });
 
-        // Return both hashes to track both transactions
-        return { approveTokenHash, approveUSDCHash };
+        // Return USDC hash for transaction tracking
+        return approveUSDCHash;
       } catch (err) {
         console.error('Approval error:', err);
         throw err;
