@@ -136,7 +136,7 @@ const LiquidityPosition = ({ token, symbol }) => {
   ];
 
   const { data: token0, error: token0Error } = useReadContract({
-    address: pairAddress,
+    address: pairAddress?.toLowerCase(),
     abi: pairABI,
     functionName: 'token0',
     enabled: Boolean(pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000'),
@@ -144,7 +144,7 @@ const LiquidityPosition = ({ token, symbol }) => {
 
   // Get reserves to show liquidity info
   const { data: reserves, error: reservesError } = useReadContract({
-    address: pairAddress,
+    address: pairAddress?.toLowerCase(),
     abi: pairABI,
     functionName: 'getReserves',
     enabled: Boolean(pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000'),
@@ -196,17 +196,17 @@ const LiquidityPosition = ({ token, symbol }) => {
 
   // Get LP token balance
   const { data: lpBalance = 0n } = useReadContract({
-    address: pairAddress,
+    address: pairAddress?.toLowerCase(),
     abi: lpTokenABI,
     functionName: 'balanceOf',
-    args: [address],
+    args: [address?.toLowerCase()],
     enabled: Boolean(pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000' && address),
     watch: true,
   });
 
   // Get total supply to calculate share percentage
   const { data: totalSupply = 0n } = useReadContract({
-    address: pairAddress,
+    address: pairAddress?.toLowerCase(),
     abi: lpTokenABI,
     functionName: 'totalSupply',
     enabled: Boolean(pairAddress && pairAddress !== '0x0000000000000000000000000000000000000000'),
@@ -216,8 +216,8 @@ const LiquidityPosition = ({ token, symbol }) => {
   // Calculate share percentage using bigint operations to avoid precision loss
   const sharePercent = useMemo(() => {
     if (!totalSupply || totalSupply === 0n) return 0;
-    // Convert to number only at the end of calculation
-    const share = (Number(lpBalance * 10000n) / Number(totalSupply)) * 0.01;
+    // Multiply by 10000 after division to maintain precision
+    const share = (Number(lpBalance) / Number(totalSupply)) * 100;
     return share;
   }, [lpBalance, totalSupply]);
 
@@ -225,23 +225,20 @@ const LiquidityPosition = ({ token, symbol }) => {
   const [tokenReserve, usdcReserve] = useMemo(() => {
     if (!reserves || !token0) return [0n, 0n];
 
-    // Compare addresses case-insensitively
-    const isToken0 = token?.toLowerCase() === token0?.toLowerCase();
-    const token0IsAAA = token0?.toLowerCase() === token?.toLowerCase();
+    // Get normalized addresses for comparison
+    const normalizedToken = token?.toLowerCase();
+    const normalizedToken0 = token0?.toLowerCase();
 
     console.log('Reserve order check:', {
-      isToken0,
-      token0Address: token0,
-      tokenAddress: token,
-      token0IsAAA,
+      token0: normalizedToken0,
+      token: normalizedToken,
       reserves: reserves.map(r => r.toString())
     });
 
-    if (isToken0) {
-      return [reserves[0] || 0n, reserves[1] || 0n];
-    } else {
-      return [reserves[1] || 0n, reserves[0] || 0n];
-    }
+    // If token matches token0, use reserves in order, otherwise swap them
+    return normalizedToken === normalizedToken0
+      ? [reserves[0] || 0n, reserves[1] || 0n]
+      : [reserves[1] || 0n, reserves[0] || 0n];
   }, [reserves, token0, token]);
 
   // Debug position and reserves
@@ -398,6 +395,8 @@ const Trade = () => {
   const { openConnectModal } = useWalletModal();
   const { USDC, UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
+  const contracts = useContractsConfig();
+  const UniswapV2Factory = contracts?.UniswapV2Factory;
 
   const [selectedFromToken, setSelectedFromToken] = useState('');
   const [selectedToToken, setSelectedToToken] = useState('');
@@ -455,6 +454,35 @@ const Trade = () => {
     amountInWei: liquidityAmountInWei
   } = useAmountForm(liquidityTokenBalance, 2, liquidityTokenDecimals);
 
+  // Get pair address for remove liquidity
+  const { data: removeLiquidityPairAddress } = useReadContract({
+    address: UniswapV2Factory?.address?.toLowerCase(),
+    abi: UniswapV2Factory?.abi,
+    functionName: 'getPair',
+    args: [removeLiquidityToken?.toLowerCase(), USDC?.address?.toLowerCase()],
+    enabled: Boolean(removeLiquidityToken && USDC?.address && UniswapV2Factory),
+    watch: true,
+  });
+
+  // Get LP token balance for the selected pair
+  const { data: removeLiquidityLPBalance = 0n } = useReadContract({
+    address: removeLiquidityPairAddress?.toLowerCase(),
+    abi: [
+      {
+        type: 'function',
+        name: 'balanceOf',
+        constant: true,
+        stateMutability: 'view',
+        inputs: [{ type: 'address', name: 'account' }],
+        outputs: [{ type: 'uint256', name: '' }]
+      }
+    ],
+    functionName: 'balanceOf',
+    args: [address?.toLowerCase()],
+    enabled: Boolean(removeLiquidityPairAddress && removeLiquidityPairAddress !== '0x0000000000000000000000000000000000000000' && address),
+    watch: true,
+  });
+
   const {
     amount: removeLiquidityAmount,
     error: removeLiquidityError,
@@ -463,7 +491,7 @@ const Trade = () => {
     validateAmount: validateRemoveLiquidityAmount,
     reset: resetRemoveLiquidityAmount,
     amountInWei: removeLiquidityAmountInWei
-  } = useAmountForm(0n, 2, 18); // LP tokens typically have 18 decimals
+  } = useAmountForm(removeLiquidityLPBalance, 1, 6, 18); // Display as 6 decimals but use 18 for calculations
 
   const { data: usdcBalance = 0n } = useReadContract({
     address: USDC?.address,
@@ -682,16 +710,16 @@ const Trade = () => {
     handleRemoveLiquidityTransaction(async () => {
       try {
         const hash = await writeContractAsync({
-          address: UniswapV2Router02.address,
+          address: UniswapV2Router02.address?.toLowerCase(),
           abi: UniswapV2Router02.abi,
           functionName: 'removeLiquidity',
           args: [
-            removeLiquidityToken,
-            USDC.address,
+            removeLiquidityToken?.toLowerCase(),
+            USDC.address?.toLowerCase(),
             removeLiquidityAmountInWei,
             0, // Min amounts
             0,
-            address,
+            address?.toLowerCase(),
             deadline
           ]
         });
@@ -810,6 +838,7 @@ const Trade = () => {
               setAmount={handleSwapAmountChange}
               validateAmount={validateSwapAmount}
               setError={setSwapError}
+              maxAmount={Number(formatUnits(fromTokenBalance, fromTokenDecimals))}
               label="Amount to Swap"
             />
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
@@ -865,6 +894,7 @@ const Trade = () => {
               setAmount={handleLiquidityAmountChange}
               validateAmount={validateLiquidityAmount}
               setError={setLiquidityError}
+              maxAmount={Number(formatUnits(liquidityTokenBalance, liquidityTokenDecimals))}
               label="Amount to Deposit"
             />
             <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
@@ -924,6 +954,7 @@ const Trade = () => {
                 setAmount={handleRemoveLiquidityAmountChange}
                 validateAmount={validateRemoveLiquidityAmount}
                 setError={setRemoveLiquidityError}
+                maxAmount={Number(formatUnits(removeLiquidityLPBalance, 6))}
                 label="Amount of LP Tokens"
               />
             </div>
