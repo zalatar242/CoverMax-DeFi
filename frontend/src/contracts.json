@@ -4807,7 +4807,7 @@
     },
     "base-sepolia": {
       "CoverMaxToken": {
-        "address": "0xbea7e244883bE0A176d92E8f6d621B8A4da477D6",
+        "address": "0x5a391f4FcDDA63e464A1F38629a21B0Fc290042a",
         "abi": [
           {
             "type": "constructor",
@@ -5386,7 +5386,7 @@
         ]
       },
       "USDC": {
-        "address": "0x5f6294664F1B3938cC1dB98Af903B380D41E62b9",
+        "address": "0xE511142f800B58079874a0BC1d5FB95A73e22886",
         "abi": [
           {
             "type": "constructor",
@@ -5864,7 +5864,7 @@
         ]
       },
       "Insurance": {
-        "address": "0xd20dc883E6Ae55cfcb2d2806D6A5D374212b9093",
+        "address": "0x869F2dD271cf8c17268876505b12252927EED2ea",
         "abi": [
           {
             "type": "constructor",
@@ -6421,7 +6421,7 @@
         ]
       },
       "TrancheAAA": {
-        "address": "0x449c4614886e2117618E3Ab3BC20Ce4f937DF8cc",
+        "address": "0x191C9Cc9fD9Cf308c8aAC36FA453E4583Bb4E55c",
         "abi": [
           {
             "type": "constructor",
@@ -7044,7 +7044,7 @@
         ]
       },
       "TrancheAA": {
-        "address": "0x1dA5bD6e3a35D679E46cdcec30E430310102089D",
+        "address": "0x82AE4bd877eb335100271746973572aeCb121860",
         "abi": [
           {
             "type": "constructor",
@@ -7667,7 +7667,7 @@
         ]
       },
       "AaveLendingAdapter": {
-        "address": "0x1735a7B2FC12035858314e89434096684F5c0b9E",
+        "address": "0x3841ADEe5d4fd99e36b01ff9f8bf5C55A52C2CB7",
         "abi": [
           {
             "type": "constructor",
@@ -7938,7 +7938,7 @@
         ]
       },
       "MoonwellLendingAdapter": {
-        "address": "0xfC89351030696c7Cb6692975C4AD38Cbc9582482",
+        "address": "0xe5D72Af7eB9596D04876FFff199568736A1a3445",
         "abi": [
           {
             "type": "constructor",
@@ -8182,7 +8182,7 @@
         ]
       },
       "UniswapV2Factory": {
-        "address": "0x6d383f31B564AeAD9CcDd117BA361A3a19BA1471",
+        "address": "0xa60bCE255699E8707807FcFcfC0d1Bc192119001",
         "abi": [
           {
             "type": "constructor",
@@ -8440,7 +8440,7 @@
         ]
       },
       "UniswapV2Router02": {
-        "address": "0xadA4Ab4b6613D5C68e3FECD20C51Ee3F49bA44DB",
+        "address": "0x02D09AadFD78977CA1400ACD40E114965759c6fF",
         "abi": [
           {
             "type": "constructor",
@@ -9361,7 +9361,7 @@
         ]
       },
       "AAAUSDCPair": {
-        "address": "0x392091516Be3b7A589A55BA3669F778A4Cc6Ef94",
+        "address": "0x1cc116BF19Fed44E0322959B5dE772882B0DF1bc",
         "abi": [
           {
             "type": "constructor",
@@ -10323,7 +10323,7 @@
         ]
       },
       "AAUSDCPair": {
-        "address": "0x52594F3b2fF15444406e6935d0CCA687b2F36983",
+        "address": "0xEc97903c3Cd6c16F010ff295cBf3379Ff27C41c8",
         "abi": [
           {
             "type": "constructor",
