@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity =0.5.16;
 
-import "./libraries/SafeMath.sol";
+import './interfaces/IUniswapV2ERC20.sol';
+import './libraries/SafeMath.sol';
 
-contract MockUniswapV2ERC20 {
+contract UniswapV2ERC20 is IUniswapV2ERC20 {
     using SafeMath for uint;
 
     string public constant name = 'Uniswap V2';
@@ -18,8 +18,14 @@ contract MockUniswapV2ERC20 {
     bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint) public nonces;
 
-    constructor() {
-        uint chainId = block.chainid;
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    constructor() public {
+        uint chainId;
+        assembly {
+            chainId := chainid
+        }
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
@@ -30,9 +36,6 @@ contract MockUniswapV2ERC20 {
             )
         );
     }
-
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
 
     function _mint(address to, uint value) internal {
         totalSupply = totalSupply.add(value);
@@ -68,7 +71,7 @@ contract MockUniswapV2ERC20 {
     }
 
     function transferFrom(address from, address to, uint value) external returns (bool) {
-        if (allowance[from][msg.sender] != type(uint).max) {
+        if (allowance[from][msg.sender] != uint(-1)) {
             allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
         }
         _transfer(from, to, value);

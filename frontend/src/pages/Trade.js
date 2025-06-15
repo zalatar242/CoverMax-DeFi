@@ -5,7 +5,7 @@ import { SwapHoriz, Pool, Remove } from '@mui/icons-material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
 import { useMainConfig, useContractsConfig } from '../utils/contractConfig';
 import { useWriteContract, useReadContract } from 'wagmi';
-import { formatUnits } from 'viem';
+import { formatUnits, parseUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 import {
@@ -491,7 +491,7 @@ const Trade = () => {
     validateAmount: validateRemoveLiquidityAmount,
     reset: resetRemoveLiquidityAmount,
     amountInWei: removeLiquidityAmountInWei
-  } = useAmountForm(removeLiquidityLPBalance, 1, 6, 18); // Display as 6 decimals but use 18 for calculations
+  } = useAmountForm(removeLiquidityLPBalance, 1, 6); // Display as 6 decimals for UI
 
   const { data: usdcBalance = 0n } = useReadContract({
     address: USDC?.address,
@@ -534,6 +534,28 @@ const Trade = () => {
     enabled: Boolean(address && USDC && UniswapV2Router02 && isConnected),
   });
 
+  // Get LP token allowance for remove liquidity
+  const { data: removeLiquidityLPAllowance = 0n, refetch: refetchRemoveLiquidityLPAllowance } = useReadContract({
+    address: removeLiquidityPairAddress?.toLowerCase(),
+    abi: [
+      {
+        type: 'function',
+        name: 'allowance',
+        constant: true,
+        stateMutability: 'view',
+        inputs: [
+          { type: 'address', name: 'owner' },
+          { type: 'address', name: 'spender' }
+        ],
+        outputs: [{ type: 'uint256', name: '' }]
+      }
+    ],
+    functionName: 'allowance',
+    args: [address?.toLowerCase(), UniswapV2Router02?.address?.toLowerCase()],
+    enabled: Boolean(removeLiquidityPairAddress && removeLiquidityPairAddress !== '0x0000000000000000000000000000000000000000' && address && UniswapV2Router02?.address && isConnected),
+    watch: true,
+  });
+
   const { isProcessing: isApprovingSwap, error: approveSwapError, success: approveSwapSuccess, handleTransaction: handleApproveSwap } =
     useTransaction({
       onSuccess: () => {
@@ -570,10 +592,18 @@ const Trade = () => {
       }
     });
 
+  const { isProcessing: isApprovingRemoveLiquidity, error: approveRemoveLiquidityError, success: approveRemoveLiquiditySuccess, handleTransaction: handleApproveRemoveLiquidity } =
+    useTransaction({
+      onSuccess: () => {
+        refetchRemoveLiquidityLPAllowance();
+      }
+    });
+
   const { isProcessing: isRemovingLiquidity, error: removeLiquidityTransactionError, success: removeLiquiditySuccess, handleTransaction: handleRemoveLiquidityTransaction } =
     useTransaction({
       onSuccess: () => {
         resetRemoveLiquidityAmount();
+        refetchRemoveLiquidityLPAllowance();
       }
     });
 
@@ -705,10 +735,73 @@ const Trade = () => {
     });
   };
 
+  const handleApproveRemoveLiquidityClick = () => {
+    handleApproveRemoveLiquidity(async () => {
+      try {
+        // Calculate the actual LP amount to approve based on the ratio
+        const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 6));
+        const userInputAmount = Number(removeLiquidityAmount);
+        const ratio = userInputAmount / maxDisplayAmount;
+        const actualLPAmountToApprove = parseUnits((Number(formatUnits(removeLiquidityLPBalance, 18)) * ratio).toFixed(18), 18);
+
+        console.log('Approving LP tokens:', {
+          displayedAmount: removeLiquidityAmount,
+          maxDisplayAmount,
+          ratio,
+          lpBalance: removeLiquidityLPBalance.toString(),
+          actualLPAmountToApprove: actualLPAmountToApprove.toString()
+        });
+
+        const hash = await writeContractAsync({
+          address: removeLiquidityPairAddress?.toLowerCase(),
+          abi: [
+            {
+              type: 'function',
+              name: 'approve',
+              constant: false,
+              inputs: [
+                { type: 'address', name: 'spender' },
+                { type: 'uint256', name: 'amount' }
+              ],
+              outputs: [{ type: 'bool', name: '' }]
+            }
+          ],
+          functionName: 'approve',
+          args: [
+            UniswapV2Router02?.address?.toLowerCase(),
+            actualLPAmountToApprove
+          ]
+        });
+        console.log('LP token approval hash:', hash);
+        return hash;
+      } catch (err) {
+        console.error('LP token approval error:', err);
+        throw err;
+      }
+    });
+  };
+
   const handleRemoveLiquidity = () => {
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
     handleRemoveLiquidityTransaction(async () => {
       try {
+        // Calculate the actual LP amount to remove based on the ratio
+        // The UI displays LP balance formatted as 6 decimals, but LP tokens actually have 18 decimals
+        // We need to calculate what portion of the actual LP balance to remove
+        const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 6));
+        const userInputAmount = Number(removeLiquidityAmount);
+        const ratio = userInputAmount / maxDisplayAmount;
+        // Use bigint arithmetic to avoid precision issues - convert via parseUnits
+        const actualLPAmountToRemove = parseUnits((Number(formatUnits(removeLiquidityLPBalance, 18)) * ratio).toFixed(18), 18);
+
+        console.log('Remove liquidity conversion:', {
+          displayedAmount: removeLiquidityAmount,
+          maxDisplayAmount,
+          ratio,
+          lpBalance: removeLiquidityLPBalance.toString(),
+          actualLPAmountToRemove: actualLPAmountToRemove.toString()
+        });
+
         const hash = await writeContractAsync({
           address: UniswapV2Router02.address?.toLowerCase(),
           abi: UniswapV2Router02.abi,
@@ -716,7 +809,7 @@ const Trade = () => {
           args: [
             removeLiquidityToken?.toLowerCase(),
             USDC.address?.toLowerCase(),
-            removeLiquidityAmountInWei,
+            actualLPAmountToRemove, // Use the calculated amount based on ratio
             0, // Min amounts
             0,
             address?.toLowerCase(),
@@ -918,6 +1011,7 @@ const Trade = () => {
               onClick={handleApproveLiquidityClick}
               disabled={!liquidityAmount || !selectedLiquidityToken || isApprovingLiquidity || !validateLiquidityAmount(liquidityAmount)}
               startIcon={isApprovingLiquidity ? <CircularProgress size={24} /> : <Pool />}
+              color="primary"
             >
               1. Approve Tokens
             </Button>
@@ -927,6 +1021,7 @@ const Trade = () => {
               onClick={handleAddLiquidity}
               disabled={!liquidityAmount || !selectedLiquidityToken || isAddingLiquidity || liquidityAmountInWei > liquidityTokenAllowance || liquidityAmountInWei > usdcAllowance}
               startIcon={isAddingLiquidity ? <CircularProgress size={24} /> : <Pool />}
+              color="primary"
             >
               2. Add Liquidity
             </Button>
@@ -937,8 +1032,8 @@ const Trade = () => {
       {activeTab === 'removeLiquidity' && (
         <ContentCard title="Remove Liquidity">
           <TransactionAlerts
-            error={removeLiquidityError || removeLiquidityTransactionError}
-            success={removeLiquiditySuccess}
+            error={removeLiquidityError || removeLiquidityTransactionError || approveRemoveLiquidityError}
+            success={removeLiquiditySuccess || approveRemoveLiquiditySuccess}
           />
 
           <Stack spacing={3}>
@@ -947,7 +1042,7 @@ const Trade = () => {
                 token={removeLiquidityToken}
                 onTokenChange={setRemoveLiquidityToken}
                 tokens={trancheTokens.filter(t => t.address !== USDC.address)}
-                label="Select Pool"
+                label="Select Token"
               />
               <AmountField
                 amount={removeLiquidityAmount}
@@ -955,19 +1050,64 @@ const Trade = () => {
                 validateAmount={validateRemoveLiquidityAmount}
                 setError={setRemoveLiquidityError}
                 maxAmount={Number(formatUnits(removeLiquidityLPBalance, 6))}
-                label="Amount of LP Tokens"
+                label="Amount to Remove"
               />
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                LP Token Balance: {Number(formatUnits(removeLiquidityLPBalance, 6)).toLocaleString(undefined, { maximumFractionDigits: 4 })} {trancheTokens.find(t => t.address === removeLiquidityToken)?.symbol || 'LP'}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                LP Token Allowance: {Number(formatUnits(removeLiquidityLPAllowance, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 })} {trancheTokens.find(t => t.address === removeLiquidityToken)?.symbol || 'LP'}
+              </Typography>
             </div>
 
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={handleRemoveLiquidity}
-              disabled={!removeLiquidityAmount || !removeLiquidityToken || isRemovingLiquidity}
-              startIcon={isRemovingLiquidity ? <CircularProgress size={24} /> : <Remove />}
-            >
-              Remove Liquidity
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button
+                fullWidth
+                variant={(() => {
+                  if (!removeLiquidityAmount || !removeLiquidityLPBalance) return "outlined";
+                  const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 6));
+                  const userInputAmount = Number(removeLiquidityAmount);
+                  const ratio = userInputAmount / maxDisplayAmount;
+                  const actualLPAmountToRemove = parseUnits((Number(formatUnits(removeLiquidityLPBalance, 18)) * ratio).toFixed(18), 18);
+                  return actualLPAmountToRemove > removeLiquidityLPAllowance ? "contained" : "outlined";
+                })()}
+                onClick={handleApproveRemoveLiquidityClick}
+                disabled={!removeLiquidityAmount || !removeLiquidityToken || isApprovingRemoveLiquidity || !validateRemoveLiquidityAmount(removeLiquidityAmount) || (() => {
+                  if (!removeLiquidityAmount || !removeLiquidityLPBalance) return true;
+                  const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 6));
+                  const userInputAmount = Number(removeLiquidityAmount);
+                  const ratio = userInputAmount / maxDisplayAmount;
+                  const actualLPAmountToRemove = parseUnits((Number(formatUnits(removeLiquidityLPBalance, 18)) * ratio).toFixed(18), 18);
+                  return actualLPAmountToRemove <= removeLiquidityLPAllowance;
+                })()}
+                startIcon={isApprovingRemoveLiquidity ? <CircularProgress size={24} /> : <Remove />}
+              >
+                1. Approve LP Tokens
+              </Button>
+              <Button
+                fullWidth
+                variant={(() => {
+                  if (!removeLiquidityAmount || !removeLiquidityLPBalance) return "outlined";
+                  const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 6));
+                  const userInputAmount = Number(removeLiquidityAmount);
+                  const ratio = userInputAmount / maxDisplayAmount;
+                  const actualLPAmountToRemove = parseUnits((Number(formatUnits(removeLiquidityLPBalance, 18)) * ratio).toFixed(18), 18);
+                  return actualLPAmountToRemove <= removeLiquidityLPAllowance ? "contained" : "outlined";
+                })()}
+                onClick={handleRemoveLiquidity}
+                disabled={!removeLiquidityAmount || !removeLiquidityToken || isRemovingLiquidity || (() => {
+                  if (!removeLiquidityAmount || !removeLiquidityLPBalance) return true;
+                  const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 6));
+                  const userInputAmount = Number(removeLiquidityAmount);
+                  const ratio = userInputAmount / maxDisplayAmount;
+                  const actualLPAmountToRemove = parseUnits((Number(formatUnits(removeLiquidityLPBalance, 18)) * ratio).toFixed(18), 18);
+                  return actualLPAmountToRemove > removeLiquidityLPAllowance;
+                })()}
+                startIcon={isRemovingLiquidity ? <CircularProgress size={24} /> : <Remove />}
+              >
+                2. Remove Liquidity
+              </Button>
+            </Stack>
           </Stack>
         </ContentCard>)}
     </Stack>

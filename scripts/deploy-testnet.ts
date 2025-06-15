@@ -44,8 +44,7 @@ async function main() {
     const coverMaxToken = await ethers.getContractAt("CoverMaxToken", mockAddresses.coverMaxToken);
     const mockMToken = await ethers.getContractAt("MockMToken", mockAddresses.moonwellUsdc);
     const mockComptroller = await ethers.getContractAt("MockMoonwellComptroller", mockAddresses.moonwellComptroller);
-    const factory = await ethers.getContractAt("MockUniswapV2Factory", mockAddresses.uniswapFactory);
-    const router = await ethers.getContractAt("MockUniswapV2Router02", mockAddresses.uniswapRouter);
+    const factory = await ethers.getContractAt("UniswapV2Factory", mockAddresses.uniswapFactory);
 
     // Update addresses for core deployment
     const deploymentAddresses = {
@@ -72,7 +71,8 @@ async function main() {
         ATOKEN: await mockAavePool.aTokens(await mockUSDC.getAddress()),
         MOONWELL_COMPTROLLER: await mockComptroller.getAddress(),
         UNISWAP_FACTORY: await factory.getAddress(),
-        UNISWAP_ROUTER: await router.getAddress()
+        UNISWAP_ROUTER: mockAddresses.uniswapRouter,
+        WETH: mockAddresses.weth
       }
     };
 
@@ -95,14 +95,14 @@ async function main() {
 
     // Create Uniswap pairs for AAA and AA tokens
     console.log("\nCreating Uniswap pairs...");
-    await waitForConfirmations(factory.createPair(await deployedContracts.trancheAAA.getAddress(), await mockUSDC.getAddress()));
+    await waitForConfirmations((factory as any).createPair(await deployedContracts.trancheAAA.getAddress(), await mockUSDC.getAddress()));
     console.log("Created AAA/USDC pair");
-    await waitForConfirmations(factory.createPair(await deployedContracts.trancheAA.getAddress(), await mockUSDC.getAddress()));
+    await waitForConfirmations((factory as any).createPair(await deployedContracts.trancheAA.getAddress(), await mockUSDC.getAddress()));
     console.log("Created AA/USDC pair");
 
     // Get pair addresses for configuration
-    const aaaUsdcPair = await factory.getPair(await deployedContracts.trancheAAA.getAddress(), await mockUSDC.getAddress());
-    const aaUsdcPair = await factory.getPair(await deployedContracts.trancheAA.getAddress(), await mockUSDC.getAddress());
+    const aaaUsdcPair = await (factory as any).getPair(await deployedContracts.trancheAAA.getAddress(), await mockUSDC.getAddress());
+    const aaUsdcPair = await (factory as any).getPair(await deployedContracts.trancheAA.getAddress(), await mockUSDC.getAddress());
     console.log("AAA/USDC pair:", aaaUsdcPair);
     console.log("AA/USDC pair:", aaUsdcPair);
 
@@ -138,19 +138,19 @@ async function main() {
       },
       UniswapV2Factory: {
         address: await factory.getAddress(),
-        abi: (await ethers.getContractFactory("MockUniswapV2Factory")).interface.fragments
+        abi: (await ethers.getContractFactory("UniswapV2Factory")).interface.fragments
       },
       UniswapV2Router02: {
-        address: await router.getAddress(),
-        abi: (await ethers.getContractFactory("MockUniswapV2Router02")).interface.fragments
+        address: mockAddresses.uniswapRouter,
+        abi: (await ethers.getContractFactory("UniswapV2Router02")).interface.fragments
       },
       AAAUSDCPair: {
         address: aaaUsdcPair,
-        abi: (await ethers.getContractFactory("MockUniswapV2Pair")).interface.fragments
+        abi: (await ethers.getContractFactory("UniswapV2Pair")).interface.fragments
       },
       AAUSDCPair: {
         address: aaUsdcPair,
-        abi: (await ethers.getContractFactory("MockUniswapV2Pair")).interface.fragments
+        abi: (await ethers.getContractFactory("UniswapV2Pair")).interface.fragments
       }
     };
 

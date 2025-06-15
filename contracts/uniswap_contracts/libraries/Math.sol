@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity =0.5.16;
 
 // a library for performing various math operations
 
@@ -20,13 +19,5 @@ library Math {
         } else if (y != 0) {
             z = 1;
         }
-    }
-
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x, 'Math: addition overflow');
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x, 'Math: subtraction overflow');
     }
 }

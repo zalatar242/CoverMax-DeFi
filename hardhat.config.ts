@@ -9,13 +9,45 @@ dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.28",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
+    compilers: [
+      {
+        version: "0.8.28",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+        },
       },
-    },
+      {
+        version: "0.7.6", // Added compiler for Uniswap V3 contracts
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+          evmVersion: 'istanbul', // Added evmVersion setting
+        },
+      },
+      {
+        version: "0.6.6", // Added compiler for Uniswap V2 Router
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+        },
+      },
+      {
+        version: "0.5.16", // Added compiler for Uniswap V2 core contracts
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+        },
+      },
+    ],
   },
   networks: {
     hardhat: {

@@ -1,9 +1,11 @@
 import { ethers } from "hardhat";
 import { Contract } from "ethers";
+// import { UniswapV2Factory } from "../typechain-types"; // Changed import for UniswapV2Factory type
+// Minimal interface for UniswapV2Factory removed for simplicity
 
 async function main() {
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying Uniswap V2 mocks with account:", await deployer.getAddress());
+  console.log("Deploying Uniswap V2 contracts with account:", await deployer.getAddress());
 
   // Deploy Mock USDC if needed (use existing if available)
   const MockUSDC = await ethers.getContractFactory("MockUSDC");
@@ -13,22 +15,14 @@ async function main() {
   console.log("MockUSDC deployed to:", usdcAddress);
 
   // Deploy Factory
-  const MockUniswapV2Factory = await ethers.getContractFactory("MockUniswapV2Factory");
-  const factory = await MockUniswapV2Factory.deploy(await deployer.getAddress());
+  const UniswapV2FactoryFactory = await ethers.getContractFactory("UniswapV2Factory");
+  const factory = await UniswapV2FactoryFactory.deploy(await deployer.getAddress());
   await factory.waitForDeployment();
   const factoryAddress = await factory.getAddress();
-  console.log("MockUniswapV2Factory deployed to:", factoryAddress);
+  console.log("UniswapV2Factory deployed to:", factoryAddress);
 
-  // Deploy Router
-  const MockUniswapV2Router02 = await ethers.getContractFactory("MockUniswapV2Router02");
-  const router = await MockUniswapV2Router02.deploy(
-    factoryAddress,
-    ethers.ZeroAddress, // No WETH needed for our mock
-    usdcAddress
-  );
-  await router.waitForDeployment();
-  const routerAddress = await router.getAddress();
-  console.log("MockUniswapV2Router02 deployed to:", routerAddress);
+  // Router removed - using only core Uniswap V2 contracts
+  const routerAddress = ethers.ZeroAddress; // Placeholder for router address
 
   // Get AAA and AA token addresses from Insurance contract
   const Insurance = await ethers.getContractFactory("Insurance");
@@ -43,14 +37,14 @@ async function main() {
   console.log("AA Token:", aaToken);
 
   // Create pairs
-  await factory.createPair(aaaToken, usdcAddress);
-  console.log("Created AAA/USDC pair");
-  await factory.createPair(aaToken, usdcAddress);
-  console.log("Created AA/USDC pair");
+  await (factory as any).createPair(aaaToken, usdcAddress);
+  console.log(`Created AAA/USDC pair`);
+  await (factory as any).createPair(aaToken, usdcAddress);
+  console.log(`Created AA/USDC pair`);
 
   // Get pair addresses
-  const aaaUsdcPair = await factory.getPair(aaaToken, usdcAddress);
-  const aaUsdcPair = await factory.getPair(aaToken, usdcAddress);
+  const aaaUsdcPair = await (factory as any).getPair(aaaToken, usdcAddress);
+  const aaUsdcPair = await (factory as any).getPair(aaToken, usdcAddress);
   console.log("AAA/USDC pair:", aaaUsdcPair);
   console.log("AA/USDC pair:", aaUsdcPair);
 
