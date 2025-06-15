@@ -328,10 +328,159 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
   });
 
+  describe("Time-based Operation Restrictions", function () {
+    it("Should prevent splitRisk after issuance period ends (after S)", async function () {
+      const amount = ethers.parseUnits("100", 6);
+
+      // Advance time past S (issuance period ends)
+      await advanceTime(ISSUANCE_PERIOD + 1);
+
+      await expect(insurance.connect(attacker).splitRisk(amount))
+        .to.be.revertedWith("Insurance: issuance ended");
+    });
+
+    it("Should handle forgotten splitRisk - users miss issuance window", async function () {
+      console.log("\nForgotten Split Risk Test");
+      console.log("========================");
+
+      const amount = ethers.parseUnits("100", 6);
+      console.log("Planned investment:", ethers.formatUnits(amount, 6), "USDC");
+
+      // User intends to split risk but forgets until after S
+      console.log("Time advances past issuance period...");
+      await advanceTime(ISSUANCE_PERIOD + 1);
+
+      console.log("\nUser attempts late splitRisk (should fail):");
+      console.log("------------------------------------------");
+
+      // This should fail - user missed the issuance window
+      await expect(insurance.connect(attacker).splitRisk(amount))
+        .to.be.revertedWith("Insurance: issuance ended");
+
+      // Verify no tokens were minted
+      expect(await trancheAAA.balanceOf(attacker.address)).to.equal(0);
+      expect(await trancheAA.balanceOf(attacker.address)).to.equal(0);
+
+      console.log("Result: User cannot participate - missed issuance window");
+      console.log("========================\n");
+    });
+
+    it("Should handle forgotten claim during insurance period", async function () {
+      console.log("\nForgotten Claim During Insurance Period Test");
+      console.log("==========================================");
+
+      const amount = ethers.parseUnits("100", 6);
+      await insurance.connect(attacker).splitRisk(amount);
+
+      const trancheAmount = amount / 2n;
+      console.log("User has tranche tokens:", ethers.formatUnits(trancheAmount, 6), "each");
+
+      // User forgets to claim before insurance period and tries during it
+      console.log("\nAdvancing to insurance period (between S and T1)...");
+      await advanceTime(ISSUANCE_PERIOD + 1); // After S but before T1
+
+      console.log("User attempts to claim during insurance period (should fail):");
+      console.log("------------------------------------------------------------");
+
+      await expect(insurance.connect(attacker).claim(trancheAmount, trancheAmount))
+        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
+
+      console.log("Result: Claims blocked during insurance period");
+      console.log("==========================================\n");
+    });
+
+    it("Should allow claim after user forgets during insurance period but remembers after T1", async function () {
+      console.log("\nRecovery After Forgotten Claim Test");
+      console.log("==================================");
+
+      const amount = ethers.parseUnits("100", 6);
+      await insurance.connect(attacker).splitRisk(amount);
+
+      const trancheAmount = amount / 2n;
+      console.log("User has tranche tokens:", ethers.formatUnits(trancheAmount, 6), "each");
+
+      // User forgets to claim during insurance period
+      console.log("\nUser forgets to claim and insurance period passes...");
+      await advanceTime(ISSUANCE_PERIOD + INSURANCE_PERIOD + 1); // Past T1
+
+      console.log("User remembers and claims after T1 (should succeed):");
+      console.log("---------------------------------------------------");
+
+      const initialUSDC = await usdc.balanceOf(attacker.address);
+
+      // This should work - after T1
+      await insurance.connect(attacker).claim(trancheAmount, trancheAmount);
+
+      const finalUSDC = await usdc.balanceOf(attacker.address);
+      const claimed = finalUSDC - initialUSDC;
+
+      console.log("USDC claimed:", ethers.formatUnits(claimed, 6), "USDC");
+      console.log("Tranche tokens burned successfully");
+
+      // Verify tokens were burned
+      expect(await trancheAAA.balanceOf(attacker.address)).to.equal(0);
+      expect(await trancheAA.balanceOf(attacker.address)).to.equal(0);
+
+      console.log("Result: User successfully recovered after insurance period");
+      console.log("==================================\n");
+    });
+
+    it("Should allow claims right before S", async function () {
+      console.log("\nClaim Right Before S Test");
+      console.log("========================");
+
+      const amount = ethers.parseUnits("100", 6);
+      await insurance.connect(user).splitRisk(amount);
+      const trancheAmount = amount / 2n;
+
+      console.log("Advancing to just before S...");
+      await advanceTime(ISSUANCE_PERIOD - 10); // 10 seconds before S
+
+      console.log("Attempting claim before S (should work):");
+      const beforeS = await insurance.connect(user).claim(trancheAmount, 0);
+      await expect(beforeS).to.not.be.reverted;
+      console.log("✓ Claim before S: SUCCESS");
+      console.log("========================\n");
+    });
+
+    it("Should prevent claims during insurance period (between S and T1)", async function () {
+      console.log("\nClaim During Insurance Period Test");
+      console.log("=================================");
+
+      const amount = ethers.parseUnits("100", 6);
+      await insurance.connect(attacker).splitRisk(amount);
+      const trancheAmount = amount / 2n;
+
+      console.log("Advancing to insurance period (just past S)...");
+      await advanceTime(ISSUANCE_PERIOD + 1); // Just past S
+
+      console.log("Attempting claim during insurance period (should fail):");
+      await expect(insurance.connect(attacker).claim(trancheAmount, trancheAmount))
+        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
+      console.log("✓ Claim during insurance period: BLOCKED (expected)");
+      console.log("=================================\n");
+    });
+
+    it("Should allow claims after T1", async function () {
+      console.log("\nClaim After T1 Test");
+      console.log("==================");
+
+      const amount = ethers.parseUnits("100", 6);
+      await insurance.connect(whale).splitRisk(amount);
+      const trancheAmount = amount / 2n;
+
+      console.log("Advancing past T1 (insurance period ends)...");
+      await advanceTime(ISSUANCE_PERIOD + INSURANCE_PERIOD + 1); // Past T1
+
+      console.log("Attempting claim after T1 (should work):");
+      const afterT1 = await insurance.connect(whale).claim(trancheAmount, trancheAmount);
+      await expect(afterT1).to.not.be.reverted;
+      console.log("✓ Claim after T1: SUCCESS");
+      console.log("==================\n");
+    });
+  });
+
   after(async function () {
     await ethers.provider.send("hardhat_stopImpersonatingAccount", [USDC_WHALE]);
   });
 });
-
-
-//TODO! There should be tests for when people forget to call invest on or after T1, and tests for when people forget to call divest before T2 begins
