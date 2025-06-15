@@ -35,7 +35,7 @@ describe("Moonwell Lending Adapter (Base Mainnet Fork)", function() {
         [owner] = await ethers.getSigners();
 
         // Get USDC contract
-        usdc = await ethers.getContractAt("IERC20", USDC_ADDRESS);
+        usdc = await ethers.getContractAt("@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20", USDC_ADDRESS) as unknown as IERC20;
 
         // Deploy Moonwell adapter
         const MoonwellAdapter = await ethers.getContractFactory("MoonwellLendingAdapter");
