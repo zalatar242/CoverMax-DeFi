@@ -80,8 +80,8 @@ describe("Insurance (Base Mainnet Fork)", function () {
     await ethers.provider.send("hardhat_impersonateAccount", [USDC_WHALE]);
     whale = await ethers.getSigner(USDC_WHALE);
 
-    // Use small amounts for testing
-    const transferAmount = ethers.parseUnits("100", 6); // 100 USDC
+    // Use small amounts for testing - increased to cover test cases that need 101 USDC
+    const transferAmount = ethers.parseUnits("150", 6); // 150 USDC
 
     try {
       // Verify USDC contract and whale setup
@@ -126,10 +126,11 @@ describe("Insurance (Base Mainnet Fork)", function () {
       throw error;
     }
 
-    // Approve insurance contract
-    await usdc.connect(attacker).approve(await insurance.getAddress(), transferAmount);
-    await usdc.connect(user).approve(await insurance.getAddress(), transferAmount);
-    await usdc.connect(whale).approve(await insurance.getAddress(), transferAmount);
+    // Approve insurance contract with higher amounts to cover test cases
+    const approvalAmount = ethers.parseUnits("200", 6); // 200 USDC to cover larger test amounts
+    await usdc.connect(attacker).approve(await insurance.getAddress(), approvalAmount);
+    await usdc.connect(user).approve(await insurance.getAddress(), approvalAmount);
+    await usdc.connect(whale).approve(await insurance.getAddress(), approvalAmount);
 
     // Take initial snapshot after setup
     snapshotId = await takeSnapshot();
@@ -208,7 +209,7 @@ describe("Insurance (Base Mainnet Fork)", function () {
     });
 
     it("Should prevent amount not divisible by 2 in splitRisk", async function () {
-      const amount = ethers.parseUnits("101", 6); // Odd number
+      const amount = ethers.parseUnits("100", 6) + 1n; // 100 USDC + 1 smallest unit = odd number
       await expect(insurance.connect(attacker).splitRisk(amount))
         .to.be.revertedWith("Insurance: Amount must be divisible by 2");
     });
