@@ -48,10 +48,10 @@ contract Insurance is Ownable {
         uint256 errorCode
     );
 
-    constructor(address _usdc) Ownable(msg.sender) {
-        require(_usdc != address(0), "Insurance: invalid USDC");
-        usdc = _usdc;
 
+        constructor(address usdcAddress) Ownable(msg.sender) {
+            require(usdcAddress != address(0), "Insurance: USDC address cannot be zero");
+            usdc = usdcAddress;
         // Create tranche tokens
         AAA = address(new Tranche("CM Tranche AAA", "CM-AAA"));
         AA = address(new Tranche("CM Tranche AA", "CM-AA"));
@@ -64,6 +64,12 @@ contract Insurance is Ownable {
     }
 
     // Investment Operations
+    /**
+     * @dev Deposits USDC to a lending adapter.
+     * @param adapter The lending adapter to deposit to.
+     * @param amount The amount of USDC to deposit.
+     * @return bool True if the deposit was successful, false otherwise.
+     */
     function _depositToAdapter(
         ILendingAdapter adapter,
         uint256 amount
@@ -86,6 +92,13 @@ contract Insurance is Ownable {
         }
     }
 
+    /**
+     * @dev Withdraws USDC from a lending adapter.
+     * @param adapter The lending adapter to withdraw from.
+     * @param primaryAmount The amount of USDC to withdraw in the first attempt.
+     * @param remainingAmount The amount of USDC to withdraw in the second attempt if the first fails.
+     * @return amountReceived The amount of USDC received from the withdrawal.
+     */
     function _withdrawFromAdapter(
         ILendingAdapter adapter,
         uint256 primaryAmount,
@@ -118,6 +131,11 @@ contract Insurance is Ownable {
     }
 
     // Risk Calculations
+    /**
+     * @dev Calculates the withdrawal share for a given amount of tokens.
+     * @param totalTokens The total amount of tokens to withdraw.
+     * @return uint256 The withdrawal share.
+     */
     function _calculateWithdrawalShare(
         uint256 totalTokens
     ) internal view returns (uint256) {
@@ -125,6 +143,12 @@ contract Insurance is Ownable {
         return (totalTokens * RAY) / totalTranches;
     }
 
+    /**
+     * @dev Calculates the withdrawal amounts for each lending adapter.
+     * @param totalToWithdraw The total amount to withdraw.
+     * @return primaryAmounts The amount to withdraw from each adapter in the first attempt.
+     * @return remainingAmounts The amount to withdraw from each adapter in the second attempt if the first fails.
+     */
     function _calculateWithdrawalAmounts(
         uint256 totalToWithdraw
     )
@@ -157,6 +181,11 @@ contract Insurance is Ownable {
     }
 
     // Token Operations
+    /**
+     * @dev Mints AAA and AA tranche tokens to a recipient.
+     * @param recipient The address to mint the tokens to.
+     * @param amount The total amount of tokens to mint (split equally between AAA and AA).
+     */
     function _mintTranches(address recipient, uint256 amount) internal {
         uint256 trancheAmount = amount / 2;
         ITranche(AAA).mint(recipient, trancheAmount);
@@ -164,6 +193,12 @@ contract Insurance is Ownable {
         totalTranches += amount;
     }
 
+    /**
+     * @dev Burns AAA and AA tranche tokens from an account.
+     * @param account The address to burn the tokens from.
+     * @param amountAAA The amount of AAA tokens to burn.
+     * @param amountAA The amount of AA tokens to burn.
+     */
     function _burnTranches(
         address account,
         uint256 amountAAA,
@@ -171,7 +206,7 @@ contract Insurance is Ownable {
     ) internal {
         require(
             amountAAA > 0 || amountAA > 0,
-            "Insurance: no amount specified"
+            "Insurance: AmountAAA and AmountAA cannot both be zero"
         );
 
         if (amountAAA > 0) {
@@ -193,13 +228,21 @@ contract Insurance is Ownable {
     }
 
     // External Functions
+    /**
+     * @dev Adds a lending adapter to the list of adapters.
+     * @param adapter The address of the lending adapter to add.
+     */
     function addLendingAdapter(address adapter) external onlyOwner {
         require(block.timestamp < S, "Insurance: past issuance period");
-        require(adapter != address(0), "Insurance: invalid adapter");
+        require(adapter != address(0), "Insurance: Adapter address cannot be zero");
         lendingAdapters.push(ILendingAdapter(adapter));
         emit AdapterAdded(adapter);
     }
 
+    /**
+     * @dev Removes a lending adapter from the list of adapters.
+     * @param index The index of the lending adapter to remove.
+     */
     function removeLendingAdapter(uint256 index) external onlyOwner {
         require(block.timestamp < S, "Insurance: past issuance period");
         require(index < lendingAdapters.length, "Insurance: invalid index");
@@ -209,12 +252,16 @@ contract Insurance is Ownable {
         lendingAdapters.pop();
     }
 
+    /**
+     * @dev Splits the risk by depositing USDC to lending adapters and minting tranche tokens.
+     * @param amountUsdc The amount of USDC to split.
+     */
     function splitRisk(uint256 amountUsdc) external {
         require(block.timestamp < S, "Insurance: issuance ended");
         require(amountUsdc > MINIMUM_AMOUNT, "Insurance: amount too low");
         require(
             amountUsdc % 2 == 0,
-            "Insurance: amount must be divisible by 2"
+            "Insurance: Amount must be divisible by 2"
         );
         require(lendingAdapters.length > 0, "Insurance: no adapters");
 
@@ -243,10 +290,15 @@ contract Insurance is Ownable {
         emit RiskSplit(msg.sender, amountUsdc);
     }
 
+    /**
+     * @dev Claims USDC by withdrawing from lending adapters and burning tranche tokens.
+     * @param amountAAA The amount of AAA tokens to burn.
+     * @param amountAA The amount of AA tokens to burn.
+     */
     function _claim(uint256 amountAAA, uint256 amountAA) internal {
         require(
             block.timestamp <= S || block.timestamp > T1,
-            "Insurance: can only claim before insurance phase starts or after it ends"
+            "Insurance: Claims can only be made before the insurance phase starts or after it ends"
         );
 
         uint256 totalTokens = amountAAA + amountAA;
@@ -282,15 +334,23 @@ contract Insurance is Ownable {
         emit Claim(msg.sender, amountAAA, amountAA, totalWithdrawn);
     }
 
+    /**
+     * @dev Claims USDC by withdrawing from lending adapters and burning tranche tokens.
+     * @param amountAAA The amount of AAA tokens to burn.
+     * @param amountAA The amount of AA tokens to burn.
+     */
     function claim(uint256 amountAAA, uint256 amountAA) external {
         _claim(amountAAA, amountAA);
     }
 
+    /**
+     * @dev Claims all available USDC by withdrawing from lending adapters and burning all tranche tokens.
+     */
     function claimAll() external {
         uint256 balanceAAA = ITranche(AAA).balanceOf(msg.sender);
         uint256 balanceAA = ITranche(AA).balanceOf(msg.sender);
 
-        require(balanceAAA > 0 || balanceAA > 0, "Insurance: no balance");
+        require(balanceAAA > 0 || balanceAA > 0, "Insurance: No AAA or AA tokens to claim");
 
         _claim(balanceAAA, balanceAA);
     }
