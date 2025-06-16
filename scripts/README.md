@@ -12,7 +12,11 @@ scripts/
 ├── utils/                 # Utility functions
 │   └── config.ts         # Configuration update utilities
 ├── deploy-local.ts       # Local development deployment
-└── deploy-mainnet.ts     # Mainnet deployment
+├── deploy-mainnet.ts     # Mainnet deployment
+├── deploy-testnet.ts     # Testnet deployment (description to be added)
+├── deploy-insurance.ts   # Insurance contract specific deployment (description to be added)
+├── deploy-uniswap-mocks.ts # Uniswap mock deployment (description to be added)
+└── utils.ts                # General utility script (description to be added)
 ```
 
 ## Usage

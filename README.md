@@ -120,11 +120,8 @@ Common issues and solutions:
    - Check contract addresses in frontend config
    - Clear browser cache
 
-For more detailed instructions, see [Local Development Guide](LOCAL_DEVELOPMENT.md).
-
 ## Documentation
 
-- [Local Development Guide](LOCAL_DEVELOPMENT.md) - Complete guide for local development, testing, and debugging
 - [Scripts Documentation](scripts/README.md) - Details about deployment scripts and configuration
 
 ## Deployment
@@ -168,17 +165,6 @@ npm run coverage
 4. Push to the branch
 5. Create a new Pull Request
 
-## Security
-
-### Audits
-
-- Audit 1: [Link to audit report]
-- Audit 2: [Link to audit report]
-
-### Bug Bounty
-
-Our bug bounty program details can be found at [Link to bug bounty]
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Business Source License - see the [LICENSE](LICENSE) file for details.
