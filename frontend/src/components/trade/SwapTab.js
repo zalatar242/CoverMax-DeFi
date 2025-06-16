@@ -14,7 +14,7 @@ import {
   TokenSelect
 } from '../ui';
 
-const SwapTab = () => {
+const SwapTab = ({ onTransactionSuccess }) => {
   const { isConnected, address } = useWalletConnection();
   const { USDC, UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
@@ -83,21 +83,13 @@ const SwapTab = () => {
       onSuccess: () => {
         resetSwapAmount();
         refetchFromTokenAllowance();
-        if (selectedFromToken) {
-          // Re-trigger balance fetch for the 'from' token
-          const fromTokenConfig = trancheTokens.find(t => t.address === selectedFromToken);
-          if (fromTokenConfig) {
-            // This is a bit of a hack, ideally useReadContract's refetch would be sufficient
-            // For now, let's assume direct refetch works or balances update via watch elsewhere.
-            // A more robust way would be to call the specific refetch function from useReadContract
-            // e.g., by storing them:
-            // const { data: fromTokenBalance, refetch: refetchFromBalance } = useReadContract(...);
-            // then call refetchFromBalance();
-          }
-        }
+        // No need for the hacky balance refetch here as the parent component's refreshKey will handle it.
         if (selectedToToken) {
-          refetchToTokenBalance(); // Refetch 'to' token balance
-          refetchToTokenAllowance(); // Also refetch 'to' token allowance if needed for future operations
+          refetchToTokenBalance();
+          refetchToTokenAllowance();
+        }
+        if (onTransactionSuccess) {
+          onTransactionSuccess();
         }
       }
     });

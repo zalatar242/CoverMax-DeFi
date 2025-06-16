@@ -29,9 +29,13 @@ const WalletRequiredPrompt = ({ openConnectModal }) => (
 const Trade = () => {
   const { isConnected } = useWalletConnection();
   const { openConnectModal } = useWalletModal();
-  const { AAA, AA } = useTranchesConfig(); // Keep for TokenPrice and LiquidityPosition if they need it directly
-
+  const { AAA, AA } = useTranchesConfig();
   const [activeTab, setActiveTab] = useState('swap'); // 'swap', 'addLiquidity', 'removeLiquidity'
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleTransactionSuccess = () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  };
 
   if (!isConnected) {
     return <WalletRequiredPrompt openConnectModal={openConnectModal} />;
@@ -43,16 +47,16 @@ const Trade = () => {
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>Current Prices</Typography>
         <Stack spacing={1}>
-          {AAA?.address && <TokenPrice token={AAA.address} symbol="AAA" />}
-          {AA?.address && <TokenPrice token={AA.address} symbol="AA" />}
+          {AAA?.address && <TokenPrice key={`aaa-price-${refreshKey}`} token={AAA.address} symbol="AAA" />}
+          {AA?.address && <TokenPrice key={`aa-price-${refreshKey}`} token={AA.address} symbol="AA" />}
         </Stack>
       </Paper>
 
       {/* Your Liquidity Positions */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>Your Liquidity Positions</Typography>
-        {AAA?.address && <LiquidityPosition token={AAA.address} symbol="AAA" />}
-        {AA?.address && <LiquidityPosition token={AA.address} symbol="AA" />}
+        {AAA?.address && <LiquidityPosition key={`aaa-lp-${refreshKey}`} token={AAA.address} symbol="AAA" />}
+        {AA?.address && <LiquidityPosition key={`aa-lp-${refreshKey}`} token={AA.address} symbol="AA" />}
       </Paper>
 
             {/* Navigation Tabs */}
@@ -78,10 +82,10 @@ const Trade = () => {
           </Button>
         </Stack>
       </Box>
-      
-      {activeTab === 'swap' && <SwapTab />}
-      {activeTab === 'addLiquidity' && <AddLiquidityTab />}
-      {activeTab === 'removeLiquidity' && <RemoveLiquidityTab />}
+
+      {activeTab === 'swap' && <SwapTab onTransactionSuccess={handleTransactionSuccess} />}
+      {activeTab === 'addLiquidity' && <AddLiquidityTab onTransactionSuccess={handleTransactionSuccess} />}
+      {activeTab === 'removeLiquidity' && <RemoveLiquidityTab onTransactionSuccess={handleTransactionSuccess} />}
     </Stack>
   );
 };

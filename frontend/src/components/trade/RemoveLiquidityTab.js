@@ -14,7 +14,7 @@ import {
   TokenSelect
 } from '../ui';
 
-const RemoveLiquidityTab = () => {
+const RemoveLiquidityTab = ({ onTransactionSuccess }) => {
   const { isConnected, address } = useWalletConnection();
   const { USDC, UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
@@ -84,16 +84,11 @@ const RemoveLiquidityTab = () => {
         resetRemoveLiquidityAmount();
         refetchRemoveLiquidityLPAllowance();
         refetchRemoveLiquidityLPBalance();
-
-        // Also refetch balances of the tokens received (selected token and USDC)
-        // This requires having read hooks for these balances in this component
-        // or a shared mechanism to trigger balance updates.
-        // e.g., if you had:
-        // const { refetch: refetchSelectedTokenBalance } = useReadContract({ ... for selected token balance ... });
-        // const { refetch: refetchUsdcBalance } = useReadContract({ ... for USDC balance ... });
-        // then call:
-        // refetchSelectedTokenBalance();
-        // refetchUsdcBalance();
+        // Balances of underlying tokens will be refetched by the parent component
+        // due to refreshKey change
+        if (onTransactionSuccess) {
+          onTransactionSuccess();
+        }
       }
     });
 

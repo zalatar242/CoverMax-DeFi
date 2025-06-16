@@ -15,7 +15,7 @@ import {
   TokenSelect
 } from '../ui';
 
-const AddLiquidityTab = () => {
+const AddLiquidityTab = ({ onTransactionSuccess }) => {
   const { isConnected, address } = useWalletConnection();
   const { USDC, UniswapV2Router02 } = useMainConfig();
   const wagmiConfig = useConfig();
@@ -95,14 +95,10 @@ const AddLiquidityTab = () => {
         // Refetch allowances
         refetchLiquidityTokenAllowance();
         refetchUSDCAllowance();
-        // Refetch balances of tokens used
-        // Assuming refetch functions are available from useReadContract hooks for balances
-        // For example, if useUSDCBalance hook provides refetch:
-        // refetchUsdcBalance();
-        // And similarly for selectedLiquidityToken balance.
-        // For now, we'll rely on watch:true or manual refresh if these specific refetches aren't set up.
-        // If refetchCurrentLPBalance is set up (see above), call it here:
-        // refetchCurrentLPBalance();
+        // Balances will be refetched by the parent component due to refreshKey change
+        if (onTransactionSuccess) {
+          onTransactionSuccess();
+        }
       }
     });
 
