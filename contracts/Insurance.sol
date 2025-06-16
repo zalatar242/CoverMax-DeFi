@@ -22,10 +22,10 @@ contract Insurance is Ownable {
     uint256 private constant MINIMUM_AMOUNT = 2; // Minimum split amount
 
     /* Time periods */
-    uint256 public immutable S; // Start/split end
-    uint256 public immutable T1; // Insurance end
-    uint256 public immutable T2; // AAA tokens claim start
-    uint256 public immutable T3; // Final claim end (AAA and AA)
+    uint256 public S; // Start/split end
+    uint256 public T1; // Insurance end
+    uint256 public T2; // AAA tokens claim start
+    uint256 public T3; // Final claim end (AAA and AA)
 
     /* State tracking */
     uint256 public totalTranches; // Total AAA + AA tokens
@@ -227,12 +227,32 @@ contract Insurance is Ownable {
         totalTranches -= (amountAAA + amountAA);
     }
 
+    /**
+     * @dev Resets the contract's time periods for a new cycle.
+     * This function is called internally when an operation is attempted after T3.
+     */
+    function _resetTimePeriods() internal {
+        S = block.timestamp + 2 days;
+        T1 = S + 5 days;
+        T2 = T1 + 1 days;
+        T3 = T2 + 1 days;
+
+        // Consider resetting other state variables for a new cycle:
+        // totalTranches = 0;
+        // totalInvested = 0;
+        // This would ensure that each cycle starts fresh.
+        // For now, only time periods are reset.
+    }
+
     // External Functions
     /**
      * @dev Adds a lending adapter to the list of adapters.
      * @param adapter The address of the lending adapter to add.
      */
     function addLendingAdapter(address adapter) external onlyOwner {
+        if (block.timestamp > T3) {
+            _resetTimePeriods();
+        }
         require(block.timestamp < S, "Insurance: past issuance period");
         require(adapter != address(0), "Insurance: Adapter address cannot be zero");
         lendingAdapters.push(ILendingAdapter(adapter));
@@ -244,6 +264,9 @@ contract Insurance is Ownable {
      * @param index The index of the lending adapter to remove.
      */
     function removeLendingAdapter(uint256 index) external onlyOwner {
+        if (block.timestamp > T3) {
+            _resetTimePeriods();
+        }
         require(block.timestamp < S, "Insurance: past issuance period");
         require(index < lendingAdapters.length, "Insurance: invalid index");
 
@@ -257,6 +280,9 @@ contract Insurance is Ownable {
      * @param amountUsdc The amount of USDC to split.
      */
     function splitRisk(uint256 amountUsdc) external {
+        if (block.timestamp > T3) {
+            _resetTimePeriods();
+        }
         require(block.timestamp < S, "Insurance: issuance ended");
         require(amountUsdc > MINIMUM_AMOUNT, "Insurance: amount too low");
         require(
@@ -296,6 +322,9 @@ contract Insurance is Ownable {
      * @param amountAA The amount of AA tokens to burn.
      */
     function _claim(uint256 amountAAA, uint256 amountAA) internal {
+        if (block.timestamp > T3) {
+            _resetTimePeriods();
+        }
         require(
             block.timestamp <= S || block.timestamp > T1,
             "Insurance: Claims can only be made before the insurance phase starts or after it ends"
