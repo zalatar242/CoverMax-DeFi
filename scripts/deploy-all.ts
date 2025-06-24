@@ -67,37 +67,60 @@ async function main() {
   }
 
   // Deploy Moonwell Mock Contracts
-  const MockMoonwell = await ethers.getContractFactory("MockMoonwell");
-  console.log("Deploying MockMoonwell...");
-  const mockMoonwell = await MockMoonwell.deploy(usdcAddress);
-  await mockMoonwell.waitForDeployment();
-  const mockMoonwellAddress = await mockMoonwell.getAddress();
-  console.log("MockMoonwell deployed to:", mockMoonwellAddress);
-
-  const mTokenAddress = await mockMoonwell.mToken();
-  console.log("mToken address:", mTokenAddress);
+  let mockMoonwellAddress = config["MOONWELL_ADDRESS"];
+  let mTokenAddress = config["MOONWELL_MTOKEN"];
+  if (mockMoonwellAddress && mTokenAddress) {
+    console.log("MockMoonwell already deployed at:", mockMoonwellAddress);
+    console.log("mToken address:", mTokenAddress);
+  } else {
+    const MockMoonwell = await ethers.getContractFactory("MockMoonwell");
+    console.log("Deploying MockMoonwell...");
+    const mockMoonwell = await MockMoonwell.deploy(usdcAddress);
+    await mockMoonwell.waitForDeployment();
+    mockMoonwellAddress = await mockMoonwell.getAddress();
+    mTokenAddress = await mockMoonwell.mToken();
+    config["MOONWELL_ADDRESS"] = mockMoonwellAddress;
+    config["MOONWELL_MTOKEN"] = mTokenAddress;
+    updateNetworkConfig(net, config);
+    console.log("MockMoonwell deployed to:", mockMoonwellAddress);
+    console.log("mToken address:", mTokenAddress);
+  }
 
   // Deploy Adapters
-  const AaveLendingAdapter = await ethers.getContractFactory(
-    "AaveLendingAdapter"
-  );
-  console.log("Deploying AaveLendingAdapter...");
-  const aaveAdapter = await AaveLendingAdapter.deploy(
-    mockAavePoolAddress,
-    mockAavePoolDataProviderAddress
-  );
-  await aaveAdapter.waitForDeployment();
-  const aaveAdapterAddress = await aaveAdapter.getAddress();
-  console.log("AaveLendingAdapter deployed to:", aaveAdapterAddress);
+  let aaveAdapterAddress = config["AAVE_LENDING_ADAPTER"];
+  if (aaveAdapterAddress) {
+    console.log("AaveLendingAdapter already deployed at:", aaveAdapterAddress);
+  } else {
+    const AaveLendingAdapter = await ethers.getContractFactory(
+      "AaveLendingAdapter"
+    );
+    console.log("Deploying AaveLendingAdapter...");
+    const aaveAdapter = await AaveLendingAdapter.deploy(
+      mockAavePoolAddress,
+      mockAavePoolDataProviderAddress
+    );
+    await aaveAdapter.waitForDeployment();
+    aaveAdapterAddress = await aaveAdapter.getAddress();
+    config["AAVE_LENDING_ADAPTER"] = aaveAdapterAddress;
+    updateNetworkConfig(net, config);
+    console.log("AaveLendingAdapter deployed to:", aaveAdapterAddress);
+  }
 
-  const MoonwellLendingAdapter = await ethers.getContractFactory(
-    "MoonwellLendingAdapter"
-  );
-  console.log("Deploying MoonwellLendingAdapter...");
-  const moonwellAdapter = await MoonwellLendingAdapter.deploy(mTokenAddress);
-  await moonwellAdapter.waitForDeployment();
-  const moonwellAdapterAddress = await moonwellAdapter.getAddress();
-  console.log("MoonwellLendingAdapter deployed to:", moonwellAdapterAddress);
+  let moonwellAdapterAddress = config["MOONWELL_LENDING_ADAPTER"];
+  if (moonwellAdapterAddress) {
+    console.log("MoonwellLendingAdapter already deployed at:", moonwellAdapterAddress);
+  } else {
+    const MoonwellLendingAdapter = await ethers.getContractFactory(
+      "MoonwellLendingAdapter"
+    );
+    console.log("Deploying MoonwellLendingAdapter...");
+    const moonwellAdapter = await MoonwellLendingAdapter.deploy(mTokenAddress);
+    await moonwellAdapter.waitForDeployment();
+    moonwellAdapterAddress = await moonwellAdapter.getAddress();
+    config["MOONWELL_LENDING_ADAPTER"] = moonwellAdapterAddress;
+    updateNetworkConfig(net, config);
+    console.log("MoonwellLendingAdapter deployed to:", moonwellAdapterAddress);
+  }
 
   // Deploy Insurance contract
   const Insurance = await ethers.getContractFactory("Insurance");
