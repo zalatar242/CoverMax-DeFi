@@ -27,23 +27,38 @@ export function updateNetworkConfig(network: string, config: Record<string, any>
   const addressesPath = path.join(__dirname, "../../config/addresses.ts");
   let content = fs.readFileSync(addressesPath, "utf8");
 
-  // Create or update network configuration
-  const networkStart = content.indexOf(`${network}: {`);
-  if (networkStart === -1) {
-    // Add new network configuration
-    content = content.replace(
-      "export const networks = {",
-      `export const networks = {\n  ${network}: ${JSON.stringify(config, null, 2)},`
-    );
-  } else {
-    // Update existing network configuration
-    const networkEnd = content.indexOf("}", networkStart) + 1;
-    content = content.slice(0, networkStart) +
-      `${network}: ${JSON.stringify(config, null, 2)}` +
-      content.slice(networkEnd);
+  // Extract the object literal from the file
+  const match = content.match(/export const networks = ({[\s\S]*?}) as const;/);
+  if (!match) {
+    throw new Error("Could not find networks object in addresses.ts");
+  }
+  let networksObj: any;
+  try {
+    // Use eval in a sandboxed way to parse the object literal
+    // eslint-disable-next-line no-eval
+    networksObj = eval('(' + match[1] + ')');
+  } catch (e) {
+    throw new Error("Failed to parse networks object: " + e);
   }
 
-  fs.writeFileSync(addressesPath, content);
+  // Update or add the network config
+  networksObj[network] = config;
+
+  // Serialize back to TypeScript
+  const serialized = Object.entries(networksObj)
+    .map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v, null, 2)}`)
+    .join(",\n");
+
+  const newContent =
+    "export const networks = {\n" +
+    serialized +
+    "\n} as const;\n\n" +
+    (() => {
+        const extra = content.split(/} as const;[\s\S]*/)[1];
+        return extra ? extra.replace(/^\n+/, "") : "";
+    })();
+
+  fs.writeFileSync(addressesPath, newContent);
   console.log(`Updated network configuration for ${network} in addresses.ts`);
 }
 

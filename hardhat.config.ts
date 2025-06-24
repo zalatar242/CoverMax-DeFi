@@ -1,9 +1,8 @@
 import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-ignition-ethers";
+import "@parity/hardhat-polkadot";
 import * as dotenv from "dotenv";
-import "@typechain/hardhat";
-
 
 dotenv.config();
 
@@ -15,98 +14,36 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
-          },
-        },
-      },
-      {
-        version: "0.7.6", // Added compiler for Uniswap V3 contracts
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200
-          },
-          evmVersion: 'istanbul', // Added evmVersion setting
-        },
-      },
-      {
-        version: "0.6.6", // Added compiler for Uniswap V2 Router
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200
-          },
-        },
-      },
-      {
-        version: "0.5.16", // Added compiler for Uniswap V2 core contracts
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200
-          },
-        },
-      },
-    ],
-  },
-  networks: {
-    hardhat: {
-      chainId: 31337, // Default hardhat chain ID
-      forking: {
-        url: process.env.BASE_MAINNET_RPC_URL || "",
-        enabled: process.env.FORK_ENABLED === 'true' && !!process.env.BASE_MAINNET_RPC_URL,
-        blockNumber: 12300000
-      },
-      accounts: {
-        mnemonic: "test test test test test test test test test test test junk",
-        accountsBalance: "10000000000000000000000" // 10000 ETH
-      },
-      mining: {
-        auto: true,
-        interval: 0
-      }
-    },
-    "base-mainnet": {
-      url: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
-      chainId: 8453,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    },
-    "base-sepolia": {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      chainId: 84532,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      gas: 10000000, // Increased gas limit
-      gasPrice: "auto"
-    }
-  },
-  etherscan: {
-    apiKey: {
-      "base-mainnet": process.env.BASESCAN_API_KEY || "",
-      "base-sepolia": process.env.BASESCAN_API_KEY || ""
-    },
-    customChains: [
-      {
-        network: "base-mainnet",
-        chainId: 8453,
-        urls: {
-          apiURL: "https://api.basescan.org/api",
-          browserURL: "https://basescan.org"
-        }
-      },
-      {
-        network: "base-sepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org"
+            runs: 999999
+          }
         }
       }
     ]
   },
-  mocha: {
-    timeout: 120000 // 2 minutes
+  resolc: {
+    compilerSource: 'npm'
+  },
+  networks: {
+    hardhat: {
+      chainId: 31337,
+      polkavm: true
+    },
+    "assethub-westend": {
+      url: process.env.ASSET_HUB_WESTEND_RPC_URL || "https://westend-asset-hub-eth-rpc.polkadot.io",
+      chainId: 420420421,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      gas: 20000000,
+      gasPrice: "auto",
+      polkavm: true,
+      timeout: 600000, // 10 minutes
+      allowUnlimitedContractSize: true,
+      loggingEnabled: true
+    }
+  },
+  paths: {
+    sources: "./contracts",
+    artifacts: "./artifacts-pvm"
   }
-};
-
+} as any;
 
 export default config;
