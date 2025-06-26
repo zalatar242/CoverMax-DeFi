@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Tranche.sol";
@@ -11,9 +11,9 @@ import "./ILendingAdapter.sol";
 /// @notice Deposited funds are managed through lending adapters with two-tranche risk allocation
 contract Insurance is Ownable {
     /* Internal and external contract addresses */
-    address public immutable AAA; // Tranche AAA token contract
-    address public immutable AA; // Tranche AA token contract
-    address public immutable usdc; // USDC token
+    address public AAA; // Tranche AAA token contract
+    address public AA; // Tranche AA token contract
+    address public usdc; // USDC token
     ILendingAdapter[] public lendingAdapters; // Array of platform adapters
 
     /* Math helper for decimal numbers */
@@ -49,18 +49,40 @@ contract Insurance is Ownable {
     );
 
 
-        constructor(address usdcAddress) Ownable(msg.sender) {
-            require(usdcAddress != address(0), "Insurance: USDC address cannot be zero");
-            usdc = usdcAddress;
-        // Create tranche tokens
-        AAA = address(new Tranche("CM Tranche AAA", "CM-AAA"));
-        AA = address(new Tranche("CM Tranche AA", "CM-AA"));
+    bool private initialized;
+
+    constructor() Ownable(address(0)) {
+        // Empty constructor for proxy pattern
+        // Owner will be set in initialize function
+    }
+
+    function initialize(
+        address usdcAddress,
+        uint256 _S,
+        uint256 _T1,
+        uint256 _T2,
+        uint256 _T3,
+        address owner
+    ) external {
+        require(!initialized, "Already initialized");
+        require(usdcAddress != address(0), "Insurance: USDC address cannot be zero");
+
+        initialized = true;
+        usdc = usdcAddress;
 
         // Set time periods
-        S = block.timestamp + 2 days;
-        T1 = S + 5 days;
-        T2 = T1 + 1 days;
-        T3 = T2 + 1 days;
+        S = _S;
+        T1 = _T1;
+        T2 = _T2;
+        T3 = _T3;
+
+        _transferOwnership(owner);
+    }
+
+    function setTranches(address _AAA, address _AA) external onlyOwner {
+        require(AAA == address(0) && AA == address(0), "Tranches already set");
+        AAA = _AAA;
+        AA = _AA;
     }
 
     // Investment Operations

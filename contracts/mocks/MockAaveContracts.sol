@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -58,10 +58,13 @@ contract MockAavePool {
     event Withdraw(address asset, uint256 amount, address to);
 
     constructor(address usdc) {
-        // Create aToken for USDC
-        MockAToken aToken = new MockAToken(usdc);
-        aTokens[usdc] = address(aToken);
-        aTokenContracts[usdc] = aToken;
+        // We'll initialize the aToken separately to avoid constructor issues
+    }
+
+    function setAToken(address asset, address aTokenAddress) external {
+        require(aTokens[asset] == address(0), "Already set");
+        aTokens[asset] = aTokenAddress;
+        aTokenContracts[asset] = MockAToken(aTokenAddress);
     }
 
     function supply(

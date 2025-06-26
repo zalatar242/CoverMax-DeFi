@@ -1,49 +1,58 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-ethers";
-import "@nomicfoundation/hardhat-ignition-ethers";
-import "@parity/hardhat-polkadot";
-import * as dotenv from "dotenv";
+require("@nomicfoundation/hardhat-toolbox");
+require("@parity/hardhat-polkadot");
 
-dotenv.config();
+require("dotenv").config();
 
-const config: HardhatUserConfig = {
+/** @type import('hardhat/config').HardhatUserConfig */
+const path = require("path");
+
+module.exports = {
   solidity: {
-    compilers: [
-      {
-        version: "0.8.28",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 999999
-          }
-        }
-      }
-    ]
-  },
-  resolc: {
-    compilerSource: 'npm'
-  },
-  networks: {
-    hardhat: {
-      chainId: 31337,
-      polkavm: true
+    version: "0.8.28",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
     },
-    "assethub-westend": {
-      url: process.env.ASSET_HUB_WESTEND_RPC_URL || "https://westend-asset-hub-eth-rpc.polkadot.io",
-      chainId: 420420421,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      gas: 20000000,
-      gasPrice: "auto",
-      polkavm: true,
-      timeout: 600000, // 10 minutes
-      allowUnlimitedContractSize: true,
-      loggingEnabled: true
-    }
   },
   paths: {
     sources: "./contracts",
-    artifacts: "./artifacts-pvm"
+    tests: "./test",
+    cache: "./cache-pvm",
+    artifacts: "./artifacts-pvm",
+  },
+  resolc: {
+    compilerSource: "npm",
+  },
+  networks: {
+    hardhat: {
+      polkavm: true,
+      nodeConfig: {
+        nodeBinaryPath: "./bin/substrate-node",
+        rpcPort: 8000,
+        dev: true,
+      },
+      adapterConfig: {
+        adapterBinaryPath: "./bin/eth-rpc",
+        dev: true,
+      },
+    },
+    localNode: {
+      polkavm: true,
+      url: `http://127.0.0.1:8545`,
+      accounts: [
+        process.env.LOCAL_PRIV_KEY ??
+          "ac29bf2c53064d81806eb0c5158ac43a2d00e8463b24a9647c644b25638c6b1d",
+      ],
+    },
+    passetHub: {
+      polkavm: true,
+      url: "https://testnet-passet-hub-eth-rpc.polkadot.io",
+      accounts: [
+        process.env.LOCAL_PRIV_KEY ??
+          "ac29bf2c53064d81806eb0c5158ac43a2d00e8463b24a9647c644b25638c6b1d",
+      ],
+    },
   }
-} as any;
-
-export default config;
+};
