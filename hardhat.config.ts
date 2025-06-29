@@ -42,16 +42,14 @@ module.exports = {
       polkavm: true,
       url: `http://127.0.0.1:8545`,
       accounts: [
-        process.env.LOCAL_PRIV_KEY ??
-          "ac29bf2c53064d81806eb0c5158ac43a2d00e8463b24a9647c644b25638c6b1d",
+        process.env.PRIVATE_KEY,
       ],
     },
     passetHub: {
       polkavm: true,
       url: "https://testnet-passet-hub-eth-rpc.polkadot.io",
       accounts: [
-        process.env.LOCAL_PRIV_KEY ??
-          "ac29bf2c53064d81806eb0c5158ac43a2d00e8463b24a9647c644b25638c6b1d",
+        process.env.PRIVATE_KEY,
       ],
     },
   }
