@@ -1,203 +1,72 @@
 # CoverMax-DeFi
 
-A DeFi insurance protocol that provides yield-enhanced protection through tranche-based risk segmentation.
+A simple DeFi insurance protocol on Polkadot Asset Hub that lets you earn yield while getting protection.
 
-## Overview
+## What it does
 
-CoverMax-DeFi is a decentralized insurance protocol that allows users to:
-
-- Deposit funds into risk-segmented tranches (AAA, AA)
-- Earn yield from leading DeFi protocols (Aave, Moonwell)
-- Get protection against smart contract risks
-- Trade risk/reward preferences through tranche positions
-
-For detailed protocol documentation, see [PROTOCOL.md](PROTOCOL.md).
-
-## Architecture
-
-The protocol consists of these main components:
-
-- `Insurance.sol` - Core insurance contract managing deposits and risk tranches
-- `Tranche.sol` - Risk-segmented token contracts (AAA, AA tranches)
-- Lending Adapters:
-  - `AaveLendingAdapter.sol` - Integration with Aave V3
-  - `MoonwellLendingAdapter.sol` - Integration with Moonwell
-
-## Environment Setup
-
-CoverMax-DeFi supports two testing environments:
-
-1. **PolkaVM (Default)** - For PassethHub development and deployment
-2. **Base Chain** - For testing contract behavior on Base mainnet fork
-
-### Environment Configuration
-
-```bash
-cp .env.example .env
-# Edit .env with your private key (only needed for PassethHub deployment)
-```
+- Deposit USDC and get AAA/AA insurance tokens
+- Earn yield from Aave and Moonwell lending protocols  
+- Get protected against smart contract risks
+- Withdraw anytime with your earnings
 
 ## Quick Start
 
-### Default Development (PolkaVM)
-
-1. Install dependencies:
-
+### 1. Setup
 ```bash
-npm install --legacy-peer-deps --force
+npm install
+npm test
 ```
 
-2. Run tests (uses PolkaVM by default - may not work!):
-
-```bash
-npx hardhat test
-```
-
-3. Deploy to PassethHub:
-
+### 2. Deploy (optional - already deployed)
 ```bash
 npx hardhat run scripts/deploy.ts --network passetHub
 ```
 
-### Base Chain Testing
-
-When you need to test contract behavior against Base mainnet protocols:
-
-```bash
-# Test on Base mainnet fork
-TEST_ON_BASE=true npx hardhat test
-```
-
-This uses Hardhat's forking capability to test against real Base mainnet state.
-
-## Local Development
-
-### What Gets Deployed
-
-The deployment process sets up:
-
-1. Mock External Contracts:
-
-   - Mock USDC
-   - Mock Aave (Pool, DataProvider)
-   - Mock Moonwell (mToken, Comptroller)
-
-2. Core Protocol:
-   - Insurance contract
-   - Lending adapters (Aave, Moonwell)
-   - Tranches (AAA, AA)
-
-### Frontend Setup
-
-1. Install frontend dependencies:
-
+### 3. Frontend
 ```bash
 cd frontend
-npm install --legacy-peer-deps --force
-```
-
-2. Set up frontend environment:
-
-```bash
-cp .env.example .env
-```
-
-3. Start the development server:
-
-```bash
+npm install
 npm start
 ```
 
-### MetaMask Configuration
+## Live Contracts (PassETHub)
 
-1. Configure MetaMask for local development:
+| Contract | Address |
+|----------|---------|
+| **InsuranceCore** | `0x4b36f970037fc1EAc81BEFF53067Dee30437C2F6` |
+| **TrancheAAA** | `0x94d4368503f4D184bB496098359E48A6901F6a0C` |
+| **TrancheAA** | `0x8479835ecB7ceF761262Da3AE3eFdEaE0006BCf4` |
+| **USDC (Mock)** | `0xfb9978ed80e59D5b66d36BC7c486423Ff6071E31` |
 
-   - Network Name: Hardhat Local
-   - RPC URL: http://localhost:8545
-   - Chain ID: 31337
-   - Currency Symbol: ETH
+## How to Use
 
-2. Import test account:
-   - Copy private key from Hardhat node output
-   - Import into MetaMask using "Import Account"
+### Connect to PassETHub
+Add to MetaMask:
+- **Network**: Passet Hub  
+- **RPC**: `https://testnet-passet-hub-eth-rpc.polkadot.io/`
+- **Chain ID**: `420420422`
 
-### Troubleshooting
+### Basic Operations
 
-Common issues and solutions:
+```solidity
+// Deposit 100 USDC
+insurance.splitRisk(100 * 10**6);
 
-1. "Nonce too high" error
+// Withdraw everything  
+insurance.claimAll();
 
-   - Reset MetaMask account (Settings -> Advanced -> Reset Account)
-   - Restart Hardhat node and redeploy
-
-2. Transaction failures
-
-   - Check ETH balance for gas
-   - Verify USDC approval and balance
-   - Confirm correct signer/account
-
-3. Frontend connection issues
-   - Verify MetaMask network settings
-   - Check contract addresses in frontend config
-   - Clear browser cache
-
-## Documentation
-
-- [Scripts Documentation](scripts/README.md) - Details about deployment scripts and configuration
-
-## Deployment
-
-### Production Deployment
-
-1. Configure environment:
-
-```bash
-# Set deployment private key
-DEPLOYER_PRIVATE_KEY=your_private_key
-
-# Set block explorer API key (for verification)
-BASESCAN_API_KEY=your_api_key
+// Withdraw specific amounts
+insurance.claim(aaaAmount, aaAmount);
 ```
 
-## Testing
+## Architecture
 
-### Default Testing (PolkaVM)
-
-```bash
-# Run all tests on PolkaVM (default)
-npx hardhat test
-
-# Run specific test file
-npx hardhat test test/Insurance.test.ts
-
-# Run coverage
-npm run coverage
-```
-
-### Base Chain Testing
-
-```bash
-# Test against Base mainnet fork
-TEST_ON_BASE=true npx hardhat test
-
-# Test specific file on Base
-TEST_ON_BASE=true npx hardhat test test/Insurance.mainnet.test.ts
-```
-
-**When to use Base Chain testing:**
-
-- Testing integrations with real Aave/Moonwell protocols
-- Validating against actual Base mainnet state
-- Performance testing with real liquidity conditions
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+- **InsuranceCore** - Main contract for deposits/withdrawals
+- **InsuranceCalculator** - Handles yield calculations
+- **InsuranceAdapterManager** - Manages lending protocols
+- **Tranche** - AAA/AA risk tokens
+- **Adapters** - Connect to Aave/Moonwell
 
 ## License
 
-This project is licensed under the Business Source License - see the [LICENSE](LICENSE) file for details.
+Business Source License - see [LICENSE](LICENSE)
