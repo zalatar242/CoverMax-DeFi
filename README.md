@@ -159,12 +159,6 @@ DEPLOYER_PRIVATE_KEY=your_private_key
 BASESCAN_API_KEY=your_api_key
 ```
 
-2. Deploy to mainnet:
-
-```bash
-npx hardhat run scripts/deploy-mainnet.ts --network base-mainnet
-```
-
 ## Testing
 
 ### Default Testing (PolkaVM)
@@ -191,6 +185,7 @@ TEST_ON_BASE=true npx hardhat test test/Insurance.mainnet.test.ts
 ```
 
 **When to use Base Chain testing:**
+
 - Testing integrations with real Aave/Moonwell protocols
 - Validating against actual Base mainnet state
 - Performance testing with real liquidity conditions
