@@ -19,14 +19,21 @@ module.exports = {
   paths: {
     sources: "./contracts",
     tests: "./test",
-    cache: "./cache-pvm",
-    artifacts: "./artifacts-pvm",
+    cache: process.env.TEST_ON_BASE === "true" ? "./cache" : "./cache-pvm",
+    artifacts: process.env.TEST_ON_BASE === "true" ? "./artifacts" : "./artifacts-pvm",
   },
   resolc: {
     compilerSource: "npm",
   },
   networks: {
-    hardhat: {
+    hardhat: process.env.TEST_ON_BASE === "true" ? {
+      // Base local testing config when explicitly requested
+      forking: {
+        url: "https://mainnet.base.org",
+        enabled: true,
+      },
+    } : {
+      // Default PolkaVM config
       polkavm: true,
       nodeConfig: {
         nodeBinaryPath: "./bin/substrate-node",
@@ -37,13 +44,6 @@ module.exports = {
         adapterBinaryPath: "./bin/eth-rpc",
         dev: true,
       },
-    },
-    localNode: {
-      polkavm: true,
-      url: `http://127.0.0.1:8545`,
-      accounts: [
-        process.env.PRIVATE_KEY,
-      ],
     },
     passetHub: {
       polkavm: true,

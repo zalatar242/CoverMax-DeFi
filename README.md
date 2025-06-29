@@ -23,7 +23,23 @@ The protocol consists of these main components:
   - `AaveLendingAdapter.sol` - Integration with Aave V3
   - `MoonwellLendingAdapter.sol` - Integration with Moonwell
 
+## Environment Setup
+
+CoverMax-DeFi supports two testing environments:
+
+1. **PolkaVM (Default)** - For PassethHub development and deployment
+2. **Base Chain** - For testing contract behavior on Base mainnet fork
+
+### Environment Configuration
+
+```bash
+cp .env.example .env
+# Edit .env with your private key (only needed for PassethHub deployment)
+```
+
 ## Quick Start
+
+### Default Development (PolkaVM)
 
 1. Install dependencies:
 
@@ -31,23 +47,28 @@ The protocol consists of these main components:
 npm install --legacy-peer-deps --force
 ```
 
-2. Set up environment:
+2. Run tests (uses PolkaVM by default):
 
 ```bash
-cp .env.example .env
+npx hardhat test
 ```
 
-3. Start local node:
+3. Deploy to PassethHub:
 
 ```bash
-npx hardhat node
+npx hardhat deploy --network passetHub
 ```
 
-4. Deploy contracts:
+### Base Chain Testing
+
+When you need to test contract behavior against Base mainnet protocols:
 
 ```bash
-npx hardhat run scripts/deploy-local.ts --network localhost
+# Test on Base mainnet fork
+TEST_ON_BASE=true npx hardhat test
 ```
+
+This uses Hardhat's forking capability to test against real Base mainnet state.
 
 ## Local Development
 
@@ -146,16 +167,33 @@ npx hardhat run scripts/deploy-mainnet.ts --network base-mainnet
 
 ## Testing
 
+### Default Testing (PolkaVM)
+
 ```bash
-# Run all tests
-npm test
+# Run all tests on PolkaVM (default)
+npx hardhat test
 
 # Run specific test file
-npm test test/Insurance.mainnet.test.ts
+npx hardhat test test/Insurance.test.ts
 
 # Run coverage
 npm run coverage
 ```
+
+### Base Chain Testing
+
+```bash
+# Test against Base mainnet fork
+TEST_ON_BASE=true npx hardhat test
+
+# Test specific file on Base
+TEST_ON_BASE=true npx hardhat test test/Insurance.mainnet.test.ts
+```
+
+**When to use Base Chain testing:**
+- Testing integrations with real Aave/Moonwell protocols
+- Validating against actual Base mainnet state
+- Performance testing with real liquidity conditions
 
 ## Contributing
 
