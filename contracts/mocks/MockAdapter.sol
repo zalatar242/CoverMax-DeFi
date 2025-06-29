@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../ILendingAdapter.sol";
+import "../interfaces/ILendingAdapter.sol";
 
 /// @title MockAdapter - Simple mock adapter for testing
 contract MockAdapter is ILendingAdapter {
@@ -22,14 +22,20 @@ contract MockAdapter is ILendingAdapter {
         require(asset == usdc, "Only USDC supported");
 
         // Transfer USDC from caller to this contract
-        require(IERC20(asset).transferFrom(msg.sender, address(this), amount), "Transfer failed");
+        require(
+            IERC20(asset).transferFrom(msg.sender, address(this), amount),
+            "Transfer failed"
+        );
 
         deposits[asset] += amount;
         emit DepositSuccessful(asset, amount);
         return amount;
     }
 
-    function withdraw(address asset, uint256 amount) external returns (uint256) {
+    function withdraw(
+        address asset,
+        uint256 amount
+    ) external returns (uint256) {
         if (amount == 0) revert AmountTooLow();
         require(asset == usdc, "Only USDC supported");
         require(deposits[asset] >= amount, "Insufficient balance");

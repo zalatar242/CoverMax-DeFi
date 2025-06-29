@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Tranche.sol";
 import "./ITranche.sol";
-import "./ILendingAdapter.sol";
+import "./interfaces/ILendingAdapter.sol";
 
 /// @title MultiTranche Insurance - A decentralized DeFi insurance protocol
 /// @notice Deposited funds are managed through lending adapters with two-tranche risk allocation
@@ -48,7 +48,6 @@ contract Insurance is Ownable {
         uint256 errorCode
     );
 
-
     bool private initialized;
 
     constructor() Ownable(msg.sender) {
@@ -65,7 +64,10 @@ contract Insurance is Ownable {
         address owner
     ) external {
         require(!initialized, "Already initialized");
-        require(usdcAddress != address(0), "Insurance: USDC address cannot be zero");
+        require(
+            usdcAddress != address(0),
+            "Insurance: USDC address cannot be zero"
+        );
 
         initialized = true;
         usdc = usdcAddress;
@@ -276,7 +278,10 @@ contract Insurance is Ownable {
             _resetTimePeriods();
         }
         require(block.timestamp < S, "Insurance: past issuance period");
-        require(adapter != address(0), "Insurance: Adapter address cannot be zero");
+        require(
+            adapter != address(0),
+            "Insurance: Adapter address cannot be zero"
+        );
         lendingAdapters.push(ILendingAdapter(adapter));
         emit AdapterAdded(adapter);
     }
@@ -401,7 +406,10 @@ contract Insurance is Ownable {
         uint256 balanceAAA = ITranche(AAA).balanceOf(msg.sender);
         uint256 balanceAA = ITranche(AA).balanceOf(msg.sender);
 
-        require(balanceAAA > 0 || balanceAA > 0, "Insurance: No AAA or AA tokens to claim");
+        require(
+            balanceAAA > 0 || balanceAA > 0,
+            "Insurance: No AAA or AA tokens to claim"
+        );
 
         _claim(balanceAAA, balanceAA);
     }

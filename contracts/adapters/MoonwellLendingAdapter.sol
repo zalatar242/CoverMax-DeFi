@@ -3,12 +3,15 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "../ILendingAdapter.sol";
+import "../interfaces/ILendingAdapter.sol";
 
 interface IMToken {
     function mint(uint256 amount) external returns (uint256);
+
     function redeemUnderlying(uint256 redeemAmount) external returns (uint256);
+
     function balanceOf(address owner) external view returns (uint256);
+
     function exchangeRateStored() external view returns (uint256);
 }
 
@@ -34,9 +37,16 @@ contract MoonwellLendingAdapter is ILendingAdapter {
                 // Set new approval for mToken
                 try IERC20(asset).approve(mToken, amount) {
                     // Attempt to mint in Moonwell
-                    try IMToken(mToken).mint(amount) returns (uint256 errorCode) {
+                    try IMToken(mToken).mint(amount) returns (
+                        uint256 errorCode
+                    ) {
                         if (errorCode != 0) {
-                            revert DepositFailed(string.concat("Moonwell mint error code: ", errorCode.toString()));
+                            revert DepositFailed(
+                                string.concat(
+                                    "Moonwell mint error code: ",
+                                    errorCode.toString()
+                                )
+                            );
                         }
                         emit DepositSuccessful(asset, amount);
                         return amount;
@@ -58,12 +68,22 @@ contract MoonwellLendingAdapter is ILendingAdapter {
         }
     }
 
-    function withdraw(address asset, uint256 amount) external returns (uint256) {
+    function withdraw(
+        address asset,
+        uint256 amount
+    ) external returns (uint256) {
         if (amount == 0) revert AmountTooLow();
 
-        try IMToken(mToken).redeemUnderlying(amount) returns (uint256 errorCode) {
+        try IMToken(mToken).redeemUnderlying(amount) returns (
+            uint256 errorCode
+        ) {
             if (errorCode != 0) {
-                revert WithdrawFailed(string.concat("Moonwell redeem error code: ", errorCode.toString()));
+                revert WithdrawFailed(
+                    string.concat(
+                        "Moonwell redeem error code: ",
+                        errorCode.toString()
+                    )
+                );
             }
 
             // After successful redeem, transfer the tokens back to the user
@@ -71,7 +91,9 @@ contract MoonwellLendingAdapter is ILendingAdapter {
                 emit WithdrawSuccessful(asset, amount);
                 return amount;
             } catch Error(string memory reason) {
-                revert WithdrawFailed(string.concat("Transfer failed: ", reason));
+                revert WithdrawFailed(
+                    string.concat("Transfer failed: ", reason)
+                );
             } catch {
                 revert WithdrawFailed("Transfer to user failed");
             }

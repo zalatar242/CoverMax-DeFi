@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ILendingAdapter.sol";
+import "./interfaces/ILendingAdapter.sol";
 
 /// @title Insurance Adapter Manager - Manages lending protocol interactions
 contract InsuranceAdapterManager {
@@ -13,7 +13,12 @@ contract InsuranceAdapterManager {
 
     event AdapterAdded(address adapter);
     event AdapterRemoved(address adapter);
-    event LendingError(address indexed adapter, address asset, uint256 amount, uint256 errorCode);
+    event LendingError(
+        address indexed adapter,
+        address asset,
+        uint256 amount,
+        uint256 errorCode
+    );
 
     constructor() {
         owner = msg.sender;
@@ -29,7 +34,10 @@ contract InsuranceAdapterManager {
         _;
     }
 
-    function initialize(address _insuranceCore, address _usdc) external onlyOwner {
+    function initialize(
+        address _insuranceCore,
+        address _usdc
+    ) external onlyOwner {
         require(insuranceCore == address(0), "Already initialized");
         insuranceCore = _insuranceCore;
         usdc = _usdc;
@@ -49,12 +57,17 @@ contract InsuranceAdapterManager {
         lendingAdapters.pop();
     }
 
-    function depositFunds(uint256 amount) external onlyInsuranceCore returns (uint256 totalDeposited) {
+    function depositFunds(
+        uint256 amount
+    ) external onlyInsuranceCore returns (uint256 totalDeposited) {
         require(amount > 0, "Amount must be greater than 0");
         require(lendingAdapters.length > 0, "No adapters");
 
         IERC20 usdcToken = IERC20(usdc);
-        require(usdcToken.transferFrom(insuranceCore, address(this), amount), "Transfer failed");
+        require(
+            usdcToken.transferFrom(insuranceCore, address(this), amount),
+            "Transfer failed"
+        );
 
         uint256 amountPerAdapter = amount / lendingAdapters.length;
         uint256 remainder = amount % lendingAdapters.length;
@@ -75,7 +88,9 @@ contract InsuranceAdapterManager {
         }
     }
 
-    function withdrawFunds(uint256 amount) external onlyInsuranceCore returns (uint256 totalWithdrawn) {
+    function withdrawFunds(
+        uint256 amount
+    ) external onlyInsuranceCore returns (uint256 totalWithdrawn) {
         require(amount > 0, "Amount must be greater than 0");
         require(lendingAdapters.length > 0, "No adapters");
 
@@ -88,7 +103,11 @@ contract InsuranceAdapterManager {
                 withdrawAmount++;
             }
 
-            uint256 withdrawn = _withdrawFromAdapter(lendingAdapters[i], withdrawAmount, amount);
+            uint256 withdrawn = _withdrawFromAdapter(
+                lendingAdapters[i],
+                withdrawAmount,
+                amount
+            );
             totalWithdrawn += withdrawn;
 
             unchecked {
@@ -101,7 +120,10 @@ contract InsuranceAdapterManager {
         }
     }
 
-    function _depositToAdapter(ILendingAdapter adapter, uint256 amount) internal returns (bool) {
+    function _depositToAdapter(
+        ILendingAdapter adapter,
+        uint256 amount
+    ) internal returns (bool) {
         if (amount == 0) return true;
 
         IERC20 usdcToken = IERC20(usdc);
@@ -129,10 +151,17 @@ contract InsuranceAdapterManager {
             amountReceived = amount;
         } catch {
             if (remainingAmount > 0 && remainingAmount != primaryAmount) {
-                try adapter.withdraw(usdc, remainingAmount) returns (uint256 amount) {
+                try adapter.withdraw(usdc, remainingAmount) returns (
+                    uint256 amount
+                ) {
                     amountReceived = amount;
                 } catch {
-                    emit LendingError(address(adapter), usdc, remainingAmount, 2);
+                    emit LendingError(
+                        address(adapter),
+                        usdc,
+                        remainingAmount,
+                        2
+                    );
                 }
             } else {
                 emit LendingError(address(adapter), usdc, primaryAmount, 2);
