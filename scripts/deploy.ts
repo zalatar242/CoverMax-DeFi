@@ -6,21 +6,7 @@ import { join } from "path";
 import { ContractTransactionResponse } from "ethers";
 import { BaseContract } from "ethers";
 
-const NETWORK = network.name;
 const ADDRESSES_FILE = path.join(__dirname, "../config/addresses.ts");
-
-interface NetworkConfig {
-  [key: string]: any;
-  chainId?: number;
-  blockExplorerUrl?: string;
-  defaultRpcUrl?: string;
-}
-
-interface AddressesConfig {
-  networks: {
-    [networkName: string]: NetworkConfig;
-  };
-}
 
 async function waitForDeployment<T extends BaseContract>(contract: T): Promise<T> {
   const tx = await contract.deploymentTransaction();
@@ -37,101 +23,71 @@ async function waitForConfirmations(tx: Promise<ContractTransactionResponse> | C
 }
 
 function loadDeployments(): { [key: string]: string } {
-  const config = loadAddressesConfig();
-  const networkConfig = config.networks[NETWORK] || {};
-
-  // Convert address config back to deployment format
-  const deployments: { [key: string]: string } = {};
-
-  const reverseMap: { [key: string]: string } = {
-    "USDC_ADDRESS": "MockUSDC",
-    "AAVE_ATOKEN": "MockAToken",
-    "AAVE_V3_POOL": "MockAavePool",
-    "AAVE_DATA_PROVIDER": "MockAavePoolDataProvider",
-    "AAVE_LENDING_ADAPTER": "AaveLendingAdapter",
-    "MOONWELL_MTOKEN": "MockMToken",
-    "MOONWELL_LENDING_ADAPTER": "MoonwellLendingAdapter",
-    "UNISWAP_FACTORY": "UniswapV2Factory",
-    "UNISWAP_ROUTER": "UniswapV2Router02",
-    "WETH": "WETH",
-    "TRANCHE_AAA": "TrancheAAA",
-    "TRANCHE_AA": "TrancheAA",
-    "INSURANCE_CALCULATOR": "InsuranceCalculator",
-    "INSURANCE_ADAPTER_MANAGER": "InsuranceAdapterManager",
-    "INSURANCE_CORE": "InsuranceCore"
-  };
-
-  for (const [configKey, contractName] of Object.entries(reverseMap)) {
-    if (networkConfig[configKey]) {
-      deployments[contractName] = networkConfig[configKey];
-    }
+  if (!fs.existsSync(ADDRESSES_FILE)) {
+    return {};
   }
-
-  return deployments;
+  
+  const content = fs.readFileSync(ADDRESSES_FILE, "utf8");
+  const addressMatch = content.match(/export const addresses = ({[\s\S]*?});/);
+  
+  if (!addressMatch) {
+    return {};
+  }
+  
+  try {
+    const addressObj = eval(`(${addressMatch[1]})`);
+    return {
+      "MockUSDC": addressObj.USDC_ADDRESS,
+      "MockAToken": addressObj.AAVE_ATOKEN,
+      "MockAavePool": addressObj.AAVE_V3_POOL,
+      "MockAavePoolDataProvider": addressObj.AAVE_DATA_PROVIDER,
+      "AaveLendingAdapter": addressObj.AAVE_LENDING_ADAPTER,
+      "MockMToken": addressObj.MOONWELL_MTOKEN,
+      "MoonwellLendingAdapter": addressObj.MOONWELL_LENDING_ADAPTER,
+      "UniswapV2Factory": addressObj.UNISWAP_FACTORY,
+      "TrancheAAA": addressObj.TRANCHE_AAA,
+      "TrancheAA": addressObj.TRANCHE_AA,
+      "InsuranceCalculator": addressObj.INSURANCE_CALCULATOR,
+      "InsuranceAdapterManager": addressObj.INSURANCE_ADAPTER_MANAGER,
+      "InsuranceCore": addressObj.INSURANCE_CORE
+    };
+  } catch {
+    return {};
+  }
 }
 
 function saveDeployments(deployments: { [key: string]: string }): void {
-  // Update addresses.ts with all current deployments to track deployment state
-  for (const [contractName, address] of Object.entries(deployments)) {
-    if (address) {
-      updateAddressesConfig(contractName, address);
+  const addresses = {
+    UNISWAP_FACTORY: deployments.UniswapV2Factory || "",
+    USDC_ADDRESS: deployments.MockUSDC || "",
+    AAVE_ATOKEN: deployments.MockAToken || "",
+    AAVE_V3_POOL: deployments.MockAavePool || "",
+    AAVE_DATA_PROVIDER: deployments.MockAavePoolDataProvider || "",
+    AAVE_LENDING_ADAPTER: deployments.AaveLendingAdapter || "",
+    MOONWELL_MTOKEN: deployments.MockMToken || "",
+    MOONWELL_LENDING_ADAPTER: deployments.MoonwellLendingAdapter || "",
+    TRANCHE_AAA: deployments.TrancheAAA || "",
+    TRANCHE_AA: deployments.TrancheAA || "",
+    INSURANCE_CALCULATOR: deployments.InsuranceCalculator || "",
+    INSURANCE_ADAPTER_MANAGER: deployments.InsuranceAdapterManager || "",
+    INSURANCE_CORE: deployments.InsuranceCore || ""
+  };
+  
+  // Remove empty addresses
+  Object.keys(addresses).forEach(key => {
+    if (!addresses[key as keyof typeof addresses]) {
+      delete addresses[key as keyof typeof addresses];
     }
-  }
-}
-
-function loadAddressesConfig(): AddressesConfig {
-  if (fs.existsSync(ADDRESSES_FILE)) {
-    const content = fs.readFileSync(ADDRESSES_FILE, "utf8");
-    // Extract the networks object from the TypeScript file
-    const match = content.match(/export const networks = ({[\s\S]*?}) as const;/);
-    if (match) {
-      // Convert the TypeScript object to JSON by evaluating it
-      const networksStr = match[1];
-      try {
-        const networks = eval(`(${networksStr})`);
-        return { networks };
-      } catch (error) {
-        console.warn("Could not parse existing addresses.ts, creating new structure");
-      }
-    }
-  }
-  return { networks: {} };
-}
-
-function saveAddressesConfig(config: AddressesConfig): void {
-  const content = `export const networks = ${JSON.stringify(config.networks, null, 2)} as const;\n\nexport type NetworkConfig = typeof networks.mainnet;\nexport type NetworkName = keyof typeof networks;\n`;
+  });
+  
+  const content = `// Contract addresses for PassETHub\nexport const addresses = ${JSON.stringify(addresses, null, 2)};\n`;
   fs.writeFileSync(ADDRESSES_FILE, content);
 }
 
-function updateAddressesConfig(contractName: string, address: string): void {
-  const config = loadAddressesConfig();
-
-  if (!config.networks[NETWORK]) {
-    config.networks[NETWORK] = {};
-  }
-
-  // Map contract names to address config keys
-  const contractKeyMap: { [key: string]: string } = {
-    "MockUSDC": "USDC_ADDRESS",
-    "MockAToken": "AAVE_ATOKEN",
-    "MockAavePool": "AAVE_V3_POOL",
-    "MockAavePoolDataProvider": "AAVE_DATA_PROVIDER",
-    "AaveLendingAdapter": "AAVE_LENDING_ADAPTER",
-    "MockMToken": "MOONWELL_MTOKEN",
-    "MoonwellLendingAdapter": "MOONWELL_LENDING_ADAPTER",
-    "UniswapV2Factory": "UNISWAP_FACTORY",
-    "UniswapV2Router02": "UNISWAP_ROUTER",
-    "WETH": "WETH",
-    "TrancheAAA": "TRANCHE_AAA",
-    "TrancheAA": "TRANCHE_AA",
-    "InsuranceCalculator": "INSURANCE_CALCULATOR",
-    "InsuranceAdapterManager": "INSURANCE_ADAPTER_MANAGER",
-    "InsuranceCore": "INSURANCE_CORE"
-  };
-
-  const configKey = contractKeyMap[contractName] || contractName.toUpperCase();
-  config.networks[NETWORK][configKey] = address;
-  saveAddressesConfig(config);
+function updateSingleAddress(contractName: string, address: string): void {
+  const deployments = loadDeployments();
+  deployments[contractName] = address;
+  saveDeployments(deployments);
 }
 
 async function getDeployedContract(name: string, address: string) {
@@ -164,7 +120,7 @@ async function deployIfNeeded(
   deployments[name] = deployedAddress;
 
   // Update addresses.ts (this now serves as our deployment tracking)
-  updateAddressesConfig(name, deployedAddress);
+  updateSingleAddress(name, deployedAddress);
 
   console.log(`✅ Deployed ${name} at ${deployedAddress}`);
   return deployedAddress;
