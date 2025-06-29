@@ -410,17 +410,25 @@ async function main(): Promise<void> {
     console.log("\n--- Creating Uniswap Pairs ---");
     const factory = await getDeployedContract("UniswapV2Factory", uniswapFactoryAddress);
 
-    console.log("Creating AAA/USDC pair...");
-    await waitForConfirmations((factory as any).createPair(deployments.TrancheAAA, deployments.MockUSDC));
-    console.log("Created AAA/USDC pair");
-
-    console.log("Creating AA/USDC pair...");
-    await waitForConfirmations((factory as any).createPair(deployments.TrancheAA, deployments.MockUSDC));
-    console.log("Created AA/USDC pair");
-
-    // Get pair addresses for configuration
+    // Check if AAA/USDC pair exists
     const aaaUsdcPair = await (factory as any).getPair(deployments.TrancheAAA, deployments.MockUSDC);
+    if (aaaUsdcPair === "0x0000000000000000000000000000000000000000") {
+      console.log("Creating AAA/USDC pair...");
+      await waitForConfirmations((factory as any).createPair(deployments.TrancheAAA, deployments.MockUSDC));
+      console.log("Created AAA/USDC pair");
+    } else {
+      console.log("✅ AAA/USDC pair already exists:", aaaUsdcPair);
+    }
+
+    // Check if AA/USDC pair exists
     const aaUsdcPair = await (factory as any).getPair(deployments.TrancheAA, deployments.MockUSDC);
+    if (aaUsdcPair === "0x0000000000000000000000000000000000000000") {
+      console.log("Creating AA/USDC pair...");
+      await waitForConfirmations((factory as any).createPair(deployments.TrancheAA, deployments.MockUSDC));
+      console.log("Created AA/USDC pair");
+    } else {
+      console.log("✅ AA/USDC pair already exists:", aaUsdcPair);
+    }
     console.log("AAA/USDC pair:", aaaUsdcPair);
     console.log("AA/USDC pair:", aaUsdcPair);
 
