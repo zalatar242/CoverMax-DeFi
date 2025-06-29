@@ -45,7 +45,37 @@ describe("UniswapV2 Core", function() {
 
     // Deploy Insurance (creates AAA and AA tokens)
     const Insurance = await ethers.getContractFactory("Insurance");
-    insurance = await Insurance.deploy(await usdc.getAddress());
+    insurance = await Insurance.deploy();
+
+    // Initialize Insurance contract
+    const currentTime = (await ethers.provider.getBlock("latest"))!.timestamp;
+    const S = currentTime + 3600;   // 1 hour
+    const T1 = currentTime + 7200;  // 2 hours
+    const T2 = currentTime + 10800; // 3 hours
+    const T3 = currentTime + 14400; // 4 hours
+
+    await insurance.initialize(
+      await usdc.getAddress(),
+      S,
+      T1,
+      T2,
+      T3,
+      await owner.getAddress()
+    );
+
+    // Deploy Tranche tokens (needed for Insurance contract)
+    const Tranche = await ethers.getContractFactory("Tranche");
+    const trancheAAA = await Tranche.deploy("Insurance AAA", "iAAA");
+    const trancheAA = await Tranche.deploy("Insurance AA", "iAA");
+    await trancheAAA.waitForDeployment();
+    await trancheAA.waitForDeployment();
+
+    // Set tranche addresses in Insurance contract
+    await insurance.setTranches(await trancheAAA.getAddress(), await trancheAA.getAddress());
+
+    // Transfer ownership of tranche tokens to Insurance contract
+    await trancheAAA.transferOwnership(await insurance.getAddress());
+    await trancheAA.transferOwnership(await insurance.getAddress());
 
     // Add Moonwell adapter to Insurance
     const MoonwellAdapter = await ethers.getContractFactory("MoonwellLendingAdapter");

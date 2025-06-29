@@ -51,9 +51,9 @@ contract Insurance is Ownable {
 
     bool private initialized;
 
-    constructor() Ownable(address(0)) {
-        // Empty constructor for proxy pattern
-        // Owner will be set in initialize function
+    constructor() Ownable(msg.sender) {
+        // Set deployer as initial owner
+        // Can be changed during initialize function
     }
 
     function initialize(

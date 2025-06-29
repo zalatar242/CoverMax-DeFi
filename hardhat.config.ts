@@ -19,17 +19,17 @@ module.exports = {
   paths: {
     sources: "./contracts",
     tests: "./test",
-    cache: process.env.TEST_ON_BASE === "true" ? "./cache" : "./cache-pvm",
-    artifacts: process.env.TEST_ON_BASE === "true" ? "./artifacts" : "./artifacts-pvm",
+    cache: process.env.TEST_ON_MOONBEAM === "true" ? "./cache" : "./cache-pvm",
+    artifacts: process.env.TEST_ON_MOONBEAM === "true" ? "./artifacts" : "./artifacts-pvm",
   },
   resolc: {
     compilerSource: "npm",
   },
   networks: {
-    hardhat: process.env.TEST_ON_BASE === "true" ? {
-      // Base local testing config when explicitly requested
+    hardhat: process.env.TEST_ON_MOONBEAM === "true" ? {
+      // Moonbeam local testing config when explicitly requested
       forking: {
-        url: "https://mainnet.base.org",
+        url: "https://rpc.api.moonbeam.network",
         enabled: true,
       },
     } : {
