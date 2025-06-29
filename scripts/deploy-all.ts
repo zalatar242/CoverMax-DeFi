@@ -1,143 +1,524 @@
 import { ethers, network } from "hardhat";
-import { networks } from "../config/addresses";
-import { updateNetworkConfig } from "./utils/config";
+import fs from "fs";
+import path from "path";
+import { writeFileSync, readFileSync } from "fs";
+import { join } from "path";
+import { ContractTransactionResponse } from "ethers";
+import { BaseContract } from "ethers";
 
-async function main() {
-  const net = network.name;
-  // Type assertion to bypass readonly/index signature error
-  const networksAny = networks as any;
-  let config = networksAny[net] ? { ...networksAny[net] } : {};
+const NETWORK = network.name;
+const ADDRESSES_FILE = path.join(__dirname, "../config/addresses.ts");
 
-  // Deploy MockUSDC
-  let usdcAddress = config["USDC_ADDRESS"];
-  if (usdcAddress) {
-    console.log("MockUSDC already deployed at:", usdcAddress);
-  } else {
-    const MockUSDC = await ethers.getContractFactory("MockUSDC");
-    console.log("Deploying MockUSDC...");
-    const usdc = await MockUSDC.deploy();
-    await usdc.waitForDeployment();
-    usdcAddress = await usdc.getAddress();
-    config["USDC_ADDRESS"] = usdcAddress;
-    updateNetworkConfig(net, config);
-    console.log("MockUSDC deployed to:", usdcAddress);
+interface NetworkConfig {
+  [key: string]: any;
+  chainId?: number;
+  blockExplorerUrl?: string;
+  defaultRpcUrl?: string;
+}
+
+interface AddressesConfig {
+  networks: {
+    [networkName: string]: NetworkConfig;
+  };
+}
+
+async function waitForDeployment<T extends BaseContract>(contract: T): Promise<T> {
+  const tx = await contract.deploymentTransaction();
+  if (tx) {
+    await tx.wait(2); // Wait for 2 confirmations
+  }
+  return contract;
+}
+
+async function waitForConfirmations(tx: Promise<ContractTransactionResponse> | ContractTransactionResponse) {
+  const resolvedTx = await tx;
+  await resolvedTx.wait(2); // Wait for 2 confirmations
+  return resolvedTx;
+}
+
+function loadDeployments(): { [key: string]: string } {
+  const config = loadAddressesConfig();
+  const networkConfig = config.networks[NETWORK] || {};
+
+  // Convert address config back to deployment format
+  const deployments: { [key: string]: string } = {};
+
+  const reverseMap: { [key: string]: string } = {
+    "USDC_ADDRESS": "MockUSDC",
+    "AAVE_ATOKEN": "MockAToken",
+    "AAVE_V3_POOL": "MockAavePool",
+    "AAVE_DATA_PROVIDER": "MockAavePoolDataProvider",
+    "AAVE_LENDING_ADAPTER": "AaveLendingAdapter",
+    "MOONWELL_MTOKEN": "MockMToken",
+    "MOONWELL_LENDING_ADAPTER": "MoonwellLendingAdapter",
+    "UNISWAP_FACTORY": "UniswapV2Factory",
+    "UNISWAP_ROUTER": "UniswapV2Router02",
+    "WETH": "WETH",
+    "COVERMAX_TOKEN": "CoverMaxToken",
+    "TRANCHE_AAA": "TrancheAAA",
+    "TRANCHE_AA": "TrancheAA",
+    "INSURANCE_CALCULATOR": "InsuranceCalculator",
+    "INSURANCE_ADAPTER_MANAGER": "InsuranceAdapterManager",
+    "INSURANCE_CORE": "InsuranceCore"
+  };
+
+  for (const [configKey, contractName] of Object.entries(reverseMap)) {
+    if (networkConfig[configKey]) {
+      deployments[contractName] = networkConfig[configKey];
+    }
   }
 
-  // Deploy Aave Mock Contracts
-  let mockAavePoolAddress = config["AAVE_V3_POOL"];
-  if (mockAavePoolAddress) {
-    console.log("MockAavePool already deployed at:", mockAavePoolAddress);
-  } else {
-    const MockAavePool = await ethers.getContractFactory("MockAavePool");
-    console.log("Deploying MockAavePool...");
-    const mockAavePool = await MockAavePool.deploy(usdcAddress);
-    await mockAavePool.waitForDeployment();
-    mockAavePoolAddress = await mockAavePool.getAddress();
-    config["AAVE_V3_POOL"] = mockAavePoolAddress;
-    updateNetworkConfig(net, config);
-    console.log("MockAavePool deployed to:", mockAavePoolAddress);
+  return deployments;
+}
+
+function saveDeployments(deployments: { [key: string]: string }): void {
+  // Update addresses.ts with all current deployments to track deployment state
+  for (const [contractName, address] of Object.entries(deployments)) {
+    if (address) {
+      updateAddressesConfig(contractName, address);
+    }
+  }
+}
+
+function loadAddressesConfig(): AddressesConfig {
+  if (fs.existsSync(ADDRESSES_FILE)) {
+    const content = fs.readFileSync(ADDRESSES_FILE, "utf8");
+    // Extract the networks object from the TypeScript file
+    const match = content.match(/export const networks = ({[\s\S]*?}) as const;/);
+    if (match) {
+      // Convert the TypeScript object to JSON by evaluating it
+      const networksStr = match[1];
+      try {
+        const networks = eval(`(${networksStr})`);
+        return { networks };
+      } catch (error) {
+        console.warn("Could not parse existing addresses.ts, creating new structure");
+      }
+    }
+  }
+  return { networks: {} };
+}
+
+function saveAddressesConfig(config: AddressesConfig): void {
+  const content = `export const networks = ${JSON.stringify(config.networks, null, 2)} as const;\n\nexport type NetworkConfig = typeof networks.mainnet;\nexport type NetworkName = keyof typeof networks;\n`;
+  fs.writeFileSync(ADDRESSES_FILE, content);
+}
+
+function updateAddressesConfig(contractName: string, address: string): void {
+  const config = loadAddressesConfig();
+
+  if (!config.networks[NETWORK]) {
+    config.networks[NETWORK] = {};
   }
 
-  let aTokenAddress = config["AAVE_ATOKEN"];
-  if (aTokenAddress) {
-    console.log("aToken already set at:", aTokenAddress);
-  } else {
-    const MockAavePool = await ethers.getContractAt("MockAavePool", mockAavePoolAddress);
-    aTokenAddress = await MockAavePool.aTokens(usdcAddress);
-    config["AAVE_ATOKEN"] = aTokenAddress;
-    updateNetworkConfig(net, config);
-    console.log("aToken address:", aTokenAddress);
+  // Map contract names to address config keys
+  const contractKeyMap: { [key: string]: string } = {
+    "MockUSDC": "USDC_ADDRESS",
+    "MockAToken": "AAVE_ATOKEN",
+    "MockAavePool": "AAVE_V3_POOL",
+    "MockAavePoolDataProvider": "AAVE_DATA_PROVIDER",
+    "AaveLendingAdapter": "AAVE_LENDING_ADAPTER",
+    "MockMToken": "MOONWELL_MTOKEN",
+    "MoonwellLendingAdapter": "MOONWELL_LENDING_ADAPTER",
+    "UniswapV2Factory": "UNISWAP_FACTORY",
+    "UniswapV2Router02": "UNISWAP_ROUTER",
+    "WETH": "WETH",
+    "CoverMaxToken": "COVERMAX_TOKEN",
+    "TrancheAAA": "TRANCHE_AAA",
+    "TrancheAA": "TRANCHE_AA",
+    "InsuranceCalculator": "INSURANCE_CALCULATOR",
+    "InsuranceAdapterManager": "INSURANCE_ADAPTER_MANAGER",
+    "InsuranceCore": "INSURANCE_CORE"
+  };
+
+  const configKey = contractKeyMap[contractName] || contractName.toUpperCase();
+  config.networks[NETWORK][configKey] = address;
+  saveAddressesConfig(config);
+}
+
+async function getDeployedContract(name: string, address: string) {
+  const factory = await ethers.getContractFactory(name);
+  return factory.attach(address);
+}
+
+async function deployIfNeeded(
+  name: string,
+  factoryGetter: () => Promise<any>,
+  ...args: any[]
+): Promise<string> {
+  const deployments = loadDeployments();
+  if (deployments[name]) {
+    console.log(`✅ ${name} already deployed at ${deployments[name]}`);
+    return deployments[name];
   }
 
-  let mockAavePoolDataProviderAddress = config["AAVE_DATA_PROVIDER"];
-  if (mockAavePoolDataProviderAddress) {
-    console.log("MockAavePoolDataProvider already deployed at:", mockAavePoolDataProviderAddress);
-  } else {
-    const MockAavePoolDataProvider = await ethers.getContractFactory("MockAavePoolDataProvider");
-    console.log("Deploying MockAavePoolDataProvider...");
-    const mockAavePoolDataProvider = await MockAavePoolDataProvider.deploy(
+  console.log(`🚀 Deploying ${name}...`);
+  const factory = await factoryGetter();
+  const contract = await factory.deploy(...args);
+  await contract.waitForDeployment();
+
+  const deployedAddress = await contract.getAddress();
+  if (!deployedAddress) {
+    console.error(`❌ Deployment failed for ${name}: no address found. Contract object:`, contract);
+    throw new Error(`Deployment failed for ${name}: no address found.`);
+  }
+
+  deployments[name] = deployedAddress;
+
+  // Update addresses.ts (this now serves as our deployment tracking)
+  updateAddressesConfig(name, deployedAddress);
+
+  console.log(`✅ Deployed ${name} at ${deployedAddress}`);
+  return deployedAddress;
+}
+
+async function main(): Promise<void> {
+  console.log("🚀 Starting Complete System Deployment...");
+
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying with account:", deployer.address);
+
+  // Check deployer balance
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log("Account balance:", ethers.formatEther(balance), "ETH");
+
+  const deployerAddress = deployer.address;
+
+  let deployments = loadDeployments();
+
+  try {
+    // Deploy CoverMax Token first
+    console.log("\n--- Deploying CoverMax Token ---");
+    const coverMaxTokenAddress = await deployIfNeeded(
+      "CoverMaxToken",
+      () => ethers.getContractFactory("CoverMaxToken")
+    );
+    deployments.CoverMaxToken = coverMaxTokenAddress;
+    saveDeployments(deployments);
+
+    // 1. Deploy Uniswap Factory
+    console.log("\n--- Deploying Uniswap Contracts ---");
+    const uniswapFactoryAddress = await deployIfNeeded(
+      "UniswapV2Factory",
+      () => ethers.getContractFactory("UniswapV2Factory"),
+      deployerAddress // feeToSetter
+    );
+    deployments.UniswapV2Factory = uniswapFactoryAddress;
+    saveDeployments(deployments);
+
+    // 2. Deploy Supporting Contracts (Mocks and Adapters)
+    console.log("\n--- Deploying Supporting Contracts ---");
+
+    // Deploy MockUSDC
+    const usdcAddress = await deployIfNeeded(
+      "MockUSDC",
+      () => ethers.getContractFactory("MockUSDC")
+    );
+    deployments.MockUSDC = usdcAddress;
+    saveDeployments(deployments);
+
+    // Deploy MockAToken
+    const aTokenAddress = await deployIfNeeded(
+      "MockAToken",
+      () => ethers.getContractFactory("MockAToken"),
+      usdcAddress
+    );
+    deployments.MockAToken = aTokenAddress;
+    saveDeployments(deployments);
+
+    // Deploy MockAavePool
+    const aavePoolAddress = await deployIfNeeded(
+      "MockAavePool",
+      () => ethers.getContractFactory("MockAavePool"),
+      usdcAddress
+    );
+    deployments.MockAavePool = aavePoolAddress;
+    saveDeployments(deployments);
+
+    // Initialize the aToken mapping in MockAavePool
+    const aavePool = await getDeployedContract("MockAavePool", aavePoolAddress);
+    try {
+      const existingAToken = await (aavePool as any).aTokens(usdcAddress);
+      if (existingAToken === "0x0000000000000000000000000000000000000000") {
+        console.log("⚙️ Setting aToken for USDC in MockAavePool...");
+        const tx = await (aavePool as any).setAToken(usdcAddress, aTokenAddress);
+        await tx.wait();
+        console.log(`✅ Set aToken ${aTokenAddress} for USDC in MockAavePool`);
+      } else {
+        console.log(`✅ aToken for USDC already set in MockAavePool: ${existingAToken}`);
+      }
+    } catch (error) {
+      console.log("Note: Could not set aToken mapping, might need manual setup or already set.");
+    }
+
+    // Deploy MockAavePoolDataProvider
+    const aaveDataProviderAddress = await deployIfNeeded(
+      "MockAavePoolDataProvider",
+      () => ethers.getContractFactory("MockAavePoolDataProvider"),
       usdcAddress,
       aTokenAddress
     );
-    await mockAavePoolDataProvider.waitForDeployment();
-    mockAavePoolDataProviderAddress = await mockAavePoolDataProvider.getAddress();
-    config["AAVE_DATA_PROVIDER"] = mockAavePoolDataProviderAddress;
-    updateNetworkConfig(net, config);
-    console.log("MockAavePoolDataProvider deployed to:", mockAavePoolDataProviderAddress);
-  }
+    deployments.MockAavePoolDataProvider = aaveDataProviderAddress;
+    saveDeployments(deployments);
 
-  // Deploy Moonwell Mock Contracts
-  let mockMoonwellAddress = config["MOONWELL_ADDRESS"];
-  let mTokenAddress = config["MOONWELL_MTOKEN"];
-  if (mockMoonwellAddress && mTokenAddress) {
-    console.log("MockMoonwell already deployed at:", mockMoonwellAddress);
-    console.log("mToken address:", mTokenAddress);
-  } else {
-    const MockMoonwell = await ethers.getContractFactory("MockMoonwell");
-    console.log("Deploying MockMoonwell...");
-    const mockMoonwell = await MockMoonwell.deploy(usdcAddress);
-    await mockMoonwell.waitForDeployment();
-    mockMoonwellAddress = await mockMoonwell.getAddress();
-    mTokenAddress = await mockMoonwell.mToken();
-    config["MOONWELL_ADDRESS"] = mockMoonwellAddress;
-    config["MOONWELL_MTOKEN"] = mTokenAddress;
-    updateNetworkConfig(net, config);
-    console.log("MockMoonwell deployed to:", mockMoonwellAddress);
-    console.log("mToken address:", mTokenAddress);
-  }
-
-  // Deploy Adapters
-  let aaveAdapterAddress = config["AAVE_LENDING_ADAPTER"];
-  if (aaveAdapterAddress) {
-    console.log("AaveLendingAdapter already deployed at:", aaveAdapterAddress);
-  } else {
-    const AaveLendingAdapter = await ethers.getContractFactory(
-      "AaveLendingAdapter"
+    // Deploy AaveLendingAdapter
+    const aaveAdapterAddress = await deployIfNeeded(
+      "AaveLendingAdapter",
+      () => ethers.getContractFactory("AaveLendingAdapter"),
+      aavePoolAddress,
+      aaveDataProviderAddress
     );
-    console.log("Deploying AaveLendingAdapter...");
-    const aaveAdapter = await AaveLendingAdapter.deploy(
-      mockAavePoolAddress,
-      mockAavePoolDataProviderAddress
+    deployments.AaveLendingAdapter = aaveAdapterAddress;
+    saveDeployments(deployments);
+
+    // Deploy MockMToken (Moonwell)
+    const mTokenAddress = await deployIfNeeded(
+      "MockMToken",
+      () => ethers.getContractFactory("MockMToken"),
+      usdcAddress
     );
-    await aaveAdapter.waitForDeployment();
-    aaveAdapterAddress = await aaveAdapter.getAddress();
-    config["AAVE_LENDING_ADAPTER"] = aaveAdapterAddress;
-    updateNetworkConfig(net, config);
-    console.log("AaveLendingAdapter deployed to:", aaveAdapterAddress);
-  }
+    deployments.MockMToken = mTokenAddress;
+    saveDeployments(deployments);
 
-  let moonwellAdapterAddress = config["MOONWELL_LENDING_ADAPTER"];
-  if (moonwellAdapterAddress) {
-    console.log("MoonwellLendingAdapter already deployed at:", moonwellAdapterAddress);
-  } else {
-    const MoonwellLendingAdapter = await ethers.getContractFactory(
-      "MoonwellLendingAdapter"
+    // Deploy MoonwellLendingAdapter
+    const moonwellAdapterAddress = await deployIfNeeded(
+      "MoonwellLendingAdapter",
+      () => ethers.getContractFactory("MoonwellLendingAdapter"),
+      mTokenAddress
     );
-    console.log("Deploying MoonwellLendingAdapter...");
-    const moonwellAdapter = await MoonwellLendingAdapter.deploy(mTokenAddress);
-    await moonwellAdapter.waitForDeployment();
-    moonwellAdapterAddress = await moonwellAdapter.getAddress();
-    config["MOONWELL_LENDING_ADAPTER"] = moonwellAdapterAddress;
-    updateNetworkConfig(net, config);
-    console.log("MoonwellLendingAdapter deployed to:", moonwellAdapterAddress);
+    deployments.MoonwellLendingAdapter = moonwellAdapterAddress;
+    saveDeployments(deployments);
+
+    // 3. Deploy Tranche Contracts
+    console.log("\n--- Deploying Tranche Contracts ---");
+    const trancheAAAAddress = await deployIfNeeded(
+      "TrancheAAA",
+      () => ethers.getContractFactory("Tranche"),
+      "Tranche AAA",
+      "TAAA"
+    );
+    deployments.TrancheAAA = trancheAAAAddress;
+    saveDeployments(deployments);
+
+    const trancheAAAddress = await deployIfNeeded(
+      "TrancheAA",
+      () => ethers.getContractFactory("Tranche"),
+      "Tranche AA",
+      "TAA"
+    );
+    deployments.TrancheAA = trancheAAAddress;
+    saveDeployments(deployments);
+
+    // 4. Deploy Core Insurance Contracts
+    console.log("\n--- Deploying Core Insurance System ---");
+
+    // Deploy Calculator first (smallest contract)
+    const calculatorAddress = await deployIfNeeded(
+      "InsuranceCalculator",
+      () => ethers.getContractFactory("InsuranceCalculator")
+    );
+    deployments.InsuranceCalculator = calculatorAddress;
+    saveDeployments(deployments);
+
+    // Deploy Adapter Manager
+    const adapterManagerAddress = await deployIfNeeded(
+      "InsuranceAdapterManager",
+      () => ethers.getContractFactory("InsuranceAdapterManager")
+    );
+    deployments.InsuranceAdapterManager = adapterManagerAddress;
+    saveDeployments(deployments);
+
+    // Deploy Insurance Core
+    const insuranceCoreAddress = await deployIfNeeded(
+      "InsuranceCore",
+      () => ethers.getContractFactory("InsuranceCore")
+    );
+    deployments.InsuranceCore = insuranceCoreAddress;
+    saveDeployments(deployments);
+
+    // Initialize Insurance Core
+    const insuranceCore = await getDeployedContract("InsuranceCore", insuranceCoreAddress);
+    const coreInfo = await (insuranceCore as any).getInfo();
+    const isCoreInitialized = coreInfo[2]; // initialized is the third element in the returned tuple
+    if (!isCoreInitialized) {
+      console.log("\n⚙️ Initializing Insurance Core...");
+      const currentTime = Math.floor(Date.now() / 1000);
+      const S = currentTime + 2 * 24 * 60 * 60; // 2 days from now
+      const T1 = S + 5 * 24 * 60 * 60; // 5 days after S
+      const T2 = T1 + 1 * 24 * 60 * 60; // 1 day after T1
+      const T3 = T2 + 1 * 24 * 60 * 60; // 1 day after T2
+
+      await (insuranceCore as any).initialize(
+        deployments.MockUSDC,
+        S,
+        T1,
+        T2,
+        T3,
+        adapterManagerAddress,
+        calculatorAddress
+      );
+      console.log("✅ Insurance Core initialized");
+    } else {
+      console.log("✅ Insurance Core already initialized.");
+    }
+
+    // Initialize Adapter Manager
+    const adapterManager = await getDeployedContract("InsuranceAdapterManager", adapterManagerAddress);
+    try {
+      console.log("\n⚙️ Initializing Adapter Manager...");
+      await (adapterManager as any).initialize(insuranceCoreAddress, deployments.MockUSDC);
+      console.log("✅ Adapter Manager initialized");
+    } catch (error: any) {
+      if (error.message.includes("Already initialized")) {
+        console.log("✅ Adapter Manager already initialized.");
+      } else {
+        throw error;
+      }
+    }
+
+    // Set tranches in Insurance Core
+    const currentAAA = await (insuranceCore as any).AAA();
+    const currentAA = await (insuranceCore as any).AA();
+
+    if (currentAAA === "0x0000000000000000000000000000000000000000" && currentAA === "0x0000000000000000000000000000000000000000") {
+      console.log("\n⚙️ Setting tranches in Insurance Core...");
+      await (insuranceCore as any).setTranches(deployments.TrancheAAA, deployments.TrancheAA);
+      console.log("✅ Tranches set in Insurance Core");
+    } else {
+      console.log("✅ Tranches already set in Insurance Core.");
+    }
+
+    // Add lending adapters to Adapter Manager
+    const currentAdapterManagerAdapters = await (adapterManager as any).getAllAdapters();
+    if (!currentAdapterManagerAdapters.includes(deployments.AaveLendingAdapter)) {
+      console.log("\n➕ Adding Aave Lending Adapter to Adapter Manager...");
+      await (adapterManager as any).addLendingAdapter(deployments.AaveLendingAdapter);
+      console.log("✅ Aave Lending Adapter added to Adapter Manager");
+    } else {
+      console.log("✅ Aave Lending Adapter already added to Adapter Manager.");
+    }
+
+    if (!currentAdapterManagerAdapters.includes(deployments.MoonwellLendingAdapter)) {
+      console.log("\n➕ Adding Moonwell Lending Adapter to Adapter Manager...");
+      await (adapterManager as any).addLendingAdapter(deployments.MoonwellLendingAdapter);
+      console.log("✅ Moonwell Lending Adapter added to Adapter Manager");
+    } else {
+      console.log("✅ Moonwell Lending Adapter already added to Adapter Manager.");
+    }
+
+    // Create Uniswap pairs for AAA and AA tokens
+    console.log("\n--- Creating Uniswap Pairs ---");
+    const factory = await getDeployedContract("UniswapV2Factory", uniswapFactoryAddress);
+
+    console.log("Creating AAA/USDC pair...");
+    await waitForConfirmations((factory as any).createPair(deployments.TrancheAAA, deployments.MockUSDC));
+    console.log("Created AAA/USDC pair");
+
+    console.log("Creating AA/USDC pair...");
+    await waitForConfirmations((factory as any).createPair(deployments.TrancheAA, deployments.MockUSDC));
+    console.log("Created AA/USDC pair");
+
+    // Get pair addresses for configuration
+    const aaaUsdcPair = await (factory as any).getPair(deployments.TrancheAAA, deployments.MockUSDC);
+    const aaUsdcPair = await (factory as any).getPair(deployments.TrancheAA, deployments.MockUSDC);
+    console.log("AAA/USDC pair:", aaaUsdcPair);
+    console.log("AA/USDC pair:", aaUsdcPair);
+
+    // Update frontend contracts.json
+    console.log("\n--- Updating Frontend Configuration ---");
+    const contractsPath = join(__dirname, "../frontend/src/contracts.json");
+    let contractsJson: any = { networks: {} };
+
+    if (fs.existsSync(contractsPath)) {
+      contractsJson = JSON.parse(readFileSync(contractsPath, 'utf8'));
+    }
+
+    // Get contract artifacts for ABIs
+    const coverMaxArtifact = await ethers.getContractFactory("CoverMaxToken");
+    const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
+    const insuranceCoreArtifact = await ethers.getContractFactory("InsuranceCore");
+    const trancheArtifact = await ethers.getContractFactory("Tranche");
+    const aaveAdapterArtifact = await ethers.getContractFactory("AaveLendingAdapter");
+    const moonwellAdapterArtifact = await ethers.getContractFactory("MoonwellLendingAdapter");
+    const factoryArtifact = await ethers.getContractFactory("UniswapV2Factory");
+    const pairArtifact = await ethers.getContractFactory("UniswapV2Pair");
+
+    // Add network configuration to contracts.json
+    contractsJson.networks[NETWORK] = {
+      CoverMaxToken: {
+        address: deployments.CoverMaxToken,
+        abi: coverMaxArtifact.interface.fragments
+      },
+      USDC: {
+        address: deployments.MockUSDC,
+        abi: mockUsdcArtifact.interface.fragments
+      },
+      Insurance: {
+        address: deployments.InsuranceCore,
+        abi: insuranceCoreArtifact.interface.fragments
+      },
+      TrancheAAA: {
+        address: deployments.TrancheAAA,
+        abi: trancheArtifact.interface.fragments
+      },
+      TrancheAA: {
+        address: deployments.TrancheAA,
+        abi: trancheArtifact.interface.fragments
+      },
+      AaveLendingAdapter: {
+        address: deployments.AaveLendingAdapter,
+        abi: aaveAdapterArtifact.interface.fragments
+      },
+      MoonwellLendingAdapter: {
+        address: deployments.MoonwellLendingAdapter,
+        abi: moonwellAdapterArtifact.interface.fragments
+      },
+      UniswapV2Factory: {
+        address: deployments.UniswapV2Factory,
+        abi: factoryArtifact.interface.fragments
+      },
+      AAAUSDCPair: {
+        address: aaaUsdcPair,
+        abi: pairArtifact.interface.fragments
+      },
+      AAUSDCPair: {
+        address: aaUsdcPair,
+        abi: pairArtifact.interface.fragments
+      }
+    };
+
+    // Write updated contracts.json
+    writeFileSync(contractsPath, JSON.stringify(contractsJson, null, 2));
+
+    // Final save of all deployments to ensure everything is tracked
+    saveDeployments(deployments);
+
+    console.log("\n🎉 Complete System Deployment Successful!");
+    console.log("- Updated config/addresses.ts with new contract addresses");
+    console.log("- Updated frontend/src/contracts.json with network configuration");
+    console.log("\n📋 Contract Addresses:");
+    for (const key in deployments) {
+      console.log(`  ${key}: ${deployments[key]}`);
+    }
+    console.log(`  AAAUSDCPair: ${aaaUsdcPair}`);
+    console.log(`  AAUSDCPair: ${aaUsdcPair}`);
+
+    console.log("\n🎯 Next steps:");
+    console.log("1. Fund your account with test tokens if needed");
+    console.log("2. Test the deployed contracts");
+    console.log("3. Start the frontend to verify everything works");
+
+  } catch (error) {
+    console.error("❌ Deployment failed:", error);
+    throw error;
   }
-
-  // Deploy Insurance contract
-  const Insurance = await ethers.getContractFactory("Insurance");
-  console.log("Deploying Insurance...");
-  const insurance = await Insurance.deploy(usdcAddress);
-  await insurance.waitForDeployment();
-  const insuranceAddress = await insurance.getAddress();
-  console.log("Insurance deployed to:", insuranceAddress);
-
-  // Add lending adapters to Insurance contract
-  console.log("Adding Aave lending adapter...");
-  await insurance.addLendingAdapter(aaveAdapterAddress);
-  console.log("Adding Moonwell lending adapter...");
-  await insurance.addLendingAdapter(moonwellAdapterAddress);
-
-  console.log("Deployment complete!");
 }
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled promise rejection:', error);
+  process.exit(1);
+});
 
 main()
   .then(() => process.exit(0))
