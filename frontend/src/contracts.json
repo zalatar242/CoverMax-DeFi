@@ -2468,31 +2468,6 @@
           }
         ]
       },
-      "CoverMaxToken": {
-        "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-        "abi": [
-          {
-            "type": "constructor",
-            "stateMutability": "undefined",
-            "payable": false,
-            "inputs": []
-          },
-          {
-            "type": "error",
-            "name": "ERC20InsufficientAllowance",
-            "inputs": [
-              {
-                "type": "address",
-                "name": "spender"
-              },
-              {
-                "type": "uint256",
-                "name": "allowance"
-              },
-              {
-                "type": "uint256",
-                "name": "needed"
-              }
             ]
           },
           {
@@ -5161,42 +5136,6 @@
       }
     },
     "base-sepolia": {
-      "CoverMaxToken": {
-        "address": "0x5a391f4FcDDA63e464A1F38629a21B0Fc290042a",
-        "abi": [
-          {
-            "type": "constructor",
-            "inputs": [],
-            "payable": false,
-            "gas": null
-          },
-          {
-            "type": "error",
-            "inputs": [
-              {
-                "name": "spender",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "allowance",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "needed",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
             ],
             "name": "ERC20InsufficientAllowance"
           },
@@ -11641,42 +11580,6 @@
       }
     },
     "passetHub": {
-      "CoverMaxToken": {
-        "address": "0xEfed061a28BF3E23925Ec2800BD162C3C03f330b",
-        "abi": [
-          {
-            "type": "constructor",
-            "inputs": [],
-            "payable": false,
-            "gas": null
-          },
-          {
-            "type": "error",
-            "inputs": [
-              {
-                "name": "spender",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "allowance",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "needed",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
             ],
             "name": "ERC20InsufficientAllowance"
           },

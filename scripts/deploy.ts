@@ -54,7 +54,6 @@ function loadDeployments(): { [key: string]: string } {
     "UNISWAP_FACTORY": "UniswapV2Factory",
     "UNISWAP_ROUTER": "UniswapV2Router02",
     "WETH": "WETH",
-    "COVERMAX_TOKEN": "CoverMaxToken",
     "TRANCHE_AAA": "TrancheAAA",
     "TRANCHE_AA": "TrancheAA",
     "INSURANCE_CALCULATOR": "InsuranceCalculator",
@@ -123,7 +122,6 @@ function updateAddressesConfig(contractName: string, address: string): void {
     "UniswapV2Factory": "UNISWAP_FACTORY",
     "UniswapV2Router02": "UNISWAP_ROUTER",
     "WETH": "WETH",
-    "CoverMaxToken": "COVERMAX_TOKEN",
     "TrancheAAA": "TRANCHE_AAA",
     "TrancheAA": "TRANCHE_AA",
     "InsuranceCalculator": "INSURANCE_CALCULATOR",
@@ -187,15 +185,6 @@ async function main(): Promise<void> {
   let deployments = loadDeployments();
 
   try {
-    // Deploy CoverMax Token first
-    console.log("\n--- Deploying CoverMax Token ---");
-    const coverMaxTokenAddress = await deployIfNeeded(
-      "CoverMaxToken",
-      () => ethers.getContractFactory("CoverMaxToken")
-    );
-    deployments.CoverMaxToken = coverMaxTokenAddress;
-    saveDeployments(deployments);
-
     // 1. Deploy Uniswap Factory
     console.log("\n--- Deploying Uniswap Contracts ---");
     const uniswapFactoryAddress = await deployIfNeeded(
@@ -442,7 +431,6 @@ async function main(): Promise<void> {
     }
 
     // Get contract artifacts for ABIs
-    const coverMaxArtifact = await ethers.getContractFactory("CoverMaxToken");
     const mockUsdcArtifact = await ethers.getContractFactory("MockUSDC");
     const insuranceCoreArtifact = await ethers.getContractFactory("InsuranceCore");
     const trancheArtifact = await ethers.getContractFactory("Tranche");
@@ -453,10 +441,6 @@ async function main(): Promise<void> {
 
     // Add network configuration to contracts.json
     contractsJson.networks[NETWORK] = {
-      CoverMaxToken: {
-        address: deployments.CoverMaxToken,
-        abi: coverMaxArtifact.interface.fragments
-      },
       USDC: {
         address: deployments.MockUSDC,
         abi: mockUsdcArtifact.interface.fragments

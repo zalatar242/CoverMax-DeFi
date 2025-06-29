@@ -34,7 +34,6 @@ export const networks = {
     "blockExplorerUrl": "https://sepolia.basescan.org",
     "defaultRpcUrl": "https://sepolia.base.org",
     "ATOKEN": "0x84c816D2584C0F82d34EdD372C9ebdd048557B24",
-    "COVERMAX_TOKEN": "0x5a391f4FcDDA63e464A1F38629a21B0Fc290042a"
   },
   "assethub-westend": {
     "USDC_ADDRESS": "0xCEE772759C791a94B403F7590e0DF6E2c3a53615",
@@ -60,7 +59,6 @@ export const networks = {
     "INSURANCE_CALCULATOR": "0x816Ef8AaD0de5e18b229F3ebA47694839Ef5f07e",
     "INSURANCE_ADAPTER_MANAGER": "0xfd4cf00F95f4b1E488Aeaf63aF01a6c91bfFaAD5",
     "INSURANCE_CORE": "0x4b36f970037fc1EAc81BEFF53067Dee30437C2F6",
-    "COVERMAX_TOKEN": "0xEfed061a28BF3E23925Ec2800BD162C3C03f330b"
   }
 } as const;
 
