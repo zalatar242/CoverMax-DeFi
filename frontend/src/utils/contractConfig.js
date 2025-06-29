@@ -28,6 +28,15 @@ const NETWORK_CONFIG = {
       symbol: 'ETH',
       decimals: 18
     }
+  },
+  passetHub: {
+    name: 'Passet Hub',
+    chainId: 420420422,
+    rpcUrl: 'https://testnet-passet-hub-eth-rpc.polkadot.io/',
+    nativeCurrency: {
+      symbol: 'DOT',
+      decimals: 18
+    }
   }
 };
 
@@ -61,7 +70,7 @@ export const useMainConfig = () => {
 
 
   return {
-    Insurance: getContractConfig('Insurance', currentNetwork),
+    Insurance: getContractConfig('InsuranceCore', currentNetwork),
     USDC: getContractConfig('USDC', currentNetwork),
     UniswapV2Router02: getContractConfig('UniswapV2Router02', currentNetwork),
     networks: NETWORK_CONFIG,

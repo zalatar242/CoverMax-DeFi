@@ -184,4 +184,15 @@ contract InsuranceCore {
     function getInfo() external view returns (address, address, bool, uint256, uint256, uint256, uint256, uint256, uint256) {
         return (owner, usdc, initialized, S, T1, T2, T3, totalTranches, totalInvested);
     }
+
+    /**
+     * @dev Gets the user's equivalent deposit value based on their tranche token holdings.
+     * @param user The address of the user.
+     * @return uint256 The user's deposited value in USDC.
+     */
+    function getUserDeposit(address user) external view returns (uint256) {
+        uint256 balanceAAA = ITranche(AAA).balanceOf(user);
+        uint256 balanceAA = ITranche(AA).balanceOf(user);
+        return balanceAAA + balanceAA;
+    }
 }

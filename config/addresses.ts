@@ -33,7 +33,7 @@ export const networks = {
     "chainId": 84532,
     "blockExplorerUrl": "https://sepolia.basescan.org",
     "defaultRpcUrl": "https://sepolia.base.org",
-    "ATOKEN": "0x84c816D2584C0F82d34EdD372C9ebdd048557B24",
+    "ATOKEN": "0x84c816D2584C0F82d34EdD372C9ebdd048557B24"
   },
   "assethub-westend": {
     "USDC_ADDRESS": "0xCEE772759C791a94B403F7590e0DF6E2c3a53615",
@@ -58,7 +58,7 @@ export const networks = {
     "TRANCHE_AA": "0x8479835ecB7ceF761262Da3AE3eFdEaE0006BCf4",
     "INSURANCE_CALCULATOR": "0x816Ef8AaD0de5e18b229F3ebA47694839Ef5f07e",
     "INSURANCE_ADAPTER_MANAGER": "0xfd4cf00F95f4b1E488Aeaf63aF01a6c91bfFaAD5",
-    "INSURANCE_CORE": "0x4b36f970037fc1EAc81BEFF53067Dee30437C2F6",
+    "INSURANCE_CORE": "0x4b36f970037fc1EAc81BEFF53067Dee30437C2F6"
   }
 } as const;
 
