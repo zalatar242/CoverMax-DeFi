@@ -26,34 +26,38 @@ contract InsuranceCalculator {
      * @dev Calculates the withdrawal amounts for each lending adapter.
      * @param totalToWithdraw The total amount to withdraw.
      * @param adapterCount The number of lending adapters.
-     * @return primaryAmounts The amount to withdraw from each adapter in the first attempt.
-     * @return remainingAmounts The amount to withdraw from each adapter in the second attempt if the first fails.
+     * @return amounts The amount to withdraw from each adapter.
      */
+    /**
+     * @dev Internal function to distribute amount across multiple recipients.
+     * @param totalAmount The total amount to distribute.
+     * @param count The number of recipients.
+     * @return amounts The amount for each recipient.
+     */
+    function _distributeAmount(uint256 totalAmount, uint256 count) 
+        internal 
+        pure 
+        returns (uint256[] memory amounts) 
+    {
+        require(count > 0, "Calculator: no adapters");
+        amounts = new uint256[](count);
+        
+        if (totalAmount == 0) return amounts;
+        
+        uint256 baseAmount = totalAmount / count;
+        uint256 remainder = totalAmount % count;
+        
+        for (uint256 i = 0; i < count;) {
+            amounts[i] = baseAmount + (i < remainder ? 1 : 0);
+            unchecked { ++i; }
+        }
+    }
+
     function calculateWithdrawalAmounts(
         uint256 totalToWithdraw,
         uint256 adapterCount
-    ) external pure returns (
-        uint256[] memory primaryAmounts,
-        uint256[] memory remainingAmounts
-    ) {
-        primaryAmounts = new uint256[](adapterCount);
-        remainingAmounts = new uint256[](adapterCount);
-
-        if (totalToWithdraw == 0) return (primaryAmounts, remainingAmounts);
-
-        uint256 baseAmount = totalToWithdraw / adapterCount;
-        uint256 remainder = totalToWithdraw % adapterCount;
-
-        for (uint256 i = 0; i < adapterCount; ) {
-            primaryAmounts[i] = baseAmount;
-            if (i < remainder) {
-                primaryAmounts[i]++;
-            }
-            remainingAmounts[i] = totalToWithdraw;
-            unchecked {
-                ++i;
-            }
-        }
+    ) external pure returns (uint256[] memory amounts) {
+        return _distributeAmount(totalToWithdraw, adapterCount);
     }
 
     /**
@@ -63,6 +67,7 @@ contract InsuranceCalculator {
      * @return aaAmount The amount for AA tranche.
      */
     function calculateTrancheAmounts(uint256 totalAmount) external pure returns (uint256 aaaAmount, uint256 aaAmount) {
+        require(totalAmount % 2 == 0, "Calculator: amount must be even");
         uint256 trancheAmount = totalAmount / 2;
         return (trancheAmount, trancheAmount);
     }
@@ -77,22 +82,7 @@ contract InsuranceCalculator {
         uint256 totalAmount,
         uint256 adapterCount
     ) external pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](adapterCount);
-
-        if (totalAmount == 0 || adapterCount == 0) return amounts;
-
-        uint256 amountPerAdapter = totalAmount / adapterCount;
-        uint256 remainder = totalAmount % adapterCount;
-
-        for (uint256 i = 0; i < adapterCount; ) {
-            amounts[i] = amountPerAdapter;
-            if (i < remainder) {
-                amounts[i]++;
-            }
-            unchecked {
-                ++i;
-            }
-        }
+        return _distributeAmount(totalAmount, adapterCount);
     }
 
     /**
@@ -106,16 +96,28 @@ contract InsuranceCalculator {
      * @return canClaim Whether claiming is allowed.
      * @return needsReset Whether time periods need to be reset.
      */
+    struct TimePeriodValidation {
+        bool canSplitRisk;
+        bool canClaim;
+        bool isInsurancePeriod;
+    }
+
     function validateTimePeriods(
         uint256 currentTime,
         uint256 S,
         uint256 T1,
         uint256 T2,
         uint256 T3
-    ) external pure returns (bool canSplit, bool canClaim, bool needsReset) {
-        needsReset = currentTime > T3;
-        canSplit = currentTime < S;
-        canClaim = currentTime <= S || currentTime > T1;
+    ) external pure returns (TimePeriodValidation memory) {
+        bool canSplitRisk = currentTime < S;
+        bool isInsurancePeriod = currentTime >= S && currentTime <= T1;
+        bool canClaim = currentTime <= S || currentTime > T1;
+        
+        return TimePeriodValidation({
+            canSplitRisk: canSplitRisk,
+            canClaim: canClaim,
+            isInsurancePeriod: isInsurancePeriod
+        });
     }
 
     /**
@@ -126,15 +128,24 @@ contract InsuranceCalculator {
      * @return newT2 New T2 time.
      * @return newT3 New T3 time.
      */
-    function calculateNewTimePeriods(uint256 currentTime) external pure returns (
-        uint256 newS,
-        uint256 newT1,
-        uint256 newT2,
-        uint256 newT3
-    ) {
-        newS = currentTime + 2 days;
-        newT1 = newS + 5 days;
-        newT2 = newT1 + 1 days;
-        newT3 = newT2 + 1 days;
+    struct NewTimePeriods {
+        uint256 S;
+        uint256 T1;
+        uint256 T2;
+        uint256 T3;
+    }
+
+    function calculateNewTimePeriods(uint256 currentTime) external pure returns (NewTimePeriods memory) {
+        uint256 newS = currentTime + 7 days; // 7 days from current time
+        uint256 newT1 = newS + 14 days; // 14 days insurance period
+        uint256 newT2 = newT1 + 300; // 5 minutes after T1
+        uint256 newT3 = newT2 + 300; // 5 minutes after T2
+        
+        return NewTimePeriods({
+            S: newS,
+            T1: newT1,
+            T2: newT2,
+            T3: newT3
+        });
     }
 }

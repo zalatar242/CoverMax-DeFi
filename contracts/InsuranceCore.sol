@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ITranche.sol";
+import "./interfaces/ITranche.sol";
 
 /// @title Insurance Core - Main insurance contract with full functionality
 contract InsuranceCore {
@@ -40,7 +40,7 @@ contract InsuranceCore {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Not owner");
+        require(msg.sender == owner, "Insurance: not owner");
         _;
     }
 
@@ -53,7 +53,7 @@ contract InsuranceCore {
         address _adapterManager,
         address _calculator
     ) external onlyOwner {
-        require(!initialized, "Already initialized");
+        require(!initialized, "Insurance: already initialized");
         require(usdcAddress != address(0), "Insurance: USDC address cannot be zero");
 
         initialized = true;
@@ -71,7 +71,7 @@ contract InsuranceCore {
     }
 
     function setTranches(address _AAA, address _AA) external onlyOwner {
-        require(AAA == address(0) && AA == address(0), "Tranches already set");
+        require(AAA == address(0) && AA == address(0), "Insurance: tranches already set");
         AAA = _AAA;
         AA = _AA;
     }
@@ -105,12 +105,16 @@ contract InsuranceCore {
         totalTranches -= (amountAAA + amountAA);
     }
 
-    function splitRisk(uint256 amountUsdc) external {
+    modifier timeReset() {
         if (block.timestamp > T3) {
             _resetTimePeriods();
         }
+        _;
+    }
+
+    function splitRisk(uint256 amountUsdc) external timeReset {
         require(block.timestamp < S, "Insurance: issuance ended");
-        require(amountUsdc > MINIMUM_AMOUNT, "Insurance: amount too low");
+        require(amountUsdc >= 4, "Insurance: amount too low");
         require(amountUsdc % 2 == 0, "Insurance: Amount must be divisible by 2");
 
         IERC20 usdcToken = IERC20(usdc);
@@ -145,10 +149,7 @@ contract InsuranceCore {
         _claim(balanceAAA, balanceAA);
     }
 
-    function _claim(uint256 amountAAA, uint256 amountAA) internal {
-        if (block.timestamp > T3) {
-            _resetTimePeriods();
-        }
+    function _claim(uint256 amountAAA, uint256 amountAA) internal timeReset {
         require(
             block.timestamp <= S || block.timestamp > T1,
             "Insurance: Claims can only be made before the insurance phase starts or after it ends"

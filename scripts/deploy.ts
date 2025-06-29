@@ -1,20 +1,13 @@
-import { ethers, network } from "hardhat";
+import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
 import { writeFileSync, readFileSync } from "fs";
 import { join } from "path";
 import { ContractTransactionResponse } from "ethers";
-import { BaseContract } from "ethers";
+import { TimeCalculator } from "./utils/TimeCalculator";
 
 const ADDRESSES_FILE = path.join(__dirname, "../config/addresses.ts");
 
-async function waitForDeployment<T extends BaseContract>(contract: T): Promise<T> {
-  const tx = await contract.deploymentTransaction();
-  if (tx) {
-    await tx.wait(2); // Wait for 2 confirmations
-  }
-  return contract;
-}
 
 async function waitForConfirmations(tx: Promise<ContractTransactionResponse> | ContractTransactionResponse) {
   const resolvedTx = await tx;
@@ -35,7 +28,11 @@ function loadDeployments(): { [key: string]: string } {
   }
   
   try {
-    const addressObj = eval(`(${addressMatch[1]})`);
+    // SAFER: Use JSON.parse instead of eval
+    const jsonString = addressMatch[1]
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Add quotes to keys
+      .replace(/'/g, '"'); // Replace single quotes with double quotes
+    const addressObj = JSON.parse(jsonString);
     return {
       "MockUSDC": addressObj.USDC_ADDRESS,
       "MockAToken": addressObj.AAVE_ATOKEN,
@@ -287,11 +284,8 @@ async function main(): Promise<void> {
     const isCoreInitialized = coreInfo[2]; // initialized is the third element in the returned tuple
     if (!isCoreInitialized) {
       console.log("\n⚙️ Initializing Insurance Core...");
-      const currentTime = Math.floor(Date.now() / 1000);
-      const S = currentTime + 2 * 24 * 60 * 60; // 2 days from now
-      const T1 = S + 5 * 24 * 60 * 60; // 5 days after S
-      const T2 = T1 + 1 * 24 * 60 * 60; // 1 day after T1
-      const T3 = T2 + 1 * 24 * 60 * 60; // 1 day after T2
+      const timePeriods = TimeCalculator.calculateTimePeriods();
+      const { S, T1, T2, T3 } = timePeriods;
 
       await (insuranceCore as any).initialize(
         deployments.MockUSDC,
@@ -396,7 +390,7 @@ async function main(): Promise<void> {
     const pairArtifact = await ethers.getContractFactory("UniswapV2Pair");
 
     // Add network configuration to contracts.json
-    contractsJson.networks[NETWORK] = {
+    contractsJson.networks["passetHub"] = {
       USDC: {
         address: deployments.MockUSDC,
         abi: mockUsdcArtifact.interface.fragments

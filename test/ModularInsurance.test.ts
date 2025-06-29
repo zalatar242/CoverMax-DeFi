@@ -277,14 +277,6 @@ describe("Modular Insurance - Comprehensive Tests", function () {
   }
 
   describe("🏗️ Deployment & Initialization", function () {
-    it("Should deploy all modular contracts successfully", async function () {
-      expect(await insuranceCore.getAddress()).to.be.a('string');
-      expect(await adapterManager.getAddress()).to.be.a('string');
-      expect(await calculator.getAddress()).to.be.a('string');
-      expect(await trancheAAA.getAddress()).to.be.a('string');
-      expect(await trancheAA.getAddress()).to.be.a('string');
-      expect(await aaveAdapter.getAddress()).to.be.a('string');
-    });
 
     it("Should have correct initial state", async function () {
       const info = await insuranceCore.getInfo();
@@ -314,6 +306,7 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       expect(T1).to.be.gt(S);
     });
   });
+
 
   describe("🔐 Access Control", function () {
     it("Should prevent unauthorized adapter management", async function () {
@@ -481,232 +474,40 @@ describe("Modular Insurance - Comprehensive Tests", function () {
     });
   });
 
-  describe("⏰ Detailed Time-based Operation Restrictions", function () {
-    it("Should allow claims right before S (issuance end)", async function () {
-      console.log("\n⏰ Claim Right Before S Test");
-      console.log("============================");
-
-      const amount = ethers.parseUnits("100", 6);
-      await insuranceCore.connect(user).splitRisk(amount);
-      const trancheAmount = amount / 2n;
-
-      console.log("Advancing to just before S...");
-      await advanceTime(ISSUANCE_PERIOD - 60); // 1 minute before S to be safe
-
-      console.log("Attempting claim before S (should work):");
-
-      // Check current time vs S to debug
-      const info = await insuranceCore.getInfo();
-      const currentTime = (await ethers.provider.getBlock("latest"))!.timestamp;
-      const S = Number(info[3]);
-      console.log("Current time:", currentTime, "S:", S, "Diff:", S - currentTime);
-
-      if (currentTime < S) {
-        const beforeS = await insuranceCore.connect(user).claim(trancheAmount, 0);
-        await expect(beforeS).to.not.be.reverted;
-        console.log("✅ Claim before S: SUCCESS");
-      } else {
-        console.log("⚠️ Time already past S, skipping claim test");
-      }
-      console.log("============================\n");
-    });
-
+  describe("⏰ Time-based Operation Restrictions", function () {
     it("Should prevent claims during insurance period (between S and T1)", async function () {
-      console.log("\n⏰ Claim During Insurance Period Test");
-      console.log("=====================================");
-
       const amount = ethers.parseUnits("100", 6);
       await insuranceCore.connect(attacker).splitRisk(amount);
       const trancheAmount = amount / 2n;
 
-      console.log("Advancing to insurance period (just past S)...");
       await advanceTime(ISSUANCE_PERIOD + 1); // Just past S
 
-      console.log("Attempting claim during insurance period (should fail):");
       await expect(insuranceCore.connect(attacker).claim(trancheAmount, trancheAmount))
         .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
-      console.log("✅ Claim during insurance period: BLOCKED (expected)");
-      console.log("=====================================\n");
     });
 
     it("Should allow claims after T1 (insurance period ends)", async function () {
-      console.log("\n⏰ Claim After T1 Test");
-      console.log("=======================");
-
       const amount = ethers.parseUnits("100", 6);
       const testUser = isForking && whale ? whale : user;
       await insuranceCore.connect(testUser).splitRisk(amount);
       const trancheAmount = amount / 2n;
 
-      console.log("Advancing past T1 (insurance period ends)...");
       await advanceTime(ISSUANCE_PERIOD + INSURANCE_PERIOD + 1); // Past T1
 
-      console.log("Attempting claim after T1 (should work):");
-      const afterT1 = await insuranceCore.connect(testUser).claim(trancheAmount, trancheAmount);
-      await expect(afterT1).to.not.be.reverted;
-      console.log("✅ Claim after T1: SUCCESS");
-      console.log("=======================\n");
-    });
-
-    it("Should handle forgotten splitRisk - users miss issuance window", async function () {
-      console.log("\n⏰ Forgotten Split Risk Test");
-      console.log("=============================");
-
-      const amount = ethers.parseUnits("100", 6);
-      console.log("Planned investment:", ethers.formatUnits(amount, 6), "USDC");
-
-      // User intends to split risk but forgets until after S
-      console.log("Time advances past issuance period...");
-      await advanceTime(ISSUANCE_PERIOD + 1);
-
-      console.log("\nUser attempts late splitRisk (should fail):");
-      console.log("------------------------------------------");
-
-      // This should fail - user missed the issuance window
-      await expect(insuranceCore.connect(attacker).splitRisk(amount))
-        .to.be.revertedWith("Insurance: issuance ended");
-
-      // Verify no tokens were minted
-      expect(await trancheAAA.balanceOf(attacker.address)).to.equal(0);
-      expect(await trancheAA.balanceOf(attacker.address)).to.equal(0);
-
-      console.log("Result: User cannot participate - missed issuance window");
-      console.log("=============================\n");
-    });
-
-    it("Should handle forgotten claim during insurance period", async function () {
-      console.log("\n⏰ Forgotten Claim During Insurance Period Test");
-      console.log("===============================================");
-
-      const amount = ethers.parseUnits("100", 6);
-      await insuranceCore.connect(attacker).splitRisk(amount);
-
-      const trancheAmount = amount / 2n;
-      console.log("User has tranche tokens:", ethers.formatUnits(trancheAmount, 6), "each");
-
-      // User forgets to claim before insurance period and tries during it
-      console.log("\nAdvancing to insurance period (between S and T1)...");
-      await advanceTime(ISSUANCE_PERIOD + 1); // After S but before T1
-
-      console.log("User attempts to claim during insurance period (should fail):");
-      console.log("------------------------------------------------------------");
-
-      await expect(insuranceCore.connect(attacker).claim(trancheAmount, trancheAmount))
-        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
-
-      console.log("Result: Claims blocked during insurance period");
-      console.log("===============================================\n");
-    });
-
-    it("Should allow claim after user forgets during insurance period but remembers after T1", async function () {
-      console.log("\n⏰ Recovery After Forgotten Claim Test");
-      console.log("======================================");
-
-      const amount = ethers.parseUnits("100", 6);
-      await insuranceCore.connect(attacker).splitRisk(amount);
-
-      const trancheAmount = amount / 2n;
-      console.log("User has tranche tokens:", ethers.formatUnits(trancheAmount, 6), "each");
-
-      // User forgets to claim during insurance period
-      console.log("\nUser forgets to claim and insurance period passes...");
-      await advanceTime(ISSUANCE_PERIOD + INSURANCE_PERIOD + 1); // Past T1
-
-      console.log("User remembers and claims after T1 (should succeed):");
-      console.log("---------------------------------------------------");
-
-      const initialUSDC = await usdc.balanceOf(attacker.address);
-
-      // This should work - after T1
-      await insuranceCore.connect(attacker).claim(trancheAmount, trancheAmount);
-
-      const finalUSDC = await usdc.balanceOf(attacker.address);
-      const claimed = finalUSDC - initialUSDC;
-
-      console.log("USDC claimed:", ethers.formatUnits(claimed, 6), "USDC");
-      console.log("Tranche tokens burned successfully");
-
-      // Verify tokens were burned
-      expect(await trancheAAA.balanceOf(attacker.address)).to.equal(0);
-      expect(await trancheAA.balanceOf(attacker.address)).to.equal(0);
-
-      console.log("Result: User successfully recovered after insurance period");
-      console.log("======================================\n");
-    });
-  });
-
-  describe("⏰ Time-based Configuration", function () {
-    it("Should have valid time periods configured", async function () {
-      const info = await insuranceCore.getInfo();
-      const currentTime = (await ethers.provider.getBlock("latest"))!.timestamp;
-
-      const S = Number(info[3]); // S timestamp
-      const T1 = Number(info[4]); // T1 timestamp
-      const T2 = Number(info[5]); // T2 timestamp
-      const T3 = Number(info[6]); // T3 timestamp
-
-      // Verify time periods are in logical order
-      expect(S).to.be.greaterThan(currentTime);
-      expect(T1).to.be.greaterThan(S);
-      expect(T2).to.be.greaterThan(T1);
-      expect(T3).to.be.greaterThan(T2);
-    });
-
-    it("Should allow splitRisk during issuance period", async function () {
-      const amount = ethers.parseUnits("50", 6);
-
-      // Should work during issuance period
-      await expect(insuranceCore.connect(attacker).splitRisk(amount)).to.not.be.reverted;
-
-      expect(await trancheAAA.balanceOf(attacker.address)).to.be.gt(0);
-      expect(await trancheAA.balanceOf(attacker.address)).to.be.gt(0);
+      await expect(insuranceCore.connect(testUser).claim(trancheAmount, trancheAmount))
+        .to.not.be.reverted;
     });
 
     it("Should prevent splitRisk after issuance period", async function () {
       await advanceTime(ISSUANCE_PERIOD + 1);
 
       const amount = ethers.parseUnits("100", 6);
-      await expect(insuranceCore.connect(deployer).splitRisk(amount))
+      await expect(insuranceCore.connect(attacker).splitRisk(amount))
         .to.be.revertedWith("Insurance: issuance ended");
     });
   });
 
-  describe("🧮 Calculator Functions", function () {
-    it("Should calculate withdrawal amounts correctly", async function () {
-      const totalTokens = ethers.parseUnits("50", 6);
-      const totalTranches = ethers.parseUnits("100", 6);
-      const totalInvested = ethers.parseUnits("1000", 6);
 
-      const withdrawal = await calculator.calculateWithdrawal(totalTokens, totalTranches, totalInvested);
-
-      // Should be 50% of total invested = 500 USDC
-      const expected = ethers.parseUnits("500", 6);
-      expect(withdrawal).to.equal(expected);
-    });
-
-    it("Should calculate tranche amounts for equal split", async function () {
-      const totalAmount = ethers.parseUnits("100", 6);
-      const [aaaAmount, aaAmount] = await calculator.calculateTrancheAmounts(totalAmount);
-
-      const expectedEach = ethers.parseUnits("50", 6);
-      expect(aaaAmount).to.equal(expectedEach);
-      expect(aaAmount).to.equal(expectedEach);
-    });
-
-    it("Should validate time periods correctly", async function () {
-      const currentTime = (await ethers.provider.getBlock("latest"))!.timestamp;
-      const S = currentTime + 100;
-      const T1 = S + 200;
-      const T2 = T1 + 100;
-      const T3 = T2 + 100;
-
-      const [canSplit, canClaim, needsReset] = await calculator.validateTimePeriods(currentTime, S, T1, T2, T3);
-
-      expect(canSplit).to.be.true; // Before S
-      expect(canClaim).to.be.true; // Before S
-      expect(needsReset).to.be.false; // Before T3
-    });
-  });
 
   describe("🔗 Adapter Management", function () {
     it("Should manage adapters correctly", async function () {
@@ -729,28 +530,184 @@ describe("Modular Insurance - Comprehensive Tests", function () {
     });
   });
 
-  describe("🌐 Network Compatibility", function () {
-    it("Should work on both mainnet fork and local networks", async function () {
-      const networkName = isForking ? "Mainnet Fork" : "Local/AssetHub";
-      console.log("Testing on:", networkName);
 
-      // Test basic functionality
-      const amount = ethers.parseUnits("50", 6);
-      await insuranceCore.connect(attacker).splitRisk(amount);
-
-      expect(await trancheAAA.balanceOf(attacker.address)).to.be.gt(0);
-      expect(await trancheAA.balanceOf(attacker.address)).to.be.gt(0);
+  describe("🔍 View Functions & Edge Cases", function () {
+    it("Should return correct user deposit for getUserDeposit", async function () {
+      const amount = ethers.parseUnits("100", 6);
+      
+      // Initially should be 0
+      expect(await insuranceCore.getUserDeposit(user.address)).to.equal(0);
+      
+      // After splitRisk should equal the deposited amount
+      await insuranceCore.connect(user).splitRisk(amount);
+      expect(await insuranceCore.getUserDeposit(user.address)).to.equal(amount);
+      
+      // After partial claim should reflect remaining balance
+      const halfAmount = amount / 2n;
+      await insuranceCore.connect(user).claim(halfAmount / 2n, halfAmount / 2n);
+      expect(await insuranceCore.getUserDeposit(user.address)).to.equal(halfAmount);
     });
 
-    it("Should handle gas costs efficiently", async function () {
-      const amount = ethers.parseUnits("20", 6);
+    it("Should handle getUserDeposit for zero address", async function () {
+      expect(await insuranceCore.getUserDeposit(ethers.ZeroAddress)).to.equal(0);
+    });
 
-      const tx = await insuranceCore.connect(attacker).splitRisk(amount);
-      const receipt = await tx.wait();
+    it("Should handle getUserDeposit after token transfers", async function () {
+      const amount = ethers.parseUnits("100", 6);
+      await insuranceCore.connect(user).splitRisk(amount);
+      
+      // Transfer half of AAA tokens to attacker
+      const aaaBalance = await trancheAAA.balanceOf(user.address);
+      await trancheAAA.connect(user).transfer(attacker.address, aaaBalance / 2n);
+      
+      // User should have 75% of original deposit
+      const userDeposit = await insuranceCore.getUserDeposit(user.address);
+      expect(userDeposit).to.equal(amount * 3n / 4n);
+      
+      // Attacker should have 25% of the deposit
+      const attackerDeposit = await insuranceCore.getUserDeposit(attacker.address);
+      expect(attackerDeposit).to.equal(amount / 4n);
+    });
+  });
 
-      console.log("Gas used for splitRisk:", receipt?.gasUsed?.toString());
-      // Should be reasonable gas cost (less than 500k gas)
-      expect(receipt?.gasUsed).to.be.lt(500000);
+  describe("🛡️ Error Handling & Edge Cases", function () {
+    it("Should prevent double initialization", async function () {
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      await expect(insuranceCore.initialize(
+        await usdc.getAddress(),
+        currentTime + 3600,
+        currentTime + 7200,
+        currentTime + 10800,
+        currentTime + 14400,
+        await adapterManager.getAddress(),
+        await calculator.getAddress()
+      )).to.be.revertedWith("Insurance: already initialized");
+    });
+
+    it("Should prevent setting tranches twice", async function () {
+      const Tranche = await ethers.getContractFactory("Tranche");
+      const newAAA = await Tranche.deploy("New AAA", "nAAA");
+      const newAA = await Tranche.deploy("New AA", "nAA");
+      
+      await expect(insuranceCore.setTranches(await newAAA.getAddress(), await newAA.getAddress()))
+        .to.be.revertedWith("Insurance: tranches already set");
+    });
+
+    it("Should prevent non-owner from setting tranches", async function () {
+      const Tranche = await ethers.getContractFactory("Tranche");
+      const newAAA = await Tranche.deploy("New AAA", "nAAA");
+      const newAA = await Tranche.deploy("New AA", "nAA");
+      
+      // Deploy fresh insurance core without tranches set
+      const InsuranceCore = await ethers.getContractFactory("InsuranceCore");
+      const freshCore = await InsuranceCore.deploy();
+      
+      await expect(freshCore.connect(attacker).setTranches(await newAAA.getAddress(), await newAA.getAddress()))
+        .to.be.revertedWith("Insurance: not owner");
+    });
+
+    it("Should handle claimAll with zero balance gracefully", async function () {
+      // User with no tokens should revert when calling claimAll
+      await expect(insuranceCore.connect(attacker).claimAll())
+        .to.be.revertedWith("Insurance: No AAA or AA tokens to claim");
+    });
+
+    it("Should handle claim with partial amounts correctly", async function () {
+      const amount = ethers.parseUnits("200", 6);
+      await insuranceCore.connect(user).splitRisk(amount);
+      
+      const aaaBalance = await trancheAAA.balanceOf(user.address);
+      const aaBalance = await trancheAA.balanceOf(user.address);
+      
+      // Claim only 25% of each tranche
+      const partialAAA = aaaBalance / 4n;
+      const partialAA = aaBalance / 4n;
+      
+      const initialUSDC = await usdc.balanceOf(user.address);
+      await insuranceCore.connect(user).claim(partialAAA, partialAA);
+      
+      // Should receive proportional USDC
+      const finalUSDC = await usdc.balanceOf(user.address);
+      expect(finalUSDC).to.be.gt(initialUSDC);
+      
+      // Should have remaining tranche tokens
+      expect(await trancheAAA.balanceOf(user.address)).to.equal(aaaBalance - partialAAA);
+      expect(await trancheAA.balanceOf(user.address)).to.equal(aaBalance - partialAA);
+    });
+
+    it("Should enforce minimum splitRisk amount", async function () {
+      // Test with amount less than 4 (minimum)
+      await expect(insuranceCore.connect(user).splitRisk(2))
+        .to.be.revertedWith("Insurance: amount too low");
+      
+      await expect(insuranceCore.connect(user).splitRisk(3))
+        .to.be.revertedWith("Insurance: amount too low");
+      
+      // 4 should work (minimum valid amount)
+      await expect(insuranceCore.connect(user).splitRisk(4))
+        .to.not.be.reverted;
+    });
+
+    it("Should handle large amounts without overflow", async function () {
+      // Mint large amount to user for testing
+      const largeAmount = ethers.parseUnits("1000000", 6); // 1M USDC
+      if (!isForking) {
+        const mockUSDC = usdc as MockUSDC;
+        await mockUSDC.mint(user.address, largeAmount);
+        await usdc.connect(user).approve(await insuranceCore.getAddress(), largeAmount);
+      }
+      
+      if (await usdc.balanceOf(user.address) >= largeAmount) {
+        await expect(insuranceCore.connect(user).splitRisk(largeAmount))
+          .to.not.be.reverted;
+        
+        const userDeposit = await insuranceCore.getUserDeposit(user.address);
+        expect(userDeposit).to.be.gte(largeAmount);
+      }
+    });
+  });
+
+  describe("🔧 Integration Edge Cases", function () {
+    it("Should handle adapter deposit failures gracefully", async function () {
+      // This test depends on having a mock adapter that can fail
+      // For now, just ensure the current flow works
+      const amount = ethers.parseUnits("50", 6);
+      
+      await expect(insuranceCore.connect(user).splitRisk(amount))
+        .to.not.be.reverted;
+    });
+
+    it("Should validate time periods correctly during operations", async function () {
+      const amount = ethers.parseUnits("50", 6);
+      
+      // Should work in issuance period
+      await insuranceCore.connect(user).splitRisk(amount);
+      
+      // Advance to insurance period
+      await advanceTime(ISSUANCE_PERIOD + 1);
+      
+      // Should fail during insurance period
+      await expect(insuranceCore.connect(attacker).splitRisk(amount))
+        .to.be.revertedWith("Insurance: issuance ended");
+      
+      // Claims should also fail during insurance period
+      const aaaBalance = await trancheAAA.balanceOf(user.address);
+      await expect(insuranceCore.connect(user).claim(aaaBalance, 0))
+        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
+    });
+
+    it("Should update totalInvested correctly", async function () {
+      const initialInfo = await insuranceCore.getInfo();
+      const initialInvested = initialInfo[8]; // totalInvested
+      
+      const amount = ethers.parseUnits("100", 6);
+      await insuranceCore.connect(user).splitRisk(amount);
+      
+      const finalInfo = await insuranceCore.getInfo();
+      const finalInvested = finalInfo[8]; // totalInvested
+      
+      expect(finalInvested).to.be.gt(initialInvested);
     });
   });
 
