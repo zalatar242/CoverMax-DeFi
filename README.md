@@ -47,7 +47,7 @@ cp .env.example .env
 npm install --legacy-peer-deps --force
 ```
 
-2. Run tests (uses PolkaVM by default):
+2. Run tests (uses PolkaVM by default - may not work!):
 
 ```bash
 npx hardhat test
@@ -56,7 +56,7 @@ npx hardhat test
 3. Deploy to PassethHub:
 
 ```bash
-npx hardhat deploy --network passetHub
+npx hardhat run scripts/deploy.ts --network passetHub
 ```
 
 ### Base Chain Testing

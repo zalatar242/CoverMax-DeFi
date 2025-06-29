@@ -2,37 +2,10 @@ import contracts from '../contracts.json';
 import { useAppKitNetwork } from '@reown/appkit/react';
 
 const NETWORK_CONFIG = {
-  hardhat: {
-    name: 'Hardhat Local',
-    chainId: 31337,
-    rpcUrl: 'http://localhost:8545',
-    nativeCurrency: {
-      symbol: 'ETH',
-      decimals: 18
-    }
-  },
-  mainnet: {
-    name: 'Base Mainnet',
-    chainId: 8453,
-    rpcUrl: process.env.REACT_APP_MAINNET_RPC_URL,
-    nativeCurrency: {
-      symbol: 'ETH',
-      decimals: 18
-    }
-  },
-  'base-sepolia': {
-    name: 'Base Sepolia',
-    chainId: 84532,
-    rpcUrl: 'https://sepolia.base.org',
-    nativeCurrency: {
-      symbol: 'ETH',
-      decimals: 18
-    }
-  },
   passetHub: {
     name: 'Passet Hub',
     chainId: 420420422,
-    rpcUrl: 'https://testnet-passet-hub-eth-rpc.polkadot.io/',
+    rpcUrl: process.env.REACT_APP_PASSETHUB_RPC_URL || 'https://testnet-passet-hub-eth-rpc.polkadot.io/',
     nativeCurrency: {
       symbol: 'DOT',
       decimals: 18
@@ -42,13 +15,11 @@ const NETWORK_CONFIG = {
 
 // Network key mapping
 const NETWORK_KEYS = {
-  84532: 'base-sepolia',
-  8453: 'base-mainnet',
-  31337: 'hardhat'
+  420420422: 'passetHub'
 };
 
 const getContractConfig = (contractName, currentNetwork) => {
-  const network = currentNetwork || process.env.REACT_APP_DEFAULT_NETWORK || 'base-sepolia';
+  const network = currentNetwork || process.env.REACT_APP_DEFAULT_NETWORK || 'passetHub';
   const networkContracts = contracts.networks[network];
 
   if (!networkContracts || !networkContracts[contractName]) {
@@ -66,11 +37,11 @@ export const useMainConfig = () => {
   const { chainId } = useAppKitNetwork();
 
   // Map chain ID to network key
-  const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
+  const currentNetwork = NETWORK_KEYS[chainId] || 'passetHub';
 
 
   return {
-    Insurance: getContractConfig('InsuranceCore', currentNetwork),
+    Insurance: getContractConfig('Insurance', currentNetwork),
     USDC: getContractConfig('USDC', currentNetwork),
     UniswapV2Router02: getContractConfig('UniswapV2Router02', currentNetwork),
     networks: NETWORK_CONFIG,
@@ -91,7 +62,7 @@ export const useTranchesConfig = () => {
   const { chainId } = useAppKitNetwork();
 
   // Map chain ID to network key
-  const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
+  const currentNetwork = NETWORK_KEYS[chainId] || 'passetHub';
 
   return {
     AAA: getContractConfig('TrancheAAA', currentNetwork),
@@ -103,7 +74,7 @@ export const useContractsConfig = () => {
   const { chainId } = useAppKitNetwork();
 
   // Map chain ID to network key
-  const currentNetwork = NETWORK_KEYS[chainId] || 'base-sepolia';
+  const currentNetwork = NETWORK_KEYS[chainId] || 'passetHub';
 
 
   const networkContracts = contracts.networks[currentNetwork];

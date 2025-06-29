@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "hardhat test"
+    "test": "TEST_ON_MOONBEAM=true npx hardhat test",
+    "coverage": "TEST_ON_MOONBEAM=true npx hardhat coverage"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +21,7 @@
     "chai": "^4.5.0",
     "ethers": "^6.13.5",
     "hardhat": "^2.25.0",
+    "solidity-coverage": "^0.8.15",
     "solc": "^0.8.28"
   },
   "dependencies": {
