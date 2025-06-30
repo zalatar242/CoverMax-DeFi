@@ -1,9 +1,8 @@
 import React from 'react';
-import { Box, Typography, Card, Grid, Stack, useTheme } from '@mui/material';
+import { Box, Typography, Card, Grid, Stack } from '@mui/material';
 import PropTypes from 'prop-types';
 
 const ProtocolCard = ({ protocol }) => {
-  const theme = useTheme();
 
   return (
     <Card sx={{

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Stack, Typography, Box, Paper } from '@mui/material';
 import { useWalletConnection, useWalletModal } from '../utils/walletConnector';
-import { useMainConfig, useTranchesConfig } from '../utils/contractConfig';
+import { useTranchesConfig } from '../utils/contractConfig';
 import { ContentCard } from '../components/ui';
 import TokenPrice from '../components/trade/TokenPrice';
 import LiquidityPosition from '../components/trade/LiquidityPosition';

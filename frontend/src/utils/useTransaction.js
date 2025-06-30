@@ -29,7 +29,7 @@ export const useTransaction = ({ onSuccess }) => {
       setIsProcessing(false);
       setHash(null);
     }
-  }, [receipt, isSuccess, onSuccess]);
+  }, [receipt, isSuccess, isError, txError, onSuccess]);
 
   const handleTransaction = async (fn) => {
     try {

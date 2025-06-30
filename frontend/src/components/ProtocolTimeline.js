@@ -2,13 +2,11 @@ import React from 'react';
 import {
   Typography,
   Box,
-  useTheme,
   Tooltip
 } from '@mui/material';
 import { InfoOutlined } from '@mui/icons-material';
 
 const ProtocolTimeline = ({ status, phases }) => {
-  const theme = useTheme();
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

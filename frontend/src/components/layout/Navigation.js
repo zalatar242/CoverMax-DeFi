@@ -54,7 +54,7 @@ MobileNavButton.propTypes = {
 
 const Navigation = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // isMobile is used in responsive design - removing for now as it's handled by sx props
 
   return (
     <AppBar

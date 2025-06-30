@@ -1,7 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { ErrorOutline } from '@mui/icons-material';
-import { useTheme } from '@mui/material';
 
 const WITHDRAWAL_INFO_BOX_STYLES = {
   box: {
@@ -18,7 +17,6 @@ const WITHDRAWAL_INFO_BOX_STYLES = {
 };
 
 const WithdrawalInfoBox = () => {
-  const theme = useTheme(); // theme is used in styles, so keep it if styles are complex or theme-dependent
   const styles = WITHDRAWAL_INFO_BOX_STYLES;
 
   return (

@@ -37,7 +37,7 @@ const SwapTab = ({ onTransactionSuccess }) => {
     enabled: Boolean(address && selectedFromToken && isConnected),
   });
 
-  const { data: toTokenBalance = 0n, refetch: refetchToTokenBalance } = useReadContract({
+  const { refetch: refetchToTokenBalance } = useReadContract({
     address: selectedToToken,
     abi: ['function balanceOf(address) view returns (uint256)'],
     functionName: 'balanceOf',

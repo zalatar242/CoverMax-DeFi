@@ -1,9 +1,8 @@
 import React from 'react';
-import { Box, Typography, Stack, useTheme } from '@mui/material';
+import { Box, Typography, Stack } from '@mui/material';
 import PropTypes from 'prop-types';
 
 const InfoBox = ({ title, items }) => {
-  const theme = useTheme();
 
   return (
     <Box sx={{

@@ -18,6 +18,27 @@ const metadata = {
 // Configure networks
 const networks = [
   {
+    id: 420420422,
+    name: 'Asset Hub Testnet',
+    network: 'asset-hub-testnet',
+    nativeCurrency: {
+      decimals: 18,
+      name: 'DOT',
+      symbol: 'DOT',
+    },
+    rpcUrls: {
+      default: { http: [process.env.REACT_APP_PASSETHUB_RPC_URL || 'https://testnet-passet-hub-eth-rpc.polkadot.io/'] },
+      public: { http: [process.env.REACT_APP_PASSETHUB_RPC_URL || 'https://testnet-passet-hub-eth-rpc.polkadot.io/'] },
+    },
+    blockExplorers: {
+      default: {
+        name: 'Asset Hub Explorer',
+        url: 'https://assethub-passet.subscan.io'
+      }
+    },
+    testnet: true
+  },
+  {
     id: 84532,
     name: 'Base Sepolia',
     network: 'base-sepolia',
@@ -91,6 +112,7 @@ export function AppKitProvider({ children }) {
 
 // Network key mapping (matches contractConfig.js)
 const NETWORK_KEYS = {
+  420420422: 'passetHub',
   84532: 'base-sepolia',
   8453: 'base-mainnet',
   31337: 'hardhat'
@@ -102,9 +124,9 @@ export const useNetwork = () => {
   console.log('Current Chain ID:', chainId);
 
   // Map chain ID to network key
-  const networkKey = NETWORK_KEYS[chainId] || 'base-sepolia';
-  // Default to Base Sepolia if chain not found
-  const network = networks.find(n => n.id === chainId) || networks.find(n => n.id === 84532);
+  const networkKey = NETWORK_KEYS[chainId] || 'passetHub';
+  // Default to Asset Hub if chain not found
+  const network = networks.find(n => n.id === chainId) || networks.find(n => n.id === 420420422);
 
   console.log('Selected Network:', network, 'Network Key:', networkKey);
 

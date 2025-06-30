@@ -96,7 +96,6 @@ const RemoveLiquidityTab = ({ onTransactionSuccess }) => {
 
   const calculateActualLPAmount = (uiAmountString) => {
     if (!removeLiquidityLPBalance || removeLiquidityLPBalance === 0n || !uiAmountString) return 0n;
-    const maxDisplayAmount = Number(formatUnits(removeLiquidityLPBalance, 18)); // Full balance as number (18 dec)
     const userInputAmount = Number(uiAmountString); // User input (assumed to be 6 dec representation)
 
     // To correctly scale, consider user input as a portion of the UI-formatted max balance
