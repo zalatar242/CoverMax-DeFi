@@ -29,16 +29,8 @@ jobs:
             npm ci
           fi
 
-      - name: Verify BASE_MAINNET_RPC_URL
-        run: |
-          if [ -z "${{ secrets.BASE_MAINNET_RPC_URL }}" ]; then
-            echo "Error: BASE_MAINNET_RPC_URL secret is not set"
-            exit 1
-          fi
-
       - name: Run tests
         env:
-          FORK_ENABLED: "true"
-          BASE_MAINNET_RPC_URL: ${{ secrets.BASE_MAINNET_RPC_URL }}
-          FORK_BLOCK_NUMBER: "12300000"
+          REACT_APP_DEFAULT_NETWORK: "passetHub"
+          REACT_APP_PASSETHUB_RPC_URL: "https://testnet-passet-hub-eth-rpc.polkadot.io/"
         run: npm test
