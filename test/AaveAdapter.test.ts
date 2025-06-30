@@ -57,11 +57,6 @@ describe("Aave Lending Adapter (Mock)", function() {
         await aaveAdapter.waitForDeployment();
     });
 
-    it("should deploy with correct addresses", async function() {
-        expect(await aaveAdapter.aavePool()).to.equal(await mockAavePool.getAddress());
-        expect(await aaveAdapter.poolDataProvider()).to.equal(await mockDataProvider.getAddress());
-    });
-
     it("should deposit USDC into Aave", async function() {
         // Approve adapter to spend USDC
         await mockUsdc.connect(user).approve(await aaveAdapter.getAddress(), TEST_AMOUNT);

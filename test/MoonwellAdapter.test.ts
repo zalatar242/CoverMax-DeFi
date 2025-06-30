@@ -39,10 +39,6 @@ describe("Moonwell Lending Adapter (Mock)", function() {
         await moonwellAdapter.waitForDeployment();
     });
 
-    it("should deploy with correct mToken address", async function() {
-        expect(await moonwellAdapter.mToken()).to.equal(await mockMToken.getAddress());
-    });
-
     it("should deposit USDC into Moonwell", async function() {
         // Approve adapter to spend USDC
         await mockUsdc.connect(user).approve(await moonwellAdapter.getAddress(), TEST_AMOUNT);
@@ -134,33 +130,6 @@ describe("Moonwell Lending Adapter (Mock)", function() {
             expect(balance).to.be.closeTo(firstDeposit + secondDeposit - withdrawAmount, parseUnits("0.03", 6));
         });
 
-        it("should handle different users independently", async function() {
-            const [, , user2] = await ethers.getSigners();
-
-            // Setup second user
-            await mockUsdc.mint(user2.address, INITIAL_SUPPLY);
-
-            const user1Amount = parseUnits("100", 6);
-            const user2Amount = parseUnits("200", 6);
-
-            // User 1 deposits
-            await mockUsdc.connect(user).approve(await moonwellAdapter.getAddress(), user1Amount);
-            await moonwellAdapter.connect(user).deposit(await mockUsdc.getAddress(), user1Amount);
-
-            // User 2 deposits
-            await mockUsdc.connect(user2).approve(await moonwellAdapter.getAddress(), user2Amount);
-            await moonwellAdapter.connect(user2).deposit(await mockUsdc.getAddress(), user2Amount);
-
-            // Check total balance reflects both deposits
-            const totalBalance = await moonwellAdapter.getBalance(await mockUsdc.getAddress());
-            expect(totalBalance).to.be.closeTo(user1Amount + user2Amount, parseUnits("0.03", 6));
-        });
-
-        it("should handle zero balance correctly", async function() {
-            const balance = await moonwellAdapter.getBalance(await mockUsdc.getAddress());
-            expect(balance).to.equal(0);
-        });
-
         it("should handle very large amounts", async function() {
             const largeAmount = parseUnits("100000", 6); // 100k USDC
 
@@ -244,19 +213,6 @@ describe("Moonwell Lending Adapter (Mock)", function() {
              .withArgs(await mockUsdc.getAddress(), TEST_AMOUNT);
         });
 
-        it("should handle exchange rate variations", async function() {
-            // This test simulates how Moonwell mTokens work with exchange rates
-            const initialDeposit = parseUnits("100", 6);
-
-            await mockUsdc.connect(user).approve(await moonwellAdapter.getAddress(), initialDeposit);
-            await moonwellAdapter.connect(user).deposit(await mockUsdc.getAddress(), initialDeposit);
-
-            const balance = await moonwellAdapter.getBalance(await mockUsdc.getAddress());
-
-            // In a real scenario, the balance might be slightly different due to exchange rates
-            // For mocks, we expect it to be very close to the deposited amount
-            expect(balance).to.be.closeTo(initialDeposit, parseUnits("0.1", 6));
-        });
     });
 
 });

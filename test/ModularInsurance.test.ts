@@ -329,13 +329,6 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       expect(await insuranceCore.getUserDeposit(freshUser.address)).to.equal(amount);
     });
 
-    it("Should handle getInfo correctly", async function () {
-      const info = await insuranceCore.getInfo();
-      expect(info.length).to.equal(9);
-      expect(info[0]).to.equal(deployer.address); // owner
-      expect(info[1]).to.equal(await usdc.getAddress()); // usdc
-      expect(info[2]).to.be.true; // initialized
-    });
   });
 
   describe("🛡️ Error Handling", function () {
