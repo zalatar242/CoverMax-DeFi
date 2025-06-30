@@ -2,7 +2,7 @@
   "networks": {
     "passetHub": {
       "USDC": {
-        "address": "0xfb9978ed80e59D5b66d36BC7c486423Ff6071E31",
+        "address": "0xD17Aef210dEC93D3521950E18aB8783e4e488Fd4",
         "abi": [
           {
             "type": "constructor",
@@ -480,56 +480,13 @@
         ]
       },
       "Insurance": {
-        "address": "0x4b36f970037fc1EAc81BEFF53067Dee30437C2F6",
+        "address": "0xBFBeD4E55F8d6fa19F0dd9986C7045eF45647dcd",
         "abi": [
           {
             "type": "constructor",
             "inputs": [],
             "payable": false,
             "gas": null
-          },
-          {
-            "type": "event",
-            "inputs": [
-              {
-                "name": "claimant",
-                "type": "address",
-                "baseType": "address",
-                "indexed": true,
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountAAA",
-                "type": "uint256",
-                "baseType": "uint256",
-                "indexed": false,
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountAA",
-                "type": "uint256",
-                "baseType": "uint256",
-                "indexed": false,
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountUsdc",
-                "type": "uint256",
-                "baseType": "uint256",
-                "indexed": false,
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "name": "Claim",
-            "anonymous": false
           },
           {
             "type": "event",
@@ -622,82 +579,6 @@
           {
             "type": "function",
             "inputs": [],
-            "name": "S",
-            "constant": true,
-            "outputs": [
-              {
-                "name": "",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "stateMutability": "view",
-            "payable": false,
-            "gas": null
-          },
-          {
-            "type": "function",
-            "inputs": [],
-            "name": "T1",
-            "constant": true,
-            "outputs": [
-              {
-                "name": "",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "stateMutability": "view",
-            "payable": false,
-            "gas": null
-          },
-          {
-            "type": "function",
-            "inputs": [],
-            "name": "T2",
-            "constant": true,
-            "outputs": [
-              {
-                "name": "",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "stateMutability": "view",
-            "payable": false,
-            "gas": null
-          },
-          {
-            "type": "function",
-            "inputs": [],
-            "name": "T3",
-            "constant": true,
-            "outputs": [
-              {
-                "name": "",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "stateMutability": "view",
-            "payable": false,
-            "gas": null
-          },
-          {
-            "type": "function",
-            "inputs": [],
             "name": "adapterManager",
             "constant": true,
             "outputs": [
@@ -716,20 +597,36 @@
           },
           {
             "type": "function",
-            "inputs": [],
-            "name": "calculator",
-            "constant": true,
-            "outputs": [
+            "inputs": [
               {
-                "name": "",
+                "name": "user",
                 "type": "address",
                 "baseType": "address",
                 "components": null,
                 "arrayLength": null,
                 "arrayChildren": null
+              },
+              {
+                "name": "amountAAA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountAA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
               }
             ],
-            "stateMutability": "view",
+            "name": "burnTokens",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable",
             "payable": false,
             "gas": null
           },
@@ -767,6 +664,25 @@
             "constant": false,
             "outputs": [],
             "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "claimManager",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
             "payable": false,
             "gas": null
           },
@@ -893,38 +809,6 @@
                 "arrayChildren": null
               },
               {
-                "name": "_S",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "_T1",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "_T2",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "_T3",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
                 "name": "_adapterManager",
                 "type": "address",
                 "baseType": "address",
@@ -933,7 +817,15 @@
                 "arrayChildren": null
               },
               {
-                "name": "_calculator",
+                "name": "_timeManager",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_claimManager",
                 "type": "address",
                 "baseType": "address",
                 "components": null,
@@ -1016,6 +908,25 @@
           {
             "type": "function",
             "inputs": [],
+            "name": "timeManager",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
             "name": "totalInvested",
             "constant": true,
             "outputs": [
@@ -1073,7 +984,7 @@
         ]
       },
       "TrancheAAA": {
-        "address": "0x94d4368503f4D184bB496098359E48A6901F6a0C",
+        "address": "0x1c780207B0Ac77a93C10d9078C4F51Fcf94C7145",
         "abi": [
           {
             "type": "constructor",
@@ -1696,7 +1607,7 @@
         ]
       },
       "TrancheAA": {
-        "address": "0x8479835ecB7ceF761262Da3AE3eFdEaE0006BCf4",
+        "address": "0xc4a1bb44c3BB4886019210993834971CfCe52DF2",
         "abi": [
           {
             "type": "constructor",
@@ -2319,7 +2230,7 @@
         ]
       },
       "AaveLendingAdapter": {
-        "address": "0x40D7eE19BaB0eC40A9E798ED1BF89c54AeA8a3F4",
+        "address": "0x9A96b128161cFc0C42f9e05cCd4dD2EAE54B6515",
         "abi": [
           {
             "type": "constructor",
@@ -2590,7 +2501,7 @@
         ]
       },
       "MoonwellLendingAdapter": {
-        "address": "0xCC1a4B192435A4101f14e4B6a33527439824096e",
+        "address": "0x820d093ABA5cEC9D7dd0096A77660287D96BB2B6",
         "abi": [
           {
             "type": "constructor",
@@ -2834,7 +2745,7 @@
         ]
       },
       "UniswapV2Factory": {
-        "address": "0xD326BA6D29e08cb0b00BA8B0f0921cefB018a2ee",
+        "address": "0xEF76a5cd6AE0B6fc1cCA68df3398De44AC4c73Ba",
         "abi": [
           {
             "type": "constructor",
@@ -3092,7 +3003,7 @@
         ]
       },
       "UniswapV2Router02": {
-        "address": "0x9E98211F9370617b1725E10fAD0a965b1BB79113",
+        "address": "0xCca3E8C9Cb2AE9DcD74C29f53804A1217fB6FBfe",
         "abi": [
           {
             "type": "constructor",
@@ -3385,7 +3296,7 @@
                 }
               }
             ],
-            "stateMutability": "view",
+            "stateMutability": "pure",
             "payable": false,
             "gas": null
           },
@@ -3531,8 +3442,752 @@
           }
         ]
       },
+      "InsuranceTimeManager": {
+        "address": "0xB960eC68282Ab2d9BfB5b93e00D046416BccDCc2",
+        "abi": [
+          {
+            "type": "constructor",
+            "inputs": [],
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "event",
+            "inputs": [
+              {
+                "name": "newS",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "newT1",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "newT2",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "newT3",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "TimePeriodReset",
+            "anonymous": false
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "S",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "T1",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "T2",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "T3",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "canClaim",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "bool",
+                "baseType": "bool",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "canSplitRisk",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "bool",
+                "baseType": "bool",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "checkAndResetTime",
+            "constant": false,
+            "outputs": [
+              {
+                "name": "wasReset",
+                "type": "bool",
+                "baseType": "bool",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "claimManager",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "forceResetTime",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "getTimePeriods",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "_insuranceCore",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_claimManager",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "initialize",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "insuranceCore",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "owner",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "_S",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_T1",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_T2",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_T3",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "setTimePeriods",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          }
+        ]
+      },
+      "InsuranceClaimManager": {
+        "address": "0x7C16d360f88e502DC241aCC7E705249Bcf6D6dC5",
+        "abi": [
+          {
+            "type": "constructor",
+            "inputs": [],
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "event",
+            "inputs": [
+              {
+                "name": "claimant",
+                "type": "address",
+                "baseType": "address",
+                "indexed": true,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountAAA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountAA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountUsdc",
+                "type": "uint256",
+                "baseType": "uint256",
+                "indexed": false,
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "Claim",
+            "anonymous": false
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "AA",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "AAA",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "adapterManager",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "calculator",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "user",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "getUserBalances",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "aaaBalance",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "aaBalance",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "_insuranceCore",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_AAA",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_AA",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_usdc",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_adapterManager",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_calculator",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "_timeManager",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "initialize",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "insuranceCore",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "owner",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "user",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountAAA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountAA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "totalTranches",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "totalInvested",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "processClaim",
+            "constant": false,
+            "outputs": [
+              {
+                "name": "totalWithdrawn",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "totalTokens",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "timeManager",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "usdc",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          }
+        ]
+      },
       "AAAUSDCPair": {
-        "address": "0x74f09F37493721aaD386cA522573C991a26d01e4",
+        "address": "0x0000000000000000000000000000000000000000",
         "abi": [
           {
             "type": "constructor",
@@ -4494,7 +5149,7 @@
         ]
       },
       "AAUSDCPair": {
-        "address": "0x39CaBD0022d87e601B2881Ac78557F38c74ca7Bf",
+        "address": "0x0000000000000000000000000000000000000000",
         "abi": [
           {
             "type": "constructor",
