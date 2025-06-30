@@ -106,8 +106,8 @@ contract InsuranceCalculator {
         uint256 currentTime,
         uint256 S,
         uint256 T1,
-        uint256 T2,
-        uint256 T3
+        uint256 /* T2 */,
+        uint256 /* T3 */
     ) external pure returns (TimePeriodValidation memory) {
         bool canSplitRisk = currentTime < S;
         bool isInsurancePeriod = currentTime >= S && currentTime <= T1;

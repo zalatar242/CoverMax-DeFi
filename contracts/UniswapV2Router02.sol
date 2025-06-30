@@ -47,9 +47,20 @@ contract UniswapV2Router02 {
         uint amountAMin,
         uint amountBMin
     ) internal view returns (uint amountA, uint amountB) {
-        // Simple implementation - just return desired amounts for testing
-        amountA = amountADesired;
-        amountB = amountBDesired;
+        // Get pair address
+        address pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
+        
+        if (pair == address(0)) {
+            // If pair doesn't exist, use desired amounts
+            amountA = amountADesired;
+            amountB = amountBDesired;
+        } else {
+            // If pair exists, calculate optimal amounts based on current reserves
+            // For simplicity in testing, we'll use desired amounts but could implement proper ratio calculation
+            amountA = amountADesired;
+            amountB = amountBDesired;
+        }
+        
         require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
         require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
     }
@@ -94,25 +105,28 @@ contract UniswapV2Router02 {
             pair = IUniswapV2Factory(factory).createPair(token, WETH);
         }
         IERC20(token).transferFrom(msg.sender, pair, amountToken);
-        // Convert ETH to WETH
+        // Convert ETH to WETH using call instead of transfer
         (bool success,) = WETH.call{value: amountETH}("");
         require(success, "ETH transfer failed");
         IERC20(WETH).transfer(pair, amountETH);
         liquidity = IUniswapV2Pair(pair).mint(to);
-        // Refund excess ETH
+        // Refund excess ETH using call instead of transfer
         if (msg.value > amountETH) {
-            payable(msg.sender).transfer(msg.value - amountETH);
+            (bool refundSuccess,) = payable(msg.sender).call{value: msg.value - amountETH}("");
+            require(refundSuccess, "ETH refund failed");
         }
     }
 
     function getAmountsOut(uint amountIn, address[] calldata path)
         public
-        view
+        pure
         returns (uint[] memory amounts)
     {
+        require(path.length >= 2, 'UniswapV2Router: INVALID_PATH');
         amounts = new uint[](path.length);
         amounts[0] = amountIn;
-        // Simple 1:1 ratio for testing
+        
+        // Simple 1:1 ratio for testing - in production this would calculate based on reserves
         for (uint i = 1; i < path.length; i++) {
             amounts[i] = amounts[i-1];
         }
@@ -128,7 +142,7 @@ contract UniswapV2Router02 {
         amounts = getAmountsOut(msg.value, path);
         require(amounts[amounts.length - 1] >= amountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
 
-        // Convert ETH to WETH
+        // Convert ETH to WETH using call
         (bool success,) = WETH.call{value: amounts[0]}("");
         require(success, "ETH transfer failed");
 

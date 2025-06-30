@@ -71,7 +71,7 @@ contract MockAavePool {
         address asset,
         uint256 amount,
         address onBehalfOf,
-        uint16 referralCode
+        uint16 /* referralCode */
     ) external {
         require(amount > 0, "Amount must be greater than 0");
 

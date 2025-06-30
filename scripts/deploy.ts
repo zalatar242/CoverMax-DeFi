@@ -19,14 +19,14 @@ function loadDeployments(): { [key: string]: string } {
   if (!fs.existsSync(ADDRESSES_FILE)) {
     return {};
   }
-  
+
   const content = fs.readFileSync(ADDRESSES_FILE, "utf8");
   const addressMatch = content.match(/export const addresses = ({[\s\S]*?});/);
-  
+
   if (!addressMatch) {
     return {};
   }
-  
+
   try {
     // SAFER: Use JSON.parse instead of eval
     const jsonString = addressMatch[1]
@@ -42,6 +42,7 @@ function loadDeployments(): { [key: string]: string } {
       "MockMToken": addressObj.MOONWELL_MTOKEN,
       "MoonwellLendingAdapter": addressObj.MOONWELL_LENDING_ADAPTER,
       "UniswapV2Factory": addressObj.UNISWAP_FACTORY,
+      "UniswapV2Router02": addressObj.UNISWAP_ROUTER,
       "TrancheAAA": addressObj.TRANCHE_AAA,
       "TrancheAA": addressObj.TRANCHE_AA,
       "InsuranceCalculator": addressObj.INSURANCE_CALCULATOR,
@@ -56,6 +57,7 @@ function loadDeployments(): { [key: string]: string } {
 function saveDeployments(deployments: { [key: string]: string }): void {
   const addresses = {
     UNISWAP_FACTORY: deployments.UniswapV2Factory || "",
+    UNISWAP_ROUTER: deployments.UniswapV2Router02 || "",
     USDC_ADDRESS: deployments.MockUSDC || "",
     AAVE_ATOKEN: deployments.MockAToken || "",
     AAVE_V3_POOL: deployments.MockAavePool || "",
@@ -69,14 +71,14 @@ function saveDeployments(deployments: { [key: string]: string }): void {
     INSURANCE_ADAPTER_MANAGER: deployments.InsuranceAdapterManager || "",
     INSURANCE_CORE: deployments.InsuranceCore || ""
   };
-  
+
   // Remove empty addresses
   Object.keys(addresses).forEach(key => {
     if (!addresses[key as keyof typeof addresses]) {
       delete addresses[key as keyof typeof addresses];
     }
   });
-  
+
   const content = `// Contract addresses for PassETHub\nexport const addresses = ${JSON.stringify(addresses, null, 2)};\n`;
   fs.writeFileSync(ADDRESSES_FILE, content);
 }
@@ -146,6 +148,16 @@ async function main(): Promise<void> {
       deployerAddress // feeToSetter
     );
     deployments.UniswapV2Factory = uniswapFactoryAddress;
+    saveDeployments(deployments);
+
+    // Deploy Uniswap Router
+    const uniswapRouterAddress = await deployIfNeeded(
+      "UniswapV2Router02",
+      () => ethers.getContractFactory("UniswapV2Router02"),
+      uniswapFactoryAddress, // factory
+      "0x0000000000000000000000000000000000000000" // WETH (using zero address as placeholder)
+    );
+    deployments.UniswapV2Router02 = uniswapRouterAddress;
     saveDeployments(deployments);
 
     // 2. Deploy Supporting Contracts (Mocks and Adapters)
@@ -387,6 +399,7 @@ async function main(): Promise<void> {
     const aaveAdapterArtifact = await ethers.getContractFactory("AaveLendingAdapter");
     const moonwellAdapterArtifact = await ethers.getContractFactory("MoonwellLendingAdapter");
     const factoryArtifact = await ethers.getContractFactory("UniswapV2Factory");
+    const routerArtifact = await ethers.getContractFactory("UniswapV2Router02");
     const pairArtifact = await ethers.getContractFactory("UniswapV2Pair");
 
     // Add network configuration to contracts.json
@@ -418,6 +431,10 @@ async function main(): Promise<void> {
       UniswapV2Factory: {
         address: deployments.UniswapV2Factory,
         abi: factoryArtifact.interface.fragments
+      },
+      UniswapV2Router02: {
+        address: deployments.UniswapV2Router02,
+        abi: routerArtifact.interface.fragments
       },
       AAAUSDCPair: {
         address: aaaUsdcPair,
