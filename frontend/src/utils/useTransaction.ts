@@ -38,6 +38,7 @@ export const useTransaction = ({ onSuccess }: UseTransactionProps): UseTransacti
       setHash(undefined);
     } else if (receipt && isSuccess) {
       setSuccess('Transaction successful!');
+      console.log('Transaction successful, calling onSuccess callback');
       onSuccess?.();
       setIsProcessing(false);
       setHash(undefined);

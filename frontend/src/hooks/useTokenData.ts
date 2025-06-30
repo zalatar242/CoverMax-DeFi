@@ -11,20 +11,30 @@ export const useTokenData = (
   const enabled = Boolean(tokenAddress && userAddress);
   const allowanceEnabled = Boolean(tokenAddress && spenderAddress && userAddress);
 
-  const { data: balance = 0n, refetch: refetchBalance } = useReadContract({
+  const { data: balance = 0n, refetch: refetchBalance, error: balanceError } = useReadContract({
     address: tokenAddress as `0x${string}`,
-    abi: ['function balanceOf(address) view returns (uint256)'],
+    abi: tokenAbi || ['function balanceOf(address) view returns (uint256)'],
     functionName: 'balanceOf',
     args: [userAddress as `0x${string}`],
     query: { enabled },
   });
 
-  const { data: decimals = 18 } = useReadContract({
+  // Debug logging for balance errors
+  if (balanceError && enabled) {
+    console.error(`Balance fetch error for token ${tokenAddress}:`, balanceError);
+  }
+
+  const { data: decimals = 18, error: decimalsError } = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: ['function decimals() view returns (uint8)'],
     functionName: 'decimals',
     query: { enabled: Boolean(tokenAddress) },
   });
+
+  // Debug logging for decimals errors
+  if (decimalsError && tokenAddress) {
+    console.error(`Decimals fetch error for token ${tokenAddress}:`, decimalsError);
+  }
 
   const { data: symbol = '' } = useReadContract({
     address: tokenAddress as `0x${string}`,
@@ -64,7 +74,7 @@ export const useMultipleTokenData = (
   tokens.forEach(token => {
     if (token.address) {
       // eslint-disable-next-line react-hooks/rules-of-hooks
-      tokenData[token.address] = useTokenData(
+      tokenData[token.address.toLowerCase()] = useTokenData(
         token.address,
         spenderAddress,
         userAddress,

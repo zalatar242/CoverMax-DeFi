@@ -84,11 +84,14 @@ export const usePortfolioData = (): PortfolioData => {
 
   // Use consolidated token data for tranches
   const trancheTokens = [
-    { address: tranches?.AAA?.address, abi: tranches?.AAA?.abi, decimals: 6 },
-    { address: tranches?.AA?.address, abi: tranches?.AA?.abi, decimals: 6 },
+    { address: tranches?.AAA?.address, abi: tranches?.AAA?.abi },
+    { address: tranches?.AA?.address, abi: tranches?.AA?.abi },
   ].filter(token => token.address);
 
-  const tokenData = useMultipleTokenData(trancheTokens, undefined, address as string);
+  console.log('Tranche tokens configuration:', trancheTokens);
+  console.log('User address for portfolio:', address);
+
+  const tokenData = useMultipleTokenData(trancheTokens, undefined, address);
 
   const {
     data: depositedValueData,
@@ -106,6 +109,7 @@ export const usePortfolioData = (): PortfolioData => {
   });
 
   const refetchAll = () => {
+    console.log('Refetching portfolio data...');
     // Refetch token balances
     Object.values(tokenData).forEach(data => {
       if (data?.refetchBalance) {
@@ -118,14 +122,35 @@ export const usePortfolioData = (): PortfolioData => {
   const aaaData = tokenData[tranches?.AAA?.address?.toLowerCase()];
   const aaData = tokenData[tranches?.AA?.address?.toLowerCase()];
 
-  return {
-    trancheAAA: aaaData ? formatUnits(aaaData.balance as bigint, aaaData.decimals) : "0",
-    trancheAA: aaData ? formatUnits(aaData.balance as bigint, aaData.decimals) : "0",
+  // Debug logging
+  React.useEffect(() => {
+    if (tranches?.AAA?.address && tranches?.AA?.address) {
+      console.log('Tranche addresses:', {
+        AAA: tranches.AAA.address,
+        AA: tranches.AA.address,
+        AAALower: tranches.AAA.address.toLowerCase(),
+        AALower: tranches.AA.address.toLowerCase()
+      });
+      console.log('Token data keys:', Object.keys(tokenData));
+      console.log('AAA balance data:', aaaData);
+      console.log('AA balance data:', aaData);
+    }
+  }, [tranches, tokenData, aaaData, aaData]);
+
+  const result = {
+    // Tranche tokens use 6 decimals like USDC, not 18
+    trancheAAA: aaaData ? formatUnits(aaaData.balance as bigint, 6) : "0",
+    trancheAA: aaData ? formatUnits(aaData.balance as bigint, 6) : "0",
     depositedValue: depositedValueData ? formatUnits(depositedValueData as bigint, 6) : "0",
     isLoading: loadingDeposited,
     isError: errorDeposited,
     refetch: refetchAll
   };
+
+  // Debug logging for return values
+  console.log('Portfolio data result:', result);
+
+  return result;
 };
 
 export const useProtocolAPY = (): ProtocolAPY => {

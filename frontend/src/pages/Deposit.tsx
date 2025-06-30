@@ -61,10 +61,15 @@ const Deposit = () => {
   const { isProcessing: isDepositing, error: depositError, success: depositSuccess, handleTransaction: handleDeposit } =
     useTransaction({
       onSuccess: () => {
+        console.log('Deposit successful, refreshing balances...');
         resetAmount();
         refetchBalance();
         refetchAllowance();
-        refetchTrancheBalances();
+        // Add a small delay before refetching tranche balances to ensure the transaction is fully processed
+        setTimeout(() => {
+          console.log('Refetching tranche balances after delay...');
+          refetchTrancheBalances();
+        }, 1000);
       }
     });
 
@@ -100,6 +105,11 @@ const Deposit = () => {
   const handleDepositClick = () => {
     handleDeposit(async () => {
       try {
+        console.log('Attempting deposit with:', {
+          address: Insurance.address,
+          amount: amountInWei.toString(),
+          userAddress: address
+        });
         const hash = await writeContractAsync({
           address: Insurance.address as `0x${string}`,
           abi: Insurance.abi,
