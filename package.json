@@ -5,7 +5,8 @@
   "scripts": {
     "test": "TEST_ON_MOONBEAM=true npx hardhat test",
     "coverage": "TEST_ON_MOONBEAM=true npx hardhat coverage",
-    "deploy": "npx hardhat run scripts/deploy.ts --network passetHub"
+    "deploy": "npx hardhat run scripts/deploy.ts --network passetHub",
+    "compile": "npx hardhat compile"
   },
   "keywords": [],
   "author": "",

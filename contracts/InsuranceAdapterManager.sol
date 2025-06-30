@@ -8,6 +8,7 @@ import "./interfaces/ILendingAdapter.sol";
 contract InsuranceAdapterManager {
     address public owner;
     address public insuranceCore;
+    address public claimManager;
     address public usdc;
     ILendingAdapter[] public lendingAdapters;
 
@@ -34,6 +35,11 @@ contract InsuranceAdapterManager {
         _;
     }
 
+    modifier onlyInsuranceCoreOrClaimManager() {
+        require(msg.sender == insuranceCore || msg.sender == claimManager, "Only insurance core or claim manager");
+        _;
+    }
+
     function initialize(
         address _insuranceCore,
         address _usdc
@@ -41,6 +47,10 @@ contract InsuranceAdapterManager {
         require(insuranceCore == address(0), "Already initialized");
         insuranceCore = _insuranceCore;
         usdc = _usdc;
+    }
+
+    function setClaimManager(address _claimManager) external onlyOwner {
+        claimManager = _claimManager;
     }
 
     function addLendingAdapter(address adapter) external onlyOwner {
@@ -90,8 +100,11 @@ contract InsuranceAdapterManager {
 
     function withdrawFunds(
         uint256 amount
-    ) external onlyInsuranceCore returns (uint256 totalWithdrawn) {
-        require(amount > 0, "Amount must be greater than 0");
+    ) external onlyInsuranceCoreOrClaimManager returns (uint256 totalWithdrawn) {
+        // Handle zero amount gracefully
+        if (amount == 0) {
+            return 0;
+        }
         require(lendingAdapters.length > 0, "No adapters");
 
         uint256 amountPerAdapter = amount / lendingAdapters.length;

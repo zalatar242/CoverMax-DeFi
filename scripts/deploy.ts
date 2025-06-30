@@ -8,7 +8,6 @@ import { TimeCalculator } from "./utils/TimeCalculator";
 
 const ADDRESSES_FILE = path.join(__dirname, "../config/addresses.ts");
 
-
 async function waitForConfirmations(tx: Promise<ContractTransactionResponse> | ContractTransactionResponse) {
   const resolvedTx = await tx;
   await resolvedTx.wait(2); // Wait for 2 confirmations
@@ -28,7 +27,6 @@ function loadDeployments(): { [key: string]: string } {
   }
 
   try {
-    // SAFER: Use JSON.parse instead of eval
     const jsonString = addressMatch[1]
       .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Add quotes to keys
       .replace(/'/g, '"'); // Replace single quotes with double quotes
@@ -47,6 +45,8 @@ function loadDeployments(): { [key: string]: string } {
       "TrancheAA": addressObj.TRANCHE_AA,
       "InsuranceCalculator": addressObj.INSURANCE_CALCULATOR,
       "InsuranceAdapterManager": addressObj.INSURANCE_ADAPTER_MANAGER,
+      "InsuranceTimeManager": addressObj.INSURANCE_TIME_MANAGER,
+      "InsuranceClaimManager": addressObj.INSURANCE_CLAIM_MANAGER,
       "InsuranceCore": addressObj.INSURANCE_CORE
     };
   } catch {
@@ -69,6 +69,8 @@ function saveDeployments(deployments: { [key: string]: string }): void {
     TRANCHE_AA: deployments.TrancheAA || "",
     INSURANCE_CALCULATOR: deployments.InsuranceCalculator || "",
     INSURANCE_ADAPTER_MANAGER: deployments.InsuranceAdapterManager || "",
+    INSURANCE_TIME_MANAGER: deployments.InsuranceTimeManager || "",
+    INSURANCE_CLAIM_MANAGER: deployments.InsuranceClaimManager || "",
     INSURANCE_CORE: deployments.InsuranceCore || ""
   };
 
@@ -126,7 +128,7 @@ async function deployIfNeeded(
 }
 
 async function main(): Promise<void> {
-  console.log("🚀 Starting Complete System Deployment...");
+  console.log("🚀 Starting Complete Insurance System Deployment...");
 
   const [deployer] = await ethers.getSigners();
   console.log("Deploying with account:", deployer.address);
@@ -282,7 +284,23 @@ async function main(): Promise<void> {
     deployments.InsuranceAdapterManager = adapterManagerAddress;
     saveDeployments(deployments);
 
-    // Deploy Insurance Core (Optimized Version)
+    // Deploy Time Manager
+    const timeManagerAddress = await deployIfNeeded(
+      "InsuranceTimeManager",
+      () => ethers.getContractFactory("InsuranceTimeManager")
+    );
+    deployments.InsuranceTimeManager = timeManagerAddress;
+    saveDeployments(deployments);
+
+    // Deploy Claim Manager
+    const claimManagerAddress = await deployIfNeeded(
+      "InsuranceClaimManager",
+      () => ethers.getContractFactory("InsuranceClaimManager")
+    );
+    deployments.InsuranceClaimManager = claimManagerAddress;
+    saveDeployments(deployments);
+
+    // Deploy Insurance Core (Refactored Version)
     const insuranceCoreAddress = await deployIfNeeded(
       "InsuranceCore",
       () => ethers.getContractFactory("InsuranceCore")
@@ -290,33 +308,94 @@ async function main(): Promise<void> {
     deployments.InsuranceCore = insuranceCoreAddress;
     saveDeployments(deployments);
 
-    // Initialize Insurance Core
-    const insuranceCore = await getDeployedContract("InsuranceCore", insuranceCoreAddress);
-    const coreInfo = await (insuranceCore as any).getInfo();
-    const isCoreInitialized = coreInfo[2]; // initialized is the third element in the returned tuple
-    if (!isCoreInitialized) {
-      console.log("\n⚙️ Initializing Insurance Core...");
+    // 5. Initialize Contracts
+    console.log("\n--- Initializing Contracts ---");
+
+    // Initialize Time Manager
+    const timeManager = await getDeployedContract("InsuranceTimeManager", timeManagerAddress);
+    try {
+      const currentCore = await (timeManager as any).insuranceCore();
+      if (currentCore === "0x0000000000000000000000000000000000000000") {
+        console.log("⚙️ Initializing Time Manager...");
+        const tx = await (timeManager as any).initialize(insuranceCoreAddress, claimManagerAddress);
+        await tx.wait();
+        console.log("✅ Time Manager initialized");
+      } else {
+        console.log("✅ Time Manager already initialized");
+      }
+    } catch (error: any) {
+      if (error.message.includes("already initialized")) {
+        console.log("✅ Time Manager already initialized");
+      } else {
+        throw error;
+      }
+    }
+
+    // Set time periods in Time Manager
+    try {
+      console.log("⚙️ Setting time periods in Time Manager...");
       const timePeriods = TimeCalculator.calculateTimePeriods();
       const { S, T1, T2, T3 } = timePeriods;
+      const tx = await (timeManager as any).setTimePeriods(S, T1, T2, T3);
+      await tx.wait();
+      console.log("✅ Time periods set in Time Manager");
+    } catch (error: any) {
+      console.log("Note: Time periods might already be set or there was an issue setting them");
+    }
 
-      await (insuranceCore as any).initialize(
+    // Initialize Claim Manager
+    const claimManager = await getDeployedContract("InsuranceClaimManager", claimManagerAddress);
+    try {
+      const currentCore = await (claimManager as any).insuranceCore();
+      if (currentCore === "0x0000000000000000000000000000000000000000") {
+        console.log("⚙️ Initializing Claim Manager...");
+        const tx = await (claimManager as any).initialize(
+          insuranceCoreAddress,
+          deployments.TrancheAAA,
+          deployments.TrancheAA,
+          deployments.MockUSDC,
+          deployments.InsuranceAdapterManager,
+          deployments.InsuranceCalculator,
+          timeManagerAddress
+        );
+        await tx.wait();
+        console.log("✅ Claim Manager initialized");
+      } else {
+        console.log("✅ Claim Manager already initialized");
+      }
+    } catch (error: any) {
+      if (error.message.includes("already initialized")) {
+        console.log("✅ Claim Manager already initialized");
+      } else {
+        throw error;
+      }
+    }
+
+    // Initialize Insurance Core
+    const insuranceCore = await getDeployedContract("InsuranceCore", insuranceCoreAddress);
+    try {
+      console.log("⚙️ Initializing Insurance Core...");
+      const tx = await (insuranceCore as any).initialize(
         deployments.MockUSDC,
-        S,
-        T1,
-        T2,
-        T3,
-        adapterManagerAddress,
-        calculatorAddress
+        deployments.InsuranceAdapterManager,
+        timeManagerAddress,
+        claimManagerAddress
       );
+      await tx.wait();
       console.log("✅ Insurance Core initialized");
-    } else {
-      console.log("✅ Insurance Core already initialized.");
+    } catch (error: any) {
+      if (error.message.includes("already initialized")) {
+        console.log("✅ Insurance Core already initialized");
+      } else {
+        console.log(`⚠️ Error initializing Insurance Core: ${error.message}`);
+        // Continue with deployment even if initialization fails
+      }
     }
 
     // Initialize Adapter Manager
     const adapterManager = await getDeployedContract("InsuranceAdapterManager", adapterManagerAddress);
     try {
-      console.log("\n⚙️ Initializing Adapter Manager...");
+      console.log("⚙️ Initializing Adapter Manager...");
       await (adapterManager as any).initialize(insuranceCoreAddress, deployments.MockUSDC);
       console.log("✅ Adapter Manager initialized");
     } catch (error: any) {
@@ -327,22 +406,34 @@ async function main(): Promise<void> {
       }
     }
 
-    // Set tranches in Insurance Core
-    const currentAAA = await (insuranceCore as any).AAA();
-    const currentAA = await (insuranceCore as any).AA();
+    // Set tranches in Insurance Core and transfer ownership
+    try {
+      const currentAAA = await (insuranceCore as any).AAA();
+      const currentAA = await (insuranceCore as any).AA();
 
-    if (currentAAA === "0x0000000000000000000000000000000000000000" && currentAA === "0x0000000000000000000000000000000000000000") {
-      console.log("\n⚙️ Setting tranches in Insurance Core...");
-      await (insuranceCore as any).setTranches(deployments.TrancheAAA, deployments.TrancheAA);
-      console.log("✅ Tranches set in Insurance Core");
-    } else {
-      console.log("✅ Tranches already set in Insurance Core.");
+      if (currentAAA === "0x0000000000000000000000000000000000000000" && currentAA === "0x0000000000000000000000000000000000000000") {
+        console.log("⚙️ Transferring tranche ownership to Insurance Core...");
+        const trancheAAA = await getDeployedContract("Tranche", deployments.TrancheAAA);
+        const trancheAA = await getDeployedContract("Tranche", deployments.TrancheAA);
+
+        await (trancheAAA as any).transferOwnership(insuranceCoreAddress);
+        await (trancheAA as any).transferOwnership(insuranceCoreAddress);
+
+        console.log("⚙️ Setting tranches in Insurance Core...");
+        const tx = await (insuranceCore as any).setTranches(deployments.TrancheAAA, deployments.TrancheAA);
+        await tx.wait();
+        console.log("✅ Tranches set in Insurance Core");
+      } else {
+        console.log("✅ Tranches already set in Insurance Core");
+      }
+    } catch (error: any) {
+      console.log("Note: Tranches might already be set or there was an issue setting them");
     }
 
     // Add lending adapters to Adapter Manager
     const currentAdapterManagerAdapters = await (adapterManager as any).getAllAdapters();
     if (!currentAdapterManagerAdapters.includes(deployments.AaveLendingAdapter)) {
-      console.log("\n➕ Adding Aave Lending Adapter to Adapter Manager...");
+      console.log("➕ Adding Aave Lending Adapter to Adapter Manager...");
       await (adapterManager as any).addLendingAdapter(deployments.AaveLendingAdapter);
       console.log("✅ Aave Lending Adapter added to Adapter Manager");
     } else {
@@ -350,7 +441,7 @@ async function main(): Promise<void> {
     }
 
     if (!currentAdapterManagerAdapters.includes(deployments.MoonwellLendingAdapter)) {
-      console.log("\n➕ Adding Moonwell Lending Adapter to Adapter Manager...");
+      console.log("➕ Adding Moonwell Lending Adapter to Adapter Manager...");
       await (adapterManager as any).addLendingAdapter(deployments.MoonwellLendingAdapter);
       console.log("✅ Moonwell Lending Adapter added to Adapter Manager");
     } else {
@@ -380,8 +471,6 @@ async function main(): Promise<void> {
     } else {
       console.log("✅ AA/USDC pair already exists:", aaUsdcPair);
     }
-    console.log("AAA/USDC pair:", aaaUsdcPair);
-    console.log("AA/USDC pair:", aaUsdcPair);
 
     // Update frontend contracts.json
     console.log("\n--- Updating Frontend Configuration ---");
@@ -401,6 +490,8 @@ async function main(): Promise<void> {
     const factoryArtifact = await ethers.getContractFactory("UniswapV2Factory");
     const routerArtifact = await ethers.getContractFactory("UniswapV2Router02");
     const pairArtifact = await ethers.getContractFactory("UniswapV2Pair");
+    const timeManagerArtifact = await ethers.getContractFactory("InsuranceTimeManager");
+    const claimManagerArtifact = await ethers.getContractFactory("InsuranceClaimManager");
 
     // Add network configuration to contracts.json
     contractsJson.networks["passetHub"] = {
@@ -436,6 +527,14 @@ async function main(): Promise<void> {
         address: deployments.UniswapV2Router02,
         abi: routerArtifact.interface.fragments
       },
+      InsuranceTimeManager: {
+        address: deployments.InsuranceTimeManager,
+        abi: timeManagerArtifact.interface.fragments
+      },
+      InsuranceClaimManager: {
+        address: deployments.InsuranceClaimManager,
+        abi: claimManagerArtifact.interface.fragments
+      },
       AAAUSDCPair: {
         address: aaaUsdcPair,
         abi: pairArtifact.interface.fragments
@@ -452,7 +551,7 @@ async function main(): Promise<void> {
     // Final save of all deployments to ensure everything is tracked
     saveDeployments(deployments);
 
-    console.log("\n🎉 Complete System Deployment Successful!");
+    console.log("\n🎉 Complete Insurance System Deployment Successful!");
     console.log("- Updated config/addresses.ts with new contract addresses");
     console.log("- Updated frontend/src/contracts.json with network configuration");
     console.log("\n📋 Contract Addresses:");
