@@ -150,9 +150,9 @@ describe("Modular Insurance - Comprehensive Tests", function () {
     await adapterManager.waitForDeployment();
     console.log("✅ Adapter Manager deployed:", await adapterManager.getAddress());
 
-    // Deploy Insurance Core
-    const InsuranceCore = await ethers.getContractFactory("InsuranceCore");
-    insuranceCore = await InsuranceCore.deploy() as InsuranceCore;
+    // Deploy Insurance Core (Optimized)
+    const InsuranceCoreFactory = await ethers.getContractFactory("InsuranceCore");
+    insuranceCore = await InsuranceCoreFactory.deploy() as InsuranceCore;
     await insuranceCore.waitForDeployment();
     console.log("✅ Insurance Core deployed:", await insuranceCore.getAddress());
 
@@ -443,7 +443,7 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       // Try to claim during insurance period (between S and T1)
       await advanceTime(ISSUANCE_PERIOD + 1); // After S but before T1
       await expect(insuranceCore.connect(attacker).claim(10, 10))
-        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
+        .to.be.revertedWith("Insurance: Claims allowed before/after insurance period");
     });
 
     it("Should allow claiming after insurance period ends", async function () {
@@ -483,7 +483,7 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       await advanceTime(ISSUANCE_PERIOD + 1); // Just past S
 
       await expect(insuranceCore.connect(attacker).claim(trancheAmount, trancheAmount))
-        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
+        .to.be.revertedWith("Insurance: Claims allowed before/after insurance period");
     });
 
     it("Should allow claims after T1 (insurance period ends)", async function () {
@@ -694,7 +694,7 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       // Claims should also fail during insurance period
       const aaaBalance = await trancheAAA.balanceOf(user.address);
       await expect(insuranceCore.connect(user).claim(aaaBalance, 0))
-        .to.be.revertedWith("Insurance: Claims can only be made before the insurance phase starts or after it ends");
+        .to.be.revertedWith("Insurance: Claims allowed before/after insurance period");
     });
 
     it("Should update totalInvested correctly", async function () {

@@ -12,7 +12,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1000,
+        runs: 200,
       },
     },
   },
@@ -24,6 +24,15 @@ module.exports = {
   },
   resolc: {
     compilerSource: "npm",
+    settings: {
+      optimizer: {
+        enabled: true,
+        parameters: 'z',
+        fallbackOz: true,
+        runs: 10000,
+      },
+      standardJson: true,
+    },
   },
   networks: {
     hardhat: process.env.TEST_ON_MOONBEAM === "true" ? {

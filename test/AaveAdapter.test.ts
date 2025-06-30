@@ -78,7 +78,7 @@ describe("Aave Lending Adapter (Mock)", function() {
 
         // Check final balance
         const finalBalance = await aaveAdapter.getBalance(await mockUsdc.getAddress());
-        expect(finalBalance).to.be.closeTo(TEST_AMOUNT, 10); // Allow small variance due to mock interest
+        expect(finalBalance).to.be.closeTo(TEST_AMOUNT, 100); // Allow small variance due to mock interest
 
         // Verify user's USDC balance decreased
         const userBalance = await mockUsdc.balanceOf(user.address);

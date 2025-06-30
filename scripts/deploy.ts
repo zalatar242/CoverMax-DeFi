@@ -282,7 +282,7 @@ async function main(): Promise<void> {
     deployments.InsuranceAdapterManager = adapterManagerAddress;
     saveDeployments(deployments);
 
-    // Deploy Insurance Core
+    // Deploy Insurance Core (Optimized Version)
     const insuranceCoreAddress = await deployIfNeeded(
       "InsuranceCore",
       () => ethers.getContractFactory("InsuranceCore")
