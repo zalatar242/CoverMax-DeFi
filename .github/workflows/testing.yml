@@ -33,4 +33,5 @@ jobs:
         env:
           REACT_APP_DEFAULT_NETWORK: "passetHub"
           REACT_APP_PASSETHUB_RPC_URL: "https://testnet-passet-hub-eth-rpc.polkadot.io/"
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: npm test
