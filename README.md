@@ -20,9 +20,11 @@ A decentralized insurance protocol on Polkadot Asset Hub that implements a two-t
 
 ### 1. Setup Development Environment
 
+- Make sure to create a .env file with the values from the .env.example 
+
 ```bash
 # Install dependencies
-npm install
+npm install --legacy-peer-deps
 
 # Run tests
 npm test
