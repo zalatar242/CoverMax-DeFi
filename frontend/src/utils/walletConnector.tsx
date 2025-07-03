@@ -59,27 +59,6 @@ const networks = [
     testnet: true
   },
   {
-    id: 84532,
-    name: 'Base Sepolia',
-    network: 'base-sepolia',
-    nativeCurrency: {
-      decimals: 18,
-      name: 'Ether',
-      symbol: 'ETH',
-    },
-    rpcUrls: {
-      default: { http: ['https://sepolia.base.org'] },
-      public: { http: ['https://sepolia.base.org'] },
-    },
-    blockExplorers: {
-      default: {
-        name: 'BaseScan',
-        url: 'https://sepolia.basescan.org'
-      }
-    },
-    testnet: true
-  },
-  {
     ...hardhat,
     id: 31337,
     name: 'Hardhat Local',
@@ -133,8 +112,6 @@ export function AppKitProvider({ children }: AppKitProviderProps) {
 // Network key mapping
 const NETWORK_KEYS: Record<number, string> = {
   420420422: 'passetHub',
-  84532: 'baseSepolia',
-  8453: 'base-mainnet',
   31337: 'hardhat'
 };
 

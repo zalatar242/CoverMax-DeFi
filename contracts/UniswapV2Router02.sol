@@ -80,8 +80,22 @@ contract UniswapV2Router02 {
         }
         require(amounts[amounts.length - 1] >= amountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');
 
+        // Take input tokens from user
         IERC20(path[0]).transferFrom(msg.sender, address(this), amounts[0]);
-        IERC20(path[path.length - 1]).transfer(to, amounts[amounts.length - 1]);
+        
+        // Try to mint output tokens (for mock contracts)
+        address outputToken = path[path.length - 1];
+        uint256 outputAmount = amounts[amounts.length - 1];
+        
+        (bool mintSuccess,) = outputToken.call(
+            abi.encodeWithSignature("mint(address,uint256)", to, outputAmount)
+        );
+        
+        // If minting fails, try to transfer from our balance
+        if (!mintSuccess) {
+            require(IERC20(outputToken).balanceOf(address(this)) >= outputAmount, "Insufficient router balance");
+            IERC20(outputToken).transfer(to, outputAmount);
+        }
     }
 
     function addLiquidityETH(
@@ -130,6 +144,32 @@ contract UniswapV2Router02 {
         for (uint i = 1; i < path.length; i++) {
             amounts[i] = amounts[i-1];
         }
+    }
+
+    function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external ensure(deadline) returns (uint amountA, uint amountB) {
+        address pair = IUniswapV2Factory(factory).getPair(tokenA, tokenB);
+        require(pair != address(0), 'UniswapV2Router: PAIR_NOT_EXISTS');
+        
+        // Transfer LP tokens to pair
+        IERC20(pair).transferFrom(msg.sender, pair, liquidity);
+        
+        // Burn LP tokens and get underlying tokens back
+        (uint amount0, uint amount1) = IUniswapV2Pair(pair).burn(to);
+        
+        // Sort amounts based on token order
+        (address token0,) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
+        
+        require(amountA >= amountAMin, 'UniswapV2Router: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= amountBMin, 'UniswapV2Router: INSUFFICIENT_B_AMOUNT');
     }
 
     function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)

@@ -13,7 +13,13 @@ export const useTokenData = (
 
   const { data: balance = 0n, refetch: refetchBalance, error: balanceError } = useReadContract({
     address: tokenAddress as `0x${string}`,
-    abi: tokenAbi || ['function balanceOf(address) view returns (uint256)'],
+    abi: tokenAbi || [{
+      type: 'function',
+      name: 'balanceOf',
+      constant: true,
+      inputs: [{ type: 'address', name: 'owner' }],
+      outputs: [{ type: 'uint256', name: '' }]
+    }],
     functionName: 'balanceOf',
     args: [userAddress as `0x${string}`],
     query: { enabled },
@@ -24,12 +30,32 @@ export const useTokenData = (
     console.error(`Balance fetch error for token ${tokenAddress}:`, balanceError);
   }
 
-  const { data: decimals = 18, error: decimalsError } = useReadContract({
+  const { data: decimals, error: decimalsError } = useReadContract({
     address: tokenAddress as `0x${string}`,
-    abi: ['function decimals() view returns (uint8)'],
+    abi: [{
+      type: 'function',
+      name: 'decimals',
+      constant: true,
+      inputs: [],
+      outputs: [{ type: 'uint8', name: '' }]
+    }],
     functionName: 'decimals',
     query: { enabled: Boolean(tokenAddress) },
   });
+
+  // Get fallback decimals based on token type
+  const getDecimalsFallback = (address: string | undefined): number => {
+    if (!address) return 18;
+    const lowerAddress = address.toLowerCase();
+    // USDC typically uses 6 decimals
+    if (lowerAddress === '0xd17aef210dec93d3521950e18ab8783e4e488fd4') {
+      return 6;
+    }
+    // Default to 18 for other tokens
+    return 18;
+  };
+
+  const finalDecimals = decimals ?? getDecimalsFallback(tokenAddress);
 
   // Debug logging for decimals errors
   if (decimalsError && tokenAddress) {
@@ -38,14 +64,29 @@ export const useTokenData = (
 
   const { data: symbol = '' } = useReadContract({
     address: tokenAddress as `0x${string}`,
-    abi: ['function symbol() view returns (string)'],
+    abi: [{
+      type: 'function',
+      name: 'symbol',
+      constant: true,
+      inputs: [],
+      outputs: [{ type: 'string', name: '' }]
+    }],
     functionName: 'symbol',
     query: { enabled: Boolean(tokenAddress) },
   });
 
   const { data: allowance = 0n, refetch: refetchAllowance } = useReadContract({
     address: tokenAddress as `0x${string}`,
-    abi: tokenAbi || ['function allowance(address,address) view returns (uint256)'],
+    abi: tokenAbi || [{
+      type: 'function',
+      name: 'allowance',
+      constant: true,
+      inputs: [
+        { type: 'address', name: 'owner' },
+        { type: 'address', name: 'spender' }
+      ],
+      outputs: [{ type: 'uint256', name: '' }]
+    }],
     functionName: 'allowance',
     args: [userAddress as `0x${string}`, spenderAddress as `0x${string}`],
     query: { enabled: allowanceEnabled },
@@ -53,14 +94,14 @@ export const useTokenData = (
 
   return useMemo(() => ({
     balance: balance as bigint,
-    decimals: decimals as number,
+    decimals: finalDecimals as number,
     symbol: symbol as string,
     allowance: allowance as bigint,
     refetchBalance,
     refetchAllowance,
     isLoading: enabled && balance === undefined,
     abi: tokenAbi
-  }), [balance, decimals, symbol, allowance, refetchBalance, refetchAllowance, enabled, tokenAbi]);
+  }), [balance, finalDecimals, symbol, allowance, refetchBalance, refetchAllowance, enabled, tokenAbi]);
 };
 
 // Hook for multiple tokens
