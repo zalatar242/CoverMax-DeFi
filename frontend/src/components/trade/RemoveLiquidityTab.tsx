@@ -41,6 +41,7 @@ const RemoveLiquidityTab: React.FC<RemoveLiquidityTabProps> = ({ onTransactionSu
     setSelectedToken,
     lpAllowance,
     formattedLPBalance,
+    formattedLPAllowance,
     liquidityAmount,
     liquidityAmountError,
     setLiquidityError,
@@ -87,7 +88,7 @@ const RemoveLiquidityTab: React.FC<RemoveLiquidityTabProps> = ({ onTransactionSu
             {' '}({tokenSymbol}/USDC LP)
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-            Your LP Token Allowance: {Number(formatUnits(lpAllowance, 18)).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+            Your LP Token Allowance: {Number(formattedLPAllowance).toLocaleString(undefined, { maximumFractionDigits: 6 })}
           </Typography>
         </div>
 

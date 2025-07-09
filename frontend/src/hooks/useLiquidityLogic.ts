@@ -61,6 +61,11 @@ export const useLiquidityLogic = ({
     return formatUnits(lpBalance, 6);
   }, [lpBalance]);
 
+  // Format LP allowance for UI (6 decimals for display)
+  const formattedLPAllowance = useMemo(() => {
+    return formatUnits(lpAllowance, 6);
+  }, [lpAllowance]);
+
   // Amount form for LP token removal
   const {
     amount: liquidityAmount,
@@ -79,7 +84,12 @@ export const useLiquidityLogic = ({
     handleTransaction: handleApproveTransaction
   } = useTransaction({
     onSuccess: () => {
-      refetchLPAllowance();
+      console.log('LP approval transaction success, refetching allowance...');
+      // Add delay to ensure blockchain state has updated
+      setTimeout(() => {
+        console.log('Refetching LP allowance after 1 second delay');
+        refetchLPAllowance();
+      }, 1000);
     }
   });
 
@@ -91,9 +101,13 @@ export const useLiquidityLogic = ({
     handleTransaction: handleRemoveTransaction
   } = useTransaction({
     onSuccess: () => {
+      console.log('Remove liquidity transaction success, refetching data...');
       resetLiquidityAmount();
-      refetchLPAllowance();
-      refetchLPBalance();
+      setTimeout(() => {
+        console.log('Refetching LP allowance and balance after remove liquidity');
+        refetchLPAllowance();
+        refetchLPBalance();
+      }, 1000);
       if (onTransactionSuccess) {
         onTransactionSuccess();
       }
@@ -106,8 +120,20 @@ export const useLiquidityLogic = ({
     const userInputAmount = Number(uiAmountString);
     const maxUIDisplayAmount = Number(formatUnits(lpBalance, 6));
     if (maxUIDisplayAmount === 0) return 0n;
-    const ratio = userInputAmount / maxUIDisplayAmount;
-    const actualAmount = BigInt(Math.floor(Number(lpBalance) * ratio)); // eslint-disable-line no-undef -- BigInt is a standard global
+
+    // Use proper BigInt arithmetic to avoid precision loss
+    const userInputAmountInWei = parseUnits(uiAmountString, 6);
+    const maxAmountInWei = parseUnits(maxUIDisplayAmount.toString(), 6);
+    const actualAmount = (lpBalance * userInputAmountInWei) / maxAmountInWei;
+
+    console.log('LP Amount calculation:', {
+      userInputAmount: uiAmountString,
+      userInputAmountInWei: userInputAmountInWei.toString(),
+      lpBalance: lpBalance.toString(),
+      maxUIDisplayAmount,
+      actualAmount: actualAmount.toString()
+    });
+
     return actualAmount;
   }, [lpBalance]);
 
@@ -157,10 +183,15 @@ export const useLiquidityLogic = ({
   }, [routerConfig, userAddress, selectedToken, usdcConfig?.address, actualLPAmount, handleRemoveTransaction, writeContractAsync]);
 
   // Validation and state checks
-  const needsApproval = useMemo(() =>
-    actualLPAmount > lpAllowance,
-    [actualLPAmount, lpAllowance]
-  );
+  const needsApproval = useMemo(() => {
+    const needs = actualLPAmount > lpAllowance;
+    console.log('LP Approval check:', {
+      actualLPAmount: actualLPAmount.toString(),
+      lpAllowance: lpAllowance.toString(),
+      needsApproval: needs
+    });
+    return needs;
+  }, [actualLPAmount, lpAllowance]);
 
   const canApprove = useMemo(() =>
     liquidityAmount &&
@@ -189,6 +220,7 @@ export const useLiquidityLogic = ({
     lpBalance,
     lpAllowance,
     formattedLPBalance,
+    formattedLPAllowance,
 
     // Amount form
     liquidityAmount,

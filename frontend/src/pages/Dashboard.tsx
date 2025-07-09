@@ -325,7 +325,7 @@ const Dashboard = () => {
               title="Moonwell"
               value={(parseFloat(tvl.total) / 2).toString()}
               valueFormatter={formatUSDC}
-              description="Innovative Base protocol with competitive rates"
+              description="Innovative lending protocol with competitive rates"
             />
           </Box>
         </Box>

@@ -45,8 +45,13 @@ export const useAddLiquidityLogic = ({
     handleTransaction: handleApproveTransaction
   } = useTransaction({
     onSuccess: async () => {
-      selectedTokenData?.refetchAllowance();
-      usdcTokenData?.refetchAllowance();
+      // Add a small delay to ensure blockchain state is updated
+      setTimeout(() => {
+        selectedTokenData?.refetchAllowance();
+        selectedTokenData?.refetchBalance();
+        usdcTokenData?.refetchAllowance();
+        usdcTokenData?.refetchBalance();
+      }, 1000);
     }
   });
 
@@ -59,8 +64,13 @@ export const useAddLiquidityLogic = ({
   } = useTransaction({
     onSuccess: () => {
       resetLiquidityAmount();
-      selectedTokenData?.refetchAllowance();
-      usdcTokenData?.refetchAllowance();
+      // Add a small delay to ensure blockchain state is updated
+      setTimeout(() => {
+        selectedTokenData?.refetchAllowance();
+        selectedTokenData?.refetchBalance();
+        usdcTokenData?.refetchAllowance();
+        usdcTokenData?.refetchBalance();
+      }, 1000);
       if (onTransactionSuccess) {
         onTransactionSuccess();
       }
@@ -75,7 +85,16 @@ export const useAddLiquidityLogic = ({
       // Approve selected token first
       const approveTokenHash = await writeContractAsync({
         address: selectedToken as `0x${string}`,
-        abi: selectedToken === usdcConfig?.address ? usdcConfig?.abi : ['function approve(address,uint256) returns (bool)'],
+        abi: selectedToken === usdcConfig?.address ? usdcConfig?.abi : [{
+          type: 'function',
+          name: 'approve',
+          constant: false,
+          inputs: [
+            { type: 'address', name: 'spender' },
+            { type: 'uint256', name: 'amount' }
+          ],
+          outputs: [{ type: 'bool', name: '' }]
+        }],
         functionName: 'approve',
         args: [routerConfig.address, liquidityAmountInWei]
       });
@@ -132,7 +151,18 @@ export const useAddLiquidityLogic = ({
   const needsApproval = useMemo(() => {
     const tokenNeedsApproval = liquidityAmountInWei > (selectedTokenData?.allowance || 0n);
     const usdcNeedsApproval = liquidityAmountInWei > (usdcTokenData?.allowance || 0n);
-    return tokenNeedsApproval || usdcNeedsApproval;
+    const result = tokenNeedsApproval || usdcNeedsApproval;
+
+    console.log('Approval check:', {
+      liquidityAmountInWei: liquidityAmountInWei.toString(),
+      tokenAllowance: selectedTokenData?.allowance?.toString() || '0',
+      usdcAllowance: usdcTokenData?.allowance?.toString() || '0',
+      tokenNeedsApproval,
+      usdcNeedsApproval,
+      needsApproval: result
+    });
+
+    return result;
   }, [liquidityAmountInWei, selectedTokenData?.allowance, usdcTokenData?.allowance]);
 
   const canApprove = useMemo(() =>
@@ -147,9 +177,10 @@ export const useAddLiquidityLogic = ({
   const canAdd = useMemo(() =>
     liquidityAmount &&
     selectedToken &&
+    validateLiquidityAmount(liquidityAmount) &&
     !needsApproval &&
     !isAdding,
-    [liquidityAmount, selectedToken, needsApproval, isAdding]
+    [liquidityAmount, selectedToken, validateLiquidityAmount, needsApproval, isAdding]
   );
 
   const maxAmount = useMemo(() => {

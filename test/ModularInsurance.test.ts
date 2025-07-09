@@ -47,55 +47,43 @@ describe("Modular Insurance - Comprehensive Tests", function () {
   };
 
   before(async function () {
-    console.log("\n🚀 Modular Insurance Comprehensive Test Setup");
-    console.log("===============================================");
-
     [deployer, attacker, user] = await ethers.getSigners();
-    console.log("Deployer:", deployer.address);
 
-    console.log("\n📄 Deploying Mock Contracts...");
     // Deploy Mock USDC
     const MockUSDCFactory = await ethers.getContractFactory("MockUSDC");
     usdc = await MockUSDCFactory.deploy();
     await usdc.waitForDeployment();
-    console.log("✅ Mock USDC deployed:", await usdc.getAddress());
 
     // Deploy Mock Aave Token
     const MockATokenFactory = await ethers.getContractFactory("MockAToken");
     mockAave = await MockATokenFactory.deploy(await usdc.getAddress());
     await mockAave.waitForDeployment();
-    console.log("✅ Mock Aave token deployed:", await mockAave.getAddress());
 
-    console.log("\n🏗️ Deploying Core Contracts...");
+    // Deploy Core Contracts
     // Deploy Calculator
     const CalculatorFactory = await ethers.getContractFactory("InsuranceCalculator");
     calculator = await CalculatorFactory.deploy();
     await calculator.waitForDeployment();
-    console.log("✅ Calculator deployed:", await calculator.getAddress());
 
     // Deploy Adapter Manager
     const AdapterManagerFactory = await ethers.getContractFactory("InsuranceAdapterManager");
     adapterManager = await AdapterManagerFactory.deploy();
     await adapterManager.waitForDeployment();
-    console.log("✅ Adapter Manager deployed:", await adapterManager.getAddress());
 
     // Deploy Time Manager
     const TimeManagerFactory = await ethers.getContractFactory("InsuranceTimeManager");
     timeManager = await TimeManagerFactory.deploy();
     await timeManager.waitForDeployment();
-    console.log("✅ Time Manager deployed:", await timeManager.getAddress());
 
     // Deploy Claim Manager
     const ClaimManagerFactory = await ethers.getContractFactory("InsuranceClaimManager");
     claimManager = await ClaimManagerFactory.deploy();
     await claimManager.waitForDeployment();
-    console.log("✅ Claim Manager deployed:", await claimManager.getAddress());
 
     // Deploy Insurance Core
     const InsuranceCoreFactory = await ethers.getContractFactory("InsuranceCore");
     insuranceCore = await InsuranceCoreFactory.deploy();
     await insuranceCore.waitForDeployment();
-    console.log("✅ Insurance Core deployed:", await insuranceCore.getAddress());
 
     // Calculate time periods using blockchain time
     const currentBlock = await ethers.provider.getBlock('latest');
@@ -105,14 +93,7 @@ describe("Modular Insurance - Comprehensive Tests", function () {
     const T2 = T1 + 300; // 5 minutes after T1
     const T3 = T2 + 300; // 5 minutes after T2
 
-    console.log("\n⏰ Time Configuration:");
-    console.log("Current time:", currentTime);
-    console.log("S (Issuance End):", S);
-    console.log("T1 (Insurance End):", T1);
-    console.log("T2 (AAA Claims Start):", T2);
-    console.log("T3 (Final Claims End):", T3);
-
-    console.log("\n🔧 Initializing Contracts...");
+    // Initialize contracts
 
     // Initialize Time Manager
     await timeManager.initialize(await insuranceCore.getAddress(), await claimManager.getAddress());
@@ -132,7 +113,6 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       await claimManager.getAddress()
     );
 
-    console.log("\n🪙 Deploying Tranche Tokens...");
     // Deploy Tranche tokens
     const TrancheFactory = await ethers.getContractFactory("Tranche");
     trancheAAA = await TrancheFactory.deploy("AAA Tranche", "AAA");
@@ -160,7 +140,6 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       await timeManager.getAddress()
     );
 
-    console.log("\n🔌 Deploying Aave Adapter...");
     // Deploy Aave Adapter - note: constructor expects (aavePool, poolDataProvider)
     const AaveAdapterFactory = await ethers.getContractFactory("AaveLendingAdapter");
     aaveAdapter = await AaveAdapterFactory.deploy(
@@ -171,19 +150,12 @@ describe("Modular Insurance - Comprehensive Tests", function () {
 
     // Add adapter to manager
     await adapterManager.addLendingAdapter(await aaveAdapter.getAddress());
-    console.log("✅ All contracts deployed and initialized");
-
-    console.log("\n💰 Setting up Test Accounts...");
     // Mint tokens to test accounts
     const mockUSDC = usdc as MockUSDC;
     await mockUSDC.mint(deployer.address, ethers.parseUnits("1000000", 6)); // 1M USDC
     await mockUSDC.mint(attacker.address, ethers.parseUnits("1000", 6));   // 1K USDC
     await mockUSDC.mint(user.address, ethers.parseUnits("1000", 6));       // 1K USDC
 
-    console.log("✅ Tokens minted to test accounts");
-    console.log("Deployer USDC Balance:", ethers.formatUnits(await usdc.balanceOf(deployer.address), 6), "USDC");
-    console.log("Attacker USDC Balance:", ethers.formatUnits(await usdc.balanceOf(attacker.address), 6), "USDC");
-    console.log("User USDC Balance:", ethers.formatUnits(await usdc.balanceOf(user.address), 6), "USDC");
 
     // Approve Insurance Core to spend USDC
     const maxApproval = ethers.parseUnits("1000000", 6);
@@ -191,7 +163,6 @@ describe("Modular Insurance - Comprehensive Tests", function () {
     await usdc.connect(user).approve(await insuranceCore.getAddress(), maxApproval);
     await usdc.connect(deployer).approve(await insuranceCore.getAddress(), maxApproval);
 
-    console.log("✅ Test accounts funded and approved");
   });
 
   describe("🏗️ Deployment & Initialization", function () {
@@ -263,9 +234,8 @@ describe("Modular Insurance - Comprehensive Tests", function () {
       const amount = ethers.parseUnits("100", 6);
       await insuranceCore.connect(user).splitRisk(amount);
 
-      // Debug: Check totalInvested after splitRisk
+      // Prepare state for test
       const totalInvested = await insuranceCore.totalInvested();
-      console.log("Total Invested after splitRisk:", ethers.formatUnits(totalInvested, 6));
     });
 
     it("Should allow claiming before insurance period", async function () {

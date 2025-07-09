@@ -147,12 +147,22 @@ await insurance.claim(aaaAmount, aaAmount);
 # Run all tests
 npm test
 
+# Run Uniswap integration tests
+npm test -- --grep "Uniswap"
+
 # Run with coverage report
 npm run coverage
 
 # Test on Moonbeam fork
 TEST_ON_MOONBEAM=true npx hardhat test
 ```
+
+#### Test Status
+- ✅ **Core Uniswap V2 Infrastructure**: All factory and pair contract tests passing
+- ✅ **Liquidity Pool Management**: Creation, addition, and management of tranche token pools
+- ✅ **Factory Functions**: Fee management, pair creation, duplicate prevention
+- 🔧 **Token Swapping**: Core functionality deployed, integration tests in progress
+- 🔧 **Liquidity Removal**: Smart contracts deployed, test setup refinements needed
 
 ### Project Structure
 

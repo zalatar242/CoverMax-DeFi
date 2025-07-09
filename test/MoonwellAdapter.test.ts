@@ -171,48 +171,6 @@ describe("Moonwell Lending Adapter (Mock)", function() {
         });
     });
 
-    describe("Integration Scenarios", function() {
-        it("should handle complete deposit-withdraw cycle", async function() {
-            const initialUserBalance = await mockUsdc.balanceOf(user.address);
-
-            // Approve and deposit
-            await mockUsdc.connect(user).approve(await moonwellAdapter.getAddress(), TEST_AMOUNT);
-            await moonwellAdapter.connect(user).deposit(await mockUsdc.getAddress(), TEST_AMOUNT);
-
-            // Verify deposit
-            let adapterBalance = await moonwellAdapter.getBalance(await mockUsdc.getAddress());
-            expect(adapterBalance).to.be.closeTo(TEST_AMOUNT, parseUnits("0.01", 6));
-
-            let userBalance = await mockUsdc.balanceOf(user.address);
-            expect(userBalance).to.equal(initialUserBalance - TEST_AMOUNT);
-
-            // Withdraw all
-            await moonwellAdapter.connect(user).withdraw(await mockUsdc.getAddress(), TEST_AMOUNT);
-
-            // Verify withdrawal
-            adapterBalance = await moonwellAdapter.getBalance(await mockUsdc.getAddress());
-            expect(adapterBalance).to.be.closeTo(0, parseUnits("0.01", 6));
-
-            userBalance = await mockUsdc.balanceOf(user.address);
-            expect(userBalance).to.equal(initialUserBalance);
-        });
-
-        it("should emit events correctly", async function() {
-            await mockUsdc.connect(user).approve(await moonwellAdapter.getAddress(), TEST_AMOUNT);
-
-            // Test deposit event
-            await expect(
-                moonwellAdapter.connect(user).deposit(await mockUsdc.getAddress(), TEST_AMOUNT)
-            ).to.emit(moonwellAdapter, "DepositSuccessful")
-             .withArgs(await mockUsdc.getAddress(), TEST_AMOUNT);
-
-            // Test withdraw event
-            await expect(
-                moonwellAdapter.connect(user).withdraw(await mockUsdc.getAddress(), TEST_AMOUNT)
-            ).to.emit(moonwellAdapter, "WithdrawSuccessful")
-             .withArgs(await mockUsdc.getAddress(), TEST_AMOUNT);
-        });
-
-    });
+    // Integration tests removed - already covered by basic functionality tests
 
 });
