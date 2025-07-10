@@ -7,16 +7,19 @@ A decentralized insurance protocol on Polkadot Asset Hub that transforms traditi
 Want to try out CoverMax? Connect to our testnet deployment:
 
 **Polkadot Asset Hub Testnet**
+
 - Network Name: Polkadot Asset Hub Testnet
 - RPC URL: `https://testnet-passet-hub-eth-rpc.polkadot.io/`
 - Chain ID: `420420422`
 - Currency Symbol: ETH
 
 Get test tokens from our deployed contracts:
+
 - **USDC**: `0xD17Aef210dEC93D3521950E18aB8783e4e488Fd4`
 - **Main Contract**: `0xBFBeD4E55F8d6fa19F0dd9986C7045eF45647dcd`
 
 This deployment lets you:
+
 - Deposit USDC and receive dual-tier tranche tokens
 - Experience the full protocol lifecycle
 - Test claim mechanisms and risk allocation
@@ -30,7 +33,7 @@ CoverMax is a revolutionary insurance protocol that maximizes capital efficiency
 
 ## 🎥 Demo Video
 
-*Coming soon - Watch CoverMax in action*
+_Coming soon - Watch CoverMax in action_
 
 ## 🧠 How It Works
 
@@ -90,10 +93,10 @@ The core innovation is the tranched risk allocation system:
 
 ### Risk Token Tiers
 
-| Token Type | Risk Level | Claim Priority | Use Case |
-|------------|------------|---------------|----------|
-| AAA-Tranche | Lower | First claims | Conservative yield seekers |
-| AA-Tranche | Higher | Subordinate | Risk-seeking yield farmers |
+| Token Type  | Risk Level | Claim Priority | Use Case                   |
+| ----------- | ---------- | -------------- | -------------------------- |
+| AAA-Tranche | Lower      | First claims   | Conservative yield seekers |
+| AA-Tranche  | Higher     | Subordinate    | Risk-seeking yield farmers |
 
 ## 🔄 Protocol Lifecycle
 
@@ -246,6 +249,7 @@ uniswapRouter.swapExactTokensForTokens(
 #### Connect to Testnet
 
 Add Polkadot Asset Hub Testnet to MetaMask:
+
 - **Network Name**: Polkadot Asset Hub Testnet
 - **RPC URL**: `https://testnet-passet-hub-eth-rpc.polkadot.io/`
 - **Chain ID**: `420420422`
@@ -324,24 +328,24 @@ npx hardhat ignition deploy ignition/modules/Insurance.ts --network localhost
 
 ### Polkadot Asset Hub Testnet
 
-| Contract | Address | Description |
-|----------|---------|-------------|
-| **InsuranceCore** | `0xBFBeD4E55F8d6fa19F0dd9986C7045eF45647dcd` | Main protocol contract |
-| **TrancheAAA** | `0x1c780207B0Ac77a93C10d9078C4F51Fcf94C7145` | Senior tranche token |
-| **TrancheAA** | `0xc4a1bb44c3BB4886019210993834971CfCe52DF2` | Junior tranche token |
-| **USDC** | `0xD17Aef210dEC93D3521950E18aB8783e4e488Fd4` | Base asset (6 decimals) |
-| **InsuranceTimeManager** | `0xB960eC68282Ab2d9BfB5b93e00D046416BccDCc2` | Time period manager |
-| **InsuranceClaimManager** | `0x7C16d360f88e502DC241aCC7E705249Bcf6D6dC5` | Claims processor |
-| **AaveLendingAdapter** | `0x9A96b128161cFc0C42f9e05cCd4dD2EAE54B6515` | Aave integration |
-| **MoonwellLendingAdapter** | `0x820d093ABA5cEC9D7dd0096A77660287D96BB2B6` | Moonwell integration |
-| **UniswapV2Factory** | `0xEF76a5cd6AE0B6fc1cCA68df3398De44AC4c73Ba` | DEX factory |
-| **UniswapV2Router02** | `0xCca3E8C9Cb2AE9DcD74C29f53804A1217fB6FBfe` | DEX router |
+| Contract                   | Address                                      | Description             |
+| -------------------------- | -------------------------------------------- | ----------------------- |
+| **InsuranceCore**          | `0xBFBeD4E55F8d6fa19F0dd9986C7045eF45647dcd` | Main protocol contract  |
+| **TrancheAAA**             | `0x1c780207B0Ac77a93C10d9078C4F51Fcf94C7145` | Senior tranche token    |
+| **TrancheAA**              | `0xc4a1bb44c3BB4886019210993834971CfCe52DF2` | Junior tranche token    |
+| **USDC**                   | `0xD17Aef210dEC93D3521950E18aB8783e4e488Fd4` | Base asset (6 decimals) |
+| **InsuranceTimeManager**   | `0xB960eC68282Ab2d9BfB5b93e00D046416BccDCc2` | Time period manager     |
+| **InsuranceClaimManager**  | `0x7C16d360f88e502DC241aCC7E705249Bcf6D6dC5` | Claims processor        |
+| **AaveLendingAdapter**     | `0x9A96b128161cFc0C42f9e05cCd4dD2EAE54B6515` | Aave integration        |
+| **MoonwellLendingAdapter** | `0x820d093ABA5cEC9D7dd0096A77660287D96BB2B6` | Moonwell integration    |
+| **UniswapV2Factory**       | `0xEF76a5cd6AE0B6fc1cCA68df3398De44AC4c73Ba` | DEX factory             |
+| **UniswapV2Router02**      | `0xCca3E8C9Cb2AE9DcD74C29f53804A1217fB6FBfe` | DEX router              |
 
 ### Frontend Application
 
 ```bash
 cd frontend
-npm install
+npm install --legacy-peer-deps
 npm start
 ```
 
@@ -350,24 +354,28 @@ The frontend will be available at http://localhost:3000
 ## 🔮 Roadmap
 
 ### Phase 1: Core Protocol ✅
+
 - ✅ Tranched risk allocation system
 - ✅ Lending adapter integration (Aave, Moonwell)
 - ✅ Automated lifecycle management
 - ✅ Waterfall loss distribution
 
 ### Phase 2: Trading Infrastructure 🚧
+
 - ✅ Uniswap V2 factory and router deployment
 - 🔧 Tranche token liquidity pools
 - 🔧 Advanced trading strategies
 - 🔧 Price discovery mechanisms
 
 ### Phase 3: Advanced Features 🎯
+
 - 🎯 Self-restarting cycles
 - 🎯 Flexible withdrawal mechanisms
 - 🎯 Dynamic risk rebalancing
 - 🎯 Cross-chain expansion
 
 ### Phase 4: Ecosystem Growth 📈
+
 - 📈 Additional lending protocol integrations
 - 📈 Institutional-grade features
 - 📈 Governance token launch
