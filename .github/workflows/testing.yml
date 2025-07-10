@@ -1,0 +1,37 @@
+name: Test Suite
+
+on:
+  push:
+    branches: '*'
+  pull_request:
+    branches: '*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          if [ ! -f "package-lock.json" ]; then
+            echo "No package-lock.json found, running npm install..."
+            npm install --legacy-peer-deps
+          else
+            echo "Using existing package-lock.json..."
+            npm ci --legacy-peer-deps
+          fi
+
+      - name: Run tests
+        env:
+          REACT_APP_DEFAULT_NETWORK: "passetHub"
+          REACT_APP_PASSETHUB_RPC_URL: "https://testnet-passet-hub-eth-rpc.polkadot.io/"
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: npm test

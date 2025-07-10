@@ -1,80 +1,65 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
-import "@nomicfoundation/hardhat-ethers";
-import * as dotenv from "dotenv";
-import "@typechain/hardhat";
+require("@nomicfoundation/hardhat-toolbox");
+require("@parity/hardhat-polkadot");
 
+require("dotenv").config();
 
-dotenv.config();
+/** @type import('hardhat/config').HardhatUserConfig */
+const path = require("path");
 
-const config: HardhatUserConfig = {
+module.exports = {
   solidity: {
     version: "0.8.28",
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200
+        runs: 200,
       },
+    },
+  },
+  paths: {
+    sources: "./contracts",
+    tests: "./test",
+    cache: process.env.TEST_ON_MOONBEAM === "true" ? "./cache" : "./cache-pvm",
+    artifacts: process.env.TEST_ON_MOONBEAM === "true" ? "./artifacts" : "./artifacts-pvm",
+  },
+  resolc: {
+    compilerSource: "npm",
+    settings: {
+      optimizer: {
+        enabled: true,
+        parameters: 'z',
+        fallbackOz: true,
+        runs: 10000,
+      },
+      standardJson: true,
     },
   },
   networks: {
-    hardhat: {
-      chainId: 31337, // Default hardhat chain ID
+    hardhat: process.env.TEST_ON_MOONBEAM === "true" ? {
+      // Moonbeam local testing config when explicitly requested
       forking: {
-        url: process.env.BASE_MAINNET_RPC_URL || "",
-        enabled: process.env.FORK_ENABLED === 'true' && !!process.env.BASE_MAINNET_RPC_URL,
-        blockNumber: 12300000
+        url: "https://rpc.api.moonbeam.network",
+        enabled: true,
       },
-      accounts: {
-        mnemonic: "test test test test test test test test test test test junk",
-        accountsBalance: "10000000000000000000000" // 10000 ETH
+    } : {
+      // Default PolkaVM config
+      polkavm: true,
+      nodeConfig: {
+        nodeBinaryPath: "./bin/substrate-node",
+        rpcPort: 8000,
+        dev: true,
       },
-      mining: {
-        auto: true,
-        interval: 0
-      }
-    },
-    "base-mainnet": {
-      url: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
-      chainId: 8453,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
-    },
-    "base-sepolia": {
-      url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      chainId: 84532,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      gas: 10000000, // Increased gas limit
-      gasPrice: "auto"
-    }
-  },
-  etherscan: {
-    apiKey: {
-      "base-mainnet": process.env.BASESCAN_API_KEY || "",
-      "base-sepolia": process.env.BASESCAN_API_KEY || ""
-    },
-    customChains: [
-      {
-        network: "base-mainnet",
-        chainId: 8453,
-        urls: {
-          apiURL: "https://api.basescan.org/api",
-          browserURL: "https://basescan.org"
-        }
+      adapterConfig: {
+        adapterBinaryPath: "./bin/eth-rpc",
+        dev: true,
       },
-      {
-        network: "base-sepolia",
-        chainId: 84532,
-        urls: {
-          apiURL: "https://api-sepolia.basescan.org/api",
-          browserURL: "https://sepolia.basescan.org"
-        }
-      }
-    ]
-  },
-  mocha: {
-    timeout: 120000 // 2 minutes
+    },
+    passetHub: {
+      polkavm: true,
+      url: "https://testnet-passet-hub-eth-rpc.polkadot.io",
+      accounts: [
+        process.env.PRIVATE_KEY,
+      ],
+    },
   }
 };
-
-
-export default config;
