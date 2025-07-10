@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.28;
+pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../ILendingAdapter.sol";
+import "../interfaces/ILendingAdapter.sol";
 
 interface IAavePool {
     function supply(
@@ -20,11 +20,16 @@ interface IAavePool {
 }
 
 interface IAavePoolDataProvider {
-    function getReserveTokensAddresses(address asset) external view returns (
-        address aTokenAddress,
-        address stableDebtTokenAddress,
-        address variableDebtTokenAddress
-    );
+    function getReserveTokensAddresses(
+        address asset
+    )
+        external
+        view
+        returns (
+            address aTokenAddress,
+            address stableDebtTokenAddress,
+            address variableDebtTokenAddress
+        );
 }
 
 interface IAToken {
@@ -57,7 +62,9 @@ contract AaveLendingAdapter is ILendingAdapter {
         try IERC20(asset).approve(aavePool, 0) {
             // Then set new approval
             try IERC20(asset).approve(aavePool, amount) {
-                try IAavePool(aavePool).supply(asset, amount, address(this), 0) {
+                try
+                    IAavePool(aavePool).supply(asset, amount, address(this), 0)
+                {
                     emit DepositSuccessful(asset, amount);
                     return amount;
                 } catch Error(string memory reason) {
@@ -81,10 +88,15 @@ contract AaveLendingAdapter is ILendingAdapter {
         }
     }
 
-    function withdraw(address asset, uint256 amount) external returns (uint256) {
+    function withdraw(
+        address asset,
+        uint256 amount
+    ) external returns (uint256) {
         if (amount == 0) revert AmountTooLow();
 
-        try IAavePool(aavePool).withdraw(asset, amount, address(this)) returns (uint256 withdrawnAmount) {
+        try IAavePool(aavePool).withdraw(asset, amount, address(this)) returns (
+            uint256 withdrawnAmount
+        ) {
             emit WithdrawSuccessful(asset, withdrawnAmount);
             // Transfer withdrawn tokens to caller
             if (!IERC20(asset).transfer(msg.sender, withdrawnAmount)) {
@@ -99,11 +111,11 @@ contract AaveLendingAdapter is ILendingAdapter {
     }
 
     function getBalance(address asset) external view returns (uint256) {
-        try IAavePoolDataProvider(poolDataProvider).getReserveTokensAddresses(asset) returns (
-            address aTokenAddress,
-            address,
-            address
-        ) {
+        try
+            IAavePoolDataProvider(poolDataProvider).getReserveTokensAddresses(
+                asset
+            )
+        returns (address aTokenAddress, address, address) {
             if (aTokenAddress == address(0)) {
                 return 0;
             }

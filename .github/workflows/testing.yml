@@ -2,9 +2,9 @@ name: Test Suite
 
 on:
   push:
-    branches: [main, dev]
+    branches: '*'
   pull_request:
-    branches: [main, dev]
+    branches: '*'
 
 jobs:
   test:
@@ -23,22 +23,15 @@ jobs:
         run: |
           if [ ! -f "package-lock.json" ]; then
             echo "No package-lock.json found, running npm install..."
-            npm install
+            npm install --legacy-peer-deps
           else
             echo "Using existing package-lock.json..."
-            npm ci
-          fi
-
-      - name: Verify BASE_MAINNET_RPC_URL
-        run: |
-          if [ -z "${{ secrets.BASE_MAINNET_RPC_URL }}" ]; then
-            echo "Error: BASE_MAINNET_RPC_URL secret is not set"
-            exit 1
+            npm ci --legacy-peer-deps
           fi
 
       - name: Run tests
         env:
-          FORK_ENABLED: "true"
-          BASE_MAINNET_RPC_URL: ${{ secrets.BASE_MAINNET_RPC_URL }}
-          FORK_BLOCK_NUMBER: "12300000"
+          REACT_APP_DEFAULT_NETWORK: "passetHub"
+          REACT_APP_PASSETHUB_RPC_URL: "https://testnet-passet-hub-eth-rpc.polkadot.io/"
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: npm test

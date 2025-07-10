@@ -4,9 +4,15 @@
 
 CoverMax DeFi is a decentralized insurance protocol that implements a two-tranche risk allocation system for DeFi lending. The protocol allows users to deposit USDC and receive two different types of risk tranches, which are then deployed across multiple lending platforms. This innovative approach provides users with different risk-reward profiles while maximizing capital efficiency.
 
+### Network Deployment
+
+The protocol is currently deployed on **Polkadot Asset Hub (passetHub)** testnet:
+- Chain ID: 420420422
+- RPC URL: https://testnet-passet-hub-eth-rpc.polkadot.io/
+
 ## Core Components
 
-### 1. Insurance Contract
+### 1. InsuranceCore Contract
 
 The main contract that orchestrates the entire protocol. It:
 
@@ -15,20 +21,33 @@ The main contract that orchestrates the entire protocol. It:
 - Handles the investment and divestment processes
 - Calculates and processes claims
 
+**Deployed Address**: `0xBFBeD4E55F8d6fa19F0dd9986C7045eF45647dcd`
+
 ### 2. Tranche Tokens
 
 Two ERC20 tokens representing different risk levels:
 
 - **Tranche AAA (Senior)**: Lowest risk, first to be paid out
+  - Address: `0x1c780207B0Ac77a93C10d9078C4F51Fcf94C7145`
 - **Tranche AA (Junior)**: Higher risk, absorbs first losses
+  - Address: `0xc4a1bb44c3BB4886019210993834971CfCe52DF2`
 
 ### 3. Lending Adapters
 
 Modular components that integrate with various DeFi lending platforms:
 
-- Aave Adapter
-- Moonwell Adapter
-- Extensible to add more platforms
+- **Aave Adapter**: `0x9A96b128161cFc0C42f9e05cCd4dD2EAE54B6515`
+- **Moonwell Adapter**: `0x820d093ABA5cEC9D7dd0096A77660287D96BB2B6`
+- Extensible architecture to add more platforms
+
+### 4. Supporting Contracts
+
+- **InsuranceTimeManager**: `0xB960eC68282Ab2d9BfB5b93e00D046416BccDCc2`
+  - Manages protocol time periods and transitions
+- **InsuranceClaimManager**: `0x7C16d360f88e502DC241aCC7E705249Bcf6D6dC5`
+  - Handles claim calculations and distributions
+- **InsuranceAdapterManager**: Manages lending adapter registry
+- **InsuranceCalculator**: Computes tranche payouts based on losses
 
 ## Risk Tranches Explained
 
@@ -105,6 +124,16 @@ function getBalance(address asset) external view returns (uint256);
    - Supports supply and withdraw operations
 
 ## Technical Implementation
+
+### Smart Contract Architecture
+
+The protocol uses a modular architecture with the following key contracts:
+- **InsuranceCore.sol**: Main protocol logic and user interactions
+- **InsuranceTimeManager.sol**: Time period management
+- **InsuranceClaimManager.sol**: Claim processing and calculations
+- **InsuranceAdapterManager.sol**: Lending adapter registry
+- **InsuranceCalculator.sol**: Mathematical calculations for payouts
+- **Tranche.sol**: ERC20 implementation for risk tranches
 
 ### Deposit Process
 
@@ -199,6 +228,40 @@ function getBalance(address asset) external view returns (uint256);
 - **Minimum Deposit**: 2 USDC (Must be divisible by 2)
 - **Time Periods**: Fixed durations (7/28/1/3 days)
 
+## Additional Infrastructure
+
+### Uniswap V2 Integration
+
+The protocol includes a full Uniswap V2 deployment for liquidity provision:
+- **UniswapV2Factory**: `0xEF76a5cd6AE0B6fc1cCA68df3398De44AC4c73Ba`
+- **UniswapV2Router02**: `0xCca3E8C9Cb2AE9DcD74C29f53804A1217fB6FBfe`
+- **WETH**: Wrapped ETH implementation for pair creation
+
+Liquidity pairs for tranches (not yet deployed):
+- **AAA/USDC Pair**: Pending deployment
+- **AA/USDC Pair**: Pending deployment
+
+### Token Addresses
+
+- **USDC (Mock)**: `0xD17Aef210dEC93D3521950E18aB8783e4e488Fd4`
+  - Standard ERC20 with 6 decimals
+  - Used as the base asset for the protocol
+
+## Development and Testing
+
+### Technology Stack
+- **Smart Contracts**: Solidity ^0.8.28
+- **Framework**: Hardhat with TypeScript
+- **Testing**: Hardhat with Chai matchers
+- **Coverage**: Solidity-coverage for test coverage analysis
+- **Dependencies**: OpenZeppelin Contracts v5.3.0
+
+### Testing on Moonbeam
+The protocol includes special test configurations for Moonbeam network:
+```bash
+TEST_ON_MOONBEAM=true npx hardhat test
+```
+
 ## Planned Features
 
 1. **Self-Restarting Cycles**
@@ -208,5 +271,9 @@ function getBalance(address asset) external view returns (uint256);
 2. **Flexible Withdrawals**
    - Users will be able to withdraw at any point
    - Rewards will be calculated and distributed appropriately based on time in protocol
+
+3. **Liquidity Provision**
+   - Deploy AAA/USDC and AA/USDC pairs on Uniswap V2
+   - Enable secondary market trading of risk tranches
 
 This documentation provides a comprehensive overview of the CoverMax DeFi protocol, its components, mechanisms, and implementation details. For specific implementation details, refer to the smart contract code and comments.
