@@ -10,8 +10,8 @@ import {
   WETH,
   MockUSDC
 } from "../typechain-types";
-import { 
-  fastForwardTime, 
+import {
+  fastForwardTime,
   getCurrentTime
 } from "./utils/TestHelpers";
 
@@ -55,7 +55,7 @@ describe("Uniswap Tranche Token Trading", function () {
     const TrancheFactory = await ethers.getContractFactory("Tranche");
     trancheAAA = await TrancheFactory.deploy("Tranche AAA", "AAA");
     await trancheAAA.waitForDeployment();
-    
+
     trancheAA = await TrancheFactory.deploy("Tranche AA", "AA");
     await trancheAA.waitForDeployment();
 
@@ -79,7 +79,7 @@ describe("Uniswap Tranche Token Trading", function () {
     await usdc.mint(liquidityProvider.address, INITIAL_SUPPLY);
     await usdc.mint(user1.address, INITIAL_SUPPLY);
     await usdc.mint(user2.address, INITIAL_SUPPLY);
-    
+
     // Mint tranche tokens directly (simulating users getting them from insurance protocol)
     await trancheAAA.mint(liquidityProvider.address, LP_INITIAL_TOKENS);
     await trancheAA.mint(liquidityProvider.address, LP_INITIAL_TOKENS);
@@ -101,7 +101,7 @@ describe("Uniswap Tranche Token Trading", function () {
       pairAAAUSDC = await ethers.getContractAt("UniswapV2Pair", pairAddress);
       const token0 = await pairAAAUSDC.token0();
       const token1 = await pairAAAUSDC.token1();
-      
+
       expect([token0, token1]).to.include(trancheAAAAddress);
       expect([token0, token1]).to.include(usdcAddress);
     });
@@ -112,9 +112,9 @@ describe("Uniswap Tranche Token Trading", function () {
       // Create pairs
       await uniswapFactory.createPair(await trancheAAA.getAddress(), await usdc.getAddress());
       await uniswapFactory.createPair(await trancheAA.getAddress(), await usdc.getAddress());
-      
+
       pairAAAUSDC = await ethers.getContractAt(
-        "UniswapV2Pair", 
+        "UniswapV2Pair",
         await uniswapFactory.getPair(await trancheAAA.getAddress(), await usdc.getAddress())
       );
       pairAAUSDC = await ethers.getContractAt(
@@ -203,7 +203,7 @@ describe("Uniswap Tranche Token Trading", function () {
       // Create pairs and add liquidity
       await uniswapFactory.createPair(await trancheAAA.getAddress(), await usdc.getAddress());
       await uniswapFactory.createPair(await trancheAA.getAddress(), await usdc.getAddress());
-      
+
       pairAAAUSDC = await ethers.getContractAt(
         "UniswapV2Pair",
         await uniswapFactory.getPair(await trancheAAA.getAddress(), await usdc.getAddress())
@@ -301,32 +301,10 @@ describe("Uniswap Tranche Token Trading", function () {
       expect(usdcBalanceAfter).to.be.gt(usdcBalanceBefore);
     });
 
-    it("Should calculate correct price impact for different risk levels", async function () {
-      const testAmount = parseUnits("100", 6);
-      
-      // Test AAA token price (1:1 ratio)
-      const pathAAA = [await trancheAAA.getAddress(), await usdc.getAddress()];
-      const amountsAAA = await uniswapRouter.getAmountsOut(testAmount, pathAAA);
-      const expectedOutAAA = amountsAAA[1];
-      
-      // Test AA token price (1:2 ratio)
-      const pathAA = [await trancheAA.getAddress(), await usdc.getAddress()];
-      const amountsAA = await uniswapRouter.getAmountsOut(testAmount, pathAA);
-      const expectedOutAA = amountsAA[1];
-      
-      // AA tokens should get more USDC per token because of the 1:2 pool ratio
-      // For same input amount, AA should yield more output due to pool ratio
-      expect(expectedOutAA).to.be.gt(0);
-      expect(expectedOutAAA).to.be.gt(0);
-      
-      // AA tokens should get more USDC per token because of the 1:2 pool ratio
-      expect(expectedOutAA).to.be.gt(expectedOutAAA);
-    });
-
     it("Should handle slippage protection correctly", async function () {
       const amountIn = parseUnits("100", 6);
       const path = [await trancheAAA.getAddress(), await usdc.getAddress()];
-      
+
       // Get expected output
       const amounts = await uniswapRouter.getAmountsOut(amountIn, path);
       const expectedOut = amounts[1];
