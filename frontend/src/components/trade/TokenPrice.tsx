@@ -18,7 +18,7 @@ const TokenPrice: React.FC<TokenPriceProps> = ({ token, symbol }) => {
     address: UniswapV2Router02?.address,
     abi: UniswapV2Router02?.abi,
     functionName: 'getAmountsOut',
-    args: [1000000n, [token, USDC?.address]], // Using 1 token (assuming 6 decimals for price check)
+    args: [1000000000000000000n, [token, USDC?.address]], // Using 1 token (18 decimals)
     query: {
       enabled: Boolean(token && USDC?.address && UniswapV2Router02)
     },
@@ -26,9 +26,9 @@ const TokenPrice: React.FC<TokenPriceProps> = ({ token, symbol }) => {
 
   useEffect(() => {
     if (getAmountsOut && Array.isArray(getAmountsOut) && getAmountsOut[1]) {
-      // Assuming the input token for price check (1000000n) effectively means 1 unit of the token
-      // and the output USDC amount is for that 1 unit.
-      const priceInUSDC = Number(formatUnits(getAmountsOut[1] as bigint, 18)); // USDC now has 18 decimals
+      // The input is 1 token (1000000000000000000n = 1 * 10^18)
+      // and the output USDC amount is for that 1 token.
+      const priceInUSDC = Number(formatUnits(getAmountsOut[1] as bigint, 18)); // USDC has 18 decimals
       setPrice(priceInUSDC);
     }
   }, [getAmountsOut]);
