@@ -35,7 +35,7 @@ export const useAddLiquidityLogic = ({
     validateAmount: validateLiquidityAmount,
     reset: resetLiquidityAmount,
     amountInWei: liquidityAmountInWei
-  } = useAmountForm(selectedTokenData?.balance || 0n, 2, selectedTokenData?.decimals || 18);
+  } = useAmountForm(selectedTokenData?.balance || 0n, 2);
 
   // Approval transaction (handles both tokens)
   const {
@@ -185,10 +185,10 @@ export const useAddLiquidityLogic = ({
 
   const maxAmount = useMemo(() => {
     if (!selectedTokenData?.balance || !usdcTokenData?.balance) return 0;
-    const tokenAmount = Number(selectedTokenData.balance) / Math.pow(10, selectedTokenData.decimals);
-    const usdcAmount = Number(usdcTokenData.balance) / Math.pow(10, usdcTokenData.decimals);
+    const tokenAmount = Number(selectedTokenData.balance) / Math.pow(10, 18); // All tokens use 18 decimals
+    const usdcAmount = Number(usdcTokenData.balance) / Math.pow(10, 18); // All tokens use 18 decimals
     return Math.min(tokenAmount, usdcAmount);
-  }, [selectedTokenData?.balance, selectedTokenData?.decimals, usdcTokenData?.balance, usdcTokenData?.decimals]);
+  }, [selectedTokenData?.balance, usdcTokenData?.balance]);
 
   return {
     // Token selection

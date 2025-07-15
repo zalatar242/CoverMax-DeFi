@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { parseUnits, formatUnits } from 'viem';
+import { formatUnits } from 'viem';
 
 interface UseAmountFormReturn {
   amount: string;
@@ -12,19 +12,19 @@ interface UseAmountFormReturn {
   amountInWei: bigint;
 }
 
-export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2, decimals: number = 18): UseAmountFormReturn => {
+export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2): UseAmountFormReturn => {
   const [amount, setAmount] = useState<string>('');
   const [error, setError] = useState<string>('');
 
   const validateAmount = (value: string): boolean => {
     if (!value) return true; // Empty is valid (will be caught by disabled button)
     const numValue = parseFloat(value);
-    return Number.isInteger(numValue * (10 ** decimals) / minDivisibleBy);
+    return Number.isInteger(numValue * 1e18 / minDivisibleBy);
   };
 
   const handleMaxAmount = () => {
     if (!maxAmount) return;
-    const formattedMax = Number(formatUnits(maxAmount, decimals));
+    const formattedMax = Number(formatUnits(maxAmount, 18)); // All tokens use 18 decimals
     const roundedAmount = Math.floor(formattedMax / minDivisibleBy) * minDivisibleBy;
     setAmount(roundedAmount.toString());
   };
@@ -43,7 +43,7 @@ export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2
       } else if (!validateAmount(value)) {
         setError('Amount must be even to ensure equal distribution between AAA and AA tranches');
       } else {
-        const valueInWei = parseUnits(value, decimals);
+        const valueInWei = BigInt(Math.floor(parseFloat(value) * 1e18)); // Convert to wei (18 decimals)
         if (maxAmount !== 0n && valueInWei > maxAmount) {
           setError('Amount exceeds your available balance');
         } else {
@@ -72,6 +72,6 @@ export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2
     handleMaxAmount,
     validateAmount,
     reset,
-    amountInWei: amount ? parseUnits(amount, decimals) : 0n
+    amountInWei: amount ? BigInt(Math.floor(parseFloat(amount) * 1e18)) : 0n // Convert to wei (18 decimals)
   };
 };

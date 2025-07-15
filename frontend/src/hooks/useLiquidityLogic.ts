@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useWriteContract, useReadContract } from 'wagmi';
-import { formatUnits, parseUnits } from 'viem';
+import { formatUnits } from 'viem';
 import { useTransaction } from '../utils/useTransaction';
 import { useAmountForm } from '../utils/useAmountForm';
 
@@ -74,7 +74,7 @@ export const useLiquidityLogic = ({
     handleAmountChange: handleLiquidityAmountChange,
     validateAmount: validateLiquidityAmount,
     reset: resetLiquidityAmount,
-  } = useAmountForm(parseUnits(formattedLPBalance, 18), 1, 18);
+  } = useAmountForm(BigInt(Math.floor(parseFloat(formattedLPBalance) * 1e18)), 1);
 
   // Approval transaction
   const {
@@ -119,7 +119,7 @@ export const useLiquidityLogic = ({
     if (!lpBalance || lpBalance === 0n || !uiAmountString) return 0n;
 
     // Since we're using 18 decimals consistently, just parse the user input directly
-    const actualAmount = parseUnits(uiAmountString, 18);
+    const actualAmount = BigInt(Math.floor(parseFloat(uiAmountString) * 1e18));
 
     // Ensure we don't exceed the user's balance
     const finalAmount = actualAmount > lpBalance ? lpBalance : actualAmount;

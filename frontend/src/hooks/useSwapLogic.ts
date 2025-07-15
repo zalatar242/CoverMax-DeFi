@@ -34,7 +34,7 @@ export const useSwapLogic = ({
     validateAmount: validateSwapAmount,
     reset: resetSwapAmount,
     amountInWei: swapAmountInWei
-  } = useAmountForm(fromToken?.balance || 0n, 2, fromToken?.decimals || 18);
+  } = useAmountForm(fromToken?.balance || 0n, 2);
 
   // Approval transaction
   const {

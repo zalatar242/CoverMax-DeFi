@@ -1,8 +1,8 @@
 import { formatUnits } from 'viem';
 
-// Format helpers
+// Format helpers - simplified since all tokens use 18 decimals
 export const formatCMX = (value: any) => {
-  // Ensure we're working with a number
+  // Convert to number (all tokens now use 18 decimals)
   const numericValue = typeof value === 'bigint'
     ? Number(formatUnits(value, 18))
     : Number(value) || 0;
@@ -16,13 +16,13 @@ export const formatCMX = (value: any) => {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
     useGrouping: true,
-  }).format(Math.max(0, numericValue)); // Ensure we don't show negative values
+  }).format(Math.max(0, numericValue));
 
   return `${formatted} CMX`;
 };
 
 export const formatUSDC = (value: any) => {
-  // Convert bigint to string with proper decimals
+  // Convert to number (all tokens now use 18 decimals)
   const formattedValue = typeof value === 'bigint'
     ? Number(formatUnits(value, 18))
     : Number(value);
