@@ -28,7 +28,7 @@ const TokenPrice: React.FC<TokenPriceProps> = ({ token, symbol }) => {
     if (getAmountsOut && Array.isArray(getAmountsOut) && getAmountsOut[1]) {
       // Assuming the input token for price check (1000000n) effectively means 1 unit of the token
       // and the output USDC amount is for that 1 unit.
-      const priceInUSDC = Number(formatUnits(getAmountsOut[1] as bigint, 6)); // USDC has 6 decimals
+      const priceInUSDC = Number(formatUnits(getAmountsOut[1] as bigint, 18)); // USDC now has 18 decimals
       setPrice(priceInUSDC);
     }
   }, [getAmountsOut]);

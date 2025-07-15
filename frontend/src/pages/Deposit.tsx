@@ -151,14 +151,14 @@ const Deposit = () => {
             setAmount={handleAmountChange}
             validateAmount={validateAmount}
             setError={setError}
-            maxAmount={Number(formatUnits(balance as bigint, 6))}
+            maxAmount={Number(formatUnits(balance as bigint, 18))}
             label="Amount to Deposit"
           />
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
-            Available Balance: {isLoadingBalance ? 'Loading...' : formatUnits(balance as bigint, 6)} USDC
+            Available Balance: {isLoadingBalance ? 'Loading...' : formatUnits(balance as bigint, 18)} USDC
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-            Current Allowance: {formatUnits(allowance as bigint, 6)} USDC
+            Current Allowance: {formatUnits(allowance as bigint, 18)} USDC
           </Typography>
         </div>
 

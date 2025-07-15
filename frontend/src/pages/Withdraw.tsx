@@ -125,8 +125,8 @@ const Withdraw = () => {
   }
 
   const balanceItems = [
-    `Tranche AAA: $${isLoadingBalanceAAA ? 'Loading...' : formatUnits(trancheAAABalance as bigint, 6)}`,
-    `Tranche AA: $${isLoadingBalanceAA ? 'Loading...' : formatUnits(trancheAABalance as bigint, 6)}`
+    `Tranche AAA: $${isLoadingBalanceAAA ? 'Loading...' : formatUnits(trancheAAABalance as bigint, 18)}`,
+    `Tranche AA: $${isLoadingBalanceAA ? 'Loading...' : formatUnits(trancheAABalance as bigint, 18)}`
   ];
 
   const infoItems = [
@@ -213,7 +213,7 @@ const Withdraw = () => {
         <Box>
           <InfoBox title="Available in Tranches" items={balanceItems} />
           <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 600, mt: 2, mb: 3 }}>
-            Total Available to Withdraw: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance as bigint, 6)} USDC
+            Total Available to Withdraw: {isLoadingBalances ? 'Loading...' : formatUnits(totalBalance as bigint, 18)} USDC
           </Typography>
 
           <AmountField
@@ -221,7 +221,7 @@ const Withdraw = () => {
             setAmount={handleAmountChange}
             validateAmount={validateAmount}
             setError={setError}
-            maxAmount={Number(formatUnits(totalBalance, 6))}
+            maxAmount={Number(formatUnits(totalBalance, 18))}
             label="Amount to Withdraw"
           />
         </Box>

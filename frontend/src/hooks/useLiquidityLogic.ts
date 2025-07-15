@@ -56,17 +56,17 @@ export const useLiquidityLogic = ({
     }
   });
 
-  // Format LP balance for UI (6 decimals for display)
+  // Format LP balance for UI (18 decimals - LP tokens are ERC20 with 18 decimals)
   const formattedLPBalance = useMemo(() => {
-    return formatUnits(lpBalance, 6);
+    return formatUnits(lpBalance, 18);
   }, [lpBalance]);
 
-  // Format LP allowance for UI (6 decimals for display)
+  // Format LP allowance for UI (18 decimals - LP tokens are ERC20 with 18 decimals)
   const formattedLPAllowance = useMemo(() => {
-    return formatUnits(lpAllowance, 6);
+    return formatUnits(lpAllowance, 18);
   }, [lpAllowance]);
 
-  // Amount form for LP token removal
+  // Amount form for LP token removal (18 decimals for LP tokens)
   const {
     amount: liquidityAmount,
     error: liquidityAmountError,
@@ -74,7 +74,7 @@ export const useLiquidityLogic = ({
     handleAmountChange: handleLiquidityAmountChange,
     validateAmount: validateLiquidityAmount,
     reset: resetLiquidityAmount,
-  } = useAmountForm(parseUnits(formattedLPBalance, 6), 1, 6);
+  } = useAmountForm(parseUnits(formattedLPBalance, 18), 1, 18);
 
   // Approval transaction
   const {
@@ -114,27 +114,25 @@ export const useLiquidityLogic = ({
     }
   });
 
-  // Calculate actual LP amount from UI amount
+  // Calculate actual LP amount from UI amount (simplified since we're using 18 decimals throughout)
   const calculateActualLPAmount = useCallback((uiAmountString: string) => {
     if (!lpBalance || lpBalance === 0n || !uiAmountString) return 0n;
-    const userInputAmount = Number(uiAmountString);
-    const maxUIDisplayAmount = Number(formatUnits(lpBalance, 6));
-    if (maxUIDisplayAmount === 0) return 0n;
 
-    // Use proper BigInt arithmetic to avoid precision loss
-    const userInputAmountInWei = parseUnits(uiAmountString, 6);
-    const maxAmountInWei = parseUnits(maxUIDisplayAmount.toString(), 6);
-    const actualAmount = (lpBalance * userInputAmountInWei) / maxAmountInWei;
+    // Since we're using 18 decimals consistently, just parse the user input directly
+    const actualAmount = parseUnits(uiAmountString, 18);
+
+    // Ensure we don't exceed the user's balance
+    const finalAmount = actualAmount > lpBalance ? lpBalance : actualAmount;
 
     console.log('LP Amount calculation:', {
       userInputAmount: uiAmountString,
-      userInputAmountInWei: userInputAmountInWei.toString(),
+      userInputAmountInWei: actualAmount.toString(),
       lpBalance: lpBalance.toString(),
-      maxUIDisplayAmount,
-      actualAmount: actualAmount.toString()
+      maxUIDisplayAmount: formatUnits(lpBalance, 18),
+      actualAmount: finalAmount.toString()
     });
 
-    return actualAmount;
+    return finalAmount;
   }, [lpBalance]);
 
   const actualLPAmount = useMemo(() =>

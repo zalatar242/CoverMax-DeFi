@@ -4,7 +4,7 @@ import { formatUnits } from 'viem';
 export const formatCMX = (value: any) => {
   // Ensure we're working with a number
   const numericValue = typeof value === 'bigint'
-    ? Number(formatUnits(value, 6))
+    ? Number(formatUnits(value, 18))
     : Number(value) || 0;
 
   // Always use 8 decimal places for small values to show micro-earnings
@@ -24,7 +24,7 @@ export const formatCMX = (value: any) => {
 export const formatUSDC = (value: any) => {
   // Convert bigint to string with proper decimals
   const formattedValue = typeof value === 'bigint'
-    ? Number(formatUnits(value, 6))
+    ? Number(formatUnits(value, 18))
     : Number(value);
 
   return new Intl.NumberFormat('en-US', {

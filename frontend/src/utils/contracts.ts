@@ -138,10 +138,10 @@ export const usePortfolioData = (): PortfolioData => {
   }, [tranches, tokenData, aaaData, aaData]);
 
   const result = {
-    // Tranche tokens use 6 decimals like USDC, not 18
-    trancheAAA: aaaData ? formatUnits(aaaData.balance as bigint, 6) : "0",
-    trancheAA: aaData ? formatUnits(aaData.balance as bigint, 6) : "0",
-    depositedValue: depositedValueData ? formatUnits(depositedValueData as bigint, 6) : "0",
+    // Tranche tokens now use 18 decimals (updated for consistency)
+    trancheAAA: aaaData ? formatUnits(aaaData.balance as bigint, 18) : "0",
+    trancheAA: aaData ? formatUnits(aaData.balance as bigint, 18) : "0",
+    depositedValue: depositedValueData ? formatUnits(depositedValueData as bigint, 18) : "0",
     isLoading: loadingDeposited,
     isError: errorDeposited,
     refetch: refetchAll
@@ -325,10 +325,10 @@ export const useProtocolStatus = (): ProtocolStatus => {
     status,
     phases,
     tvl: {
-      total: formatUnits(totalTVL as bigint, 6),
+      total: formatUnits(totalTVL as bigint, 18),
       byTranche: {
-        AAA: formatUnits(trancheAAASupply as bigint, 6),
-        AA: formatUnits(trancheAASupply as bigint, 6)
+        AAA: formatUnits(trancheAAASupply as bigint, 18),
+        AA: formatUnits(trancheAASupply as bigint, 18)
       }
     },
     isLoading,

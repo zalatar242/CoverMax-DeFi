@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /// @title Tranche tokens for the SplitInsurance contract
 /// @author Matthias Nadler, Felix Bekemeier, Fabian Schär
 contract Tranche is ERC20, Ownable {
-    uint8 private constant _decimals = 6;  // Match USDC decimals
+    uint8 private constant _decimals = 18; // Standard ERC20 decimals
 
     constructor(
         string memory name_,

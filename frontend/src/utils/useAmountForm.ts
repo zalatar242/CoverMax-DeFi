@@ -12,7 +12,7 @@ interface UseAmountFormReturn {
   amountInWei: bigint;
 }
 
-export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2, decimals: number = 6): UseAmountFormReturn => {
+export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2, decimals: number = 18): UseAmountFormReturn => {
   const [amount, setAmount] = useState<string>('');
   const [error, setError] = useState<string>('');
 

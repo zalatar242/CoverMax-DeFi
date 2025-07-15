@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract MockUSDC is ERC20 {
-    uint8 private _decimals = 6;
+    uint8 private _decimals = 18;
 
     constructor() ERC20("USD Coin", "USDC") {
         // Mint initial supply to deployer

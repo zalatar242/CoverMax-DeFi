@@ -147,7 +147,7 @@ const LiquidityPosition: React.FC<LiquidityPositionProps> = ({ token, symbol }) 
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="body2">Your LP Tokens:</Typography>
               <Typography variant="body2">
-                {Number(formatUnits(lpBalance as bigint, 6)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                {Number(formatUnits(lpBalance as bigint, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
               </Typography>
             </Stack>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -178,7 +178,7 @@ const LiquidityPosition: React.FC<LiquidityPositionProps> = ({ token, symbol }) 
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="body2" color="text.secondary">USDC:</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {Number(formatUnits(usdcReserve, 6)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    {Number(formatUnits(usdcReserve, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                   </Typography>
                 </Stack>
               </>

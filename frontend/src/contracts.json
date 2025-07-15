@@ -2,7 +2,7 @@
   "networks": {
     "passetHub": {
       "USDC": {
-        "address": "0xD17Aef210dEC93D3521950E18aB8783e4e488Fd4",
+        "address": "0x7F7aA5dc87A704B08C3B848153A7582aCC347f17",
         "abi": [
           {
             "type": "constructor",
@@ -480,7 +480,7 @@
         ]
       },
       "Insurance": {
-        "address": "0xBFBeD4E55F8d6fa19F0dd9986C7045eF45647dcd",
+        "address": "0x4E86Ed4bbEf7e9225049389B250aE6Bd8746cdA2",
         "abi": [
           {
             "type": "constructor",
@@ -984,7 +984,7 @@
         ]
       },
       "TrancheAAA": {
-        "address": "0x1c780207B0Ac77a93C10d9078C4F51Fcf94C7145",
+        "address": "0xd264f67f7Be1BC8a063CE8662d27dFCFaaf1C3Ad",
         "abi": [
           {
             "type": "constructor",
@@ -1607,7 +1607,7 @@
         ]
       },
       "TrancheAA": {
-        "address": "0xc4a1bb44c3BB4886019210993834971CfCe52DF2",
+        "address": "0x0Fcd0Ba161274e750B333118A7C8D5AA6486F86e",
         "abi": [
           {
             "type": "constructor",
@@ -2230,7 +2230,7 @@
         ]
       },
       "AaveLendingAdapter": {
-        "address": "0x9A96b128161cFc0C42f9e05cCd4dD2EAE54B6515",
+        "address": "0xAb6960309C9A6A705773d7e6c0c3b085a74900fF",
         "abi": [
           {
             "type": "constructor",
@@ -2501,7 +2501,7 @@
         ]
       },
       "MoonwellLendingAdapter": {
-        "address": "0x820d093ABA5cEC9D7dd0096A77660287D96BB2B6",
+        "address": "0x9492e699F4D38Dc98527C67172c9706F9e713578",
         "abi": [
           {
             "type": "constructor",
@@ -2745,7 +2745,7 @@
         ]
       },
       "UniswapV2Factory": {
-        "address": "0xEF76a5cd6AE0B6fc1cCA68df3398De44AC4c73Ba",
+        "address": "0xd0EF6F0E57189d6B3C11998BB7039d3B9eA69F79",
         "abi": [
           {
             "type": "constructor",
@@ -3003,7 +3003,7 @@
         ]
       },
       "UniswapV2Router02": {
-        "address": "0xCca3E8C9Cb2AE9DcD74C29f53804A1217fB6FBfe",
+        "address": "0xc928b38524404e16B4fA6D69F8a58D830bf50A89",
         "abi": [
           {
             "type": "constructor",
@@ -3304,6 +3304,90 @@
             "type": "function",
             "inputs": [
               {
+                "name": "tokenA",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "tokenB",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "liquidity",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountAMin",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountBMin",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "to",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "deadline",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "removeLiquidity",
+            "constant": false,
+            "outputs": [
+              {
+                "name": "amountA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "amountB",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "nonpayable",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
                 "name": "amountOutMin",
                 "type": "uint256",
                 "baseType": "uint256",
@@ -3439,95 +3523,11 @@
             "stateMutability": "nonpayable",
             "payable": false,
             "gas": null
-          },
-          {
-            "type": "function",
-            "inputs": [
-              {
-                "name": "tokenA",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "tokenB",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "liquidity",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountAMin",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountBMin",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "to",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "deadline",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "name": "removeLiquidity",
-            "constant": false,
-            "outputs": [
-              {
-                "name": "amountA",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountB",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "stateMutability": "nonpayable",
-            "payable": false,
-            "gas": null
           }
         ]
       },
       "InsuranceTimeManager": {
-        "address": "0xB960eC68282Ab2d9BfB5b93e00D046416BccDCc2",
+        "address": "0x47cB8F60C35619A18f94A6CF21769936A7B05347",
         "abi": [
           {
             "type": "constructor",
@@ -3894,7 +3894,7 @@
         ]
       },
       "InsuranceClaimManager": {
-        "address": "0x7C16d360f88e502DC241aCC7E705249Bcf6D6dC5",
+        "address": "0x8a62dC74EC8Ce97ecCFfD073A7Ba9Dd25b220DF2",
         "abi": [
           {
             "type": "constructor",
