@@ -3,30 +3,29 @@ import { Typography, Stack, Paper, Divider, CircularProgress } from '@mui/materi
 import { useReadContract } from 'wagmi';
 import { formatUnits } from 'viem';
 import { useWalletConnection } from '../../utils/walletConnector';
-import { useMainConfig, useContractsConfig } from '../../utils/contractConfig';
+import { useContractsConfig, useTranchesConfig } from '../../utils/contractConfig';
 
 interface LiquidityPositionProps {
-  token: string;
-  symbol: string;
+  // Remove individual token props since we only have one AAA-AA pool now
 }
 
-const LiquidityPosition: React.FC<LiquidityPositionProps> = ({ token, symbol }) => {
+const LiquidityPosition: React.FC<LiquidityPositionProps> = () => {
   const { address } = useWalletConnection();
-  const { USDC } = useMainConfig();
+  const { AAA, AA } = useTranchesConfig();
   const contracts = useContractsConfig();
   const UniswapV2Factory = contracts?.UniswapV2Factory;
 
-  const normalizedToken = token?.toLowerCase();
-  const normalizedUSDC = USDC?.address?.toLowerCase();
+  const normalizedAAA = AAA?.address?.toLowerCase();
+  const normalizedAA = AA?.address?.toLowerCase();
   const factoryAddress = UniswapV2Factory?.address;
 
   const { data: pairAddress, error: pairError } = useReadContract({
     address: factoryAddress as `0x${string}`,
     abi: UniswapV2Factory?.abi,
     functionName: 'getPair',
-    args: [normalizedToken as `0x${string}`, normalizedUSDC as `0x${string}`],
+    args: [normalizedAAA as `0x${string}`, normalizedAA as `0x${string}`],
     query: {
-      enabled: Boolean(normalizedToken && normalizedUSDC && factoryAddress && UniswapV2Factory?.abi),
+      enabled: Boolean(normalizedAAA && normalizedAA && factoryAddress && UniswapV2Factory?.abi),
     }
   });
 
@@ -52,17 +51,6 @@ const LiquidityPosition: React.FC<LiquidityPositionProps> = ({ token, symbol }) 
       enabled: Boolean((pairAddress as string) && (pairAddress as string) !== '0x0000000000000000000000000000000000000000'),
     },
   });
-
-  const { data: tokenDecimals } = useReadContract({
-    address: token as `0x${string}`,
-    abi: [{ type: 'function', name: 'decimals', constant: true, stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8', name: '' }] }],
-    functionName: 'decimals',
-    query: {
-      enabled: Boolean(token),
-    }
-  });
-
-  const actualTokenDecimals = tokenDecimals ?? 18;
 
   const lpTokenABI = [
     { type: 'function', name: 'balanceOf', constant: true, stateMutability: 'view', inputs: [{ type: 'address', name: 'account' }], outputs: [{ type: 'uint256', name: '' }] },
@@ -93,27 +81,27 @@ const LiquidityPosition: React.FC<LiquidityPositionProps> = ({ token, symbol }) 
     return (Number(lpBalance) / Number(totalSupply)) * 100;
   }, [lpBalance, totalSupply]);
 
-  const [tokenReserve, usdcReserve] = useMemo(() => {
+  const [aaaReserve, aaReserve] = useMemo(() => {
     if (!reserves || !token0) return [0n, 0n];
-    const currentTokenNormalized = token?.toLowerCase();
+    const aaaTokenNormalized = AAA?.address?.toLowerCase();
     const token0Normalized = (token0 as string)?.toLowerCase();
-    return currentTokenNormalized === token0Normalized
+    return aaaTokenNormalized === token0Normalized
       ? [(reserves as any)?.[0] || 0n, (reserves as any)?.[1] || 0n]
       : [(reserves as any)?.[1] || 0n, (reserves as any)?.[0] || 0n];
-  }, [reserves, token0, token]);
+  }, [reserves, token0, AAA?.address]);
 
   useEffect(() => {
     if (pairError) {
-      console.error(`Error fetching pair for ${symbol}:`, pairError.message);
+      console.error('Error fetching AAA/AA pair:', pairError.message);
     }
-  }, [pairError, symbol]);
+  }, [pairError]);
 
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Stack spacing={1}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Typography variant="subtitle1">
-            {symbol}/USDC Pool
+            AAA/AA Pool
           </Typography>
           <Stack direction="row" spacing={1} alignItems="center">
             {!pairAddress && !pairError && (
@@ -170,15 +158,15 @@ const LiquidityPosition: React.FC<LiquidityPositionProps> = ({ token, symbol }) 
             ) : (
               <>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">{symbol}:</Typography>
+                  <Typography variant="body2" color="text.secondary">AAA:</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {Number(formatUnits(tokenReserve, actualTokenDecimals)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                    {Number(formatUnits(aaaReserve, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
                   </Typography>
                 </Stack>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" color="text.secondary">USDC:</Typography>
+                  <Typography variant="body2" color="text.secondary">AA:</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {Number(formatUnits(usdcReserve, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    {Number(formatUnits(aaReserve, 18)).toLocaleString(undefined, { maximumFractionDigits: 4 })}
                   </Typography>
                 </Stack>
               </>

@@ -58,9 +58,8 @@ const Trade = () => {
 
       {/* Your Liquidity Positions */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>Your Liquidity Positions</Typography>
-        {AAA?.address && <LiquidityPosition key={`aaa-lp-${refreshKey}`} token={AAA.address} symbol="AAA" />}
-        {AA?.address && <LiquidityPosition key={`aa-lp-${refreshKey}`} token={AA.address} symbol="AA" />}
+        <Typography variant="h6" sx={{ mb: 2 }}>Your Liquidity Position</Typography>
+        <LiquidityPosition key={`aaa-aa-lp-${refreshKey}`} />
       </Paper>
 
             {/* Navigation Tabs */}

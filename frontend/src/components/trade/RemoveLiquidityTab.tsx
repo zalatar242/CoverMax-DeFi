@@ -2,14 +2,13 @@ import React from 'react';
 import { Button, Stack, CircularProgress, Typography } from '@mui/material';
 import { Remove } from '@mui/icons-material';
 import { useWalletConnection } from '../../utils/walletConnector';
-import { useMainConfig, useTranchesConfig, useContractsConfig } from '../../utils/contractConfig';
+import { useTranchesConfig, useContractsConfig } from '../../utils/contractConfig';
 import { formatUnits } from 'viem';
-import { useLiquidityLogic } from '../../hooks/useLiquidityLogic';
+import { useRemoveLiquidityLogicAAA } from '../../hooks/useRemoveLiquidityLogicAAA';
 import {
   ContentCard,
   AmountField,
-  TransactionAlerts,
-  TokenSelect
+  TransactionAlerts
 } from '../ui';
 
 interface RemoveLiquidityTabProps {
@@ -18,35 +17,28 @@ interface RemoveLiquidityTabProps {
 
 const RemoveLiquidityTab: React.FC<RemoveLiquidityTabProps> = ({ onTransactionSuccess }) => {
   const { isConnected, address } = useWalletConnection();
-  const { USDC, UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
   const contracts = useContractsConfig();
+  const UniswapV2Router02 = contracts?.UniswapV2Router02;
   const UniswapV2Factory = contracts?.UniswapV2Factory;
 
-  const trancheTokens = [
-    { address: AAA?.address, symbol: 'AAA' },
-    { address: AA?.address, symbol: 'AA' },
-  ].filter(token => token.address);
-
-  const liquidityLogic = useLiquidityLogic({
+  const liquidityLogic = useRemoveLiquidityLogicAAA({
     userAddress: address,
     routerConfig: UniswapV2Router02,
     factoryConfig: UniswapV2Factory,
-    usdcConfig: USDC,
+    tokenAConfig: AAA,
+    tokenBConfig: AA,
     onTransactionSuccess
   });
 
   const {
-    selectedToken,
-    setSelectedToken,
-    lpAllowance,
     formattedLPBalance,
     formattedLPAllowance,
     liquidityAmount,
     liquidityAmountError,
     setLiquidityError,
     handleLiquidityAmountChange,
-    validateLiquidityAmount,
+    maxAmount,
     handleApprove,
     handleRemoveLiquidity,
     isApproving,
@@ -60,35 +52,31 @@ const RemoveLiquidityTab: React.FC<RemoveLiquidityTabProps> = ({ onTransactionSu
     removeSuccess
   } = liquidityLogic;
 
-  const tokenSymbol = trancheTokens.find(t => t.address === selectedToken)?.symbol || '';
-
   return (
-    <ContentCard title="Remove Liquidity (Token/USDC)">
+    <ContentCard title="Remove Liquidity (AAA/AA Pool)">
       <TransactionAlerts
         error={liquidityAmountError || removeError || approveError}
         success={removeSuccess || approveSuccess}
       />
       <Stack spacing={3}>
         <div>
-          <TokenSelect
-            token={selectedToken}
-            onTokenChange={setSelectedToken}
-            tokens={trancheTokens}
-            label="Select Token from Pool"
-          />
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Remove Liquidity from AAA/AA Pool
+          </Typography>
           <AmountField
             amount={liquidityAmount}
             setAmount={handleLiquidityAmountChange}
             setError={setLiquidityError}
-            maxAmount={Number(formattedLPBalance)}
+            maxAmount={maxAmount}
             label="Amount of LP Tokens to Remove"
           />
           <Typography variant="body2" sx={{ color: 'text.secondary', mt: 2, mb: 1 }}>
             Your LP Token Balance: {Number(formattedLPBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })}
-            {' '}({tokenSymbol}/USDC LP)
+            {' '}AAA/AA LP
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
             Your LP Token Allowance: {Number(formattedLPAllowance).toLocaleString(undefined, { maximumFractionDigits: 6 })}
+            {' '}AAA/AA LP
           </Typography>
         </div>
 

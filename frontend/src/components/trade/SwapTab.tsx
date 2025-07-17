@@ -19,13 +19,12 @@ interface SwapTabProps {
 
 const SwapTab: React.FC<SwapTabProps> = ({ onTransactionSuccess }) => {
   const { isConnected, address } = useWalletConnection();
-  const { USDC, UniswapV2Router02 } = useMainConfig();
+  const { UniswapV2Router02 } = useMainConfig();
   const { AAA, AA } = useTranchesConfig();
 
   const trancheTokens = [
     { address: AAA?.address, symbol: 'AAA', abi: AAA?.abi, decimals: AAA?.decimals },
-    { address: AA?.address, symbol: 'AA', abi: AA?.abi, decimals: AA?.decimals },
-    { address: USDC?.address, symbol: 'USDC', abi: USDC?.abi, decimals: USDC?.decimals }
+    { address: AA?.address, symbol: 'AA', abi: AA?.abi, decimals: AA?.decimals }
   ].filter(token => token.address);
 
   // Get token data for all tokens
