@@ -122,9 +122,10 @@ export const usePortfolioData = (): PortfolioData => {
   const aaaData = tokenData[tranches?.AAA?.address?.toLowerCase()];
   const aaData = tokenData[tranches?.AA?.address?.toLowerCase()];
 
-  // Debug logging
+  // Enhanced debug logging
   React.useEffect(() => {
     if (tranches?.AAA?.address && tranches?.AA?.address) {
+      console.log('=== PORTFOLIO DATA DEBUG ===');
       console.log('Tranche addresses:', {
         AAA: tranches.AAA.address,
         AA: tranches.AA.address,
@@ -134,8 +135,26 @@ export const usePortfolioData = (): PortfolioData => {
       console.log('Token data keys:', Object.keys(tokenData));
       console.log('AAA balance data:', aaaData);
       console.log('AA balance data:', aaData);
+      console.log('User address:', address);
+      console.log('Is connected:', isConnected);
+
+      // Check if token data exists and has valid balances
+      if (aaaData) {
+        console.log('AAA Token - Balance:', aaaData.balance?.toString(), 'Decimals:', aaaData.decimals);
+        console.log('AAA Token - isLoading:', aaaData.isLoading);
+      } else {
+        console.log('AAA Token data not found');
+      }
+
+      if (aaData) {
+        console.log('AA Token - Balance:', aaData.balance?.toString(), 'Decimals:', aaData.decimals);
+        console.log('AA Token - isLoading:', aaData.isLoading);
+      } else {
+        console.log('AA Token data not found');
+      }
+      console.log('=== END DEBUG ===');
     }
-  }, [tranches, tokenData, aaaData, aaData]);
+  }, [tranches, tokenData, aaaData, aaData, address, isConnected]);
 
   const result = {
     // Tranche tokens now use 18 decimals (updated for consistency)

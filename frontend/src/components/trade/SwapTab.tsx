@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button, Stack, CircularProgress, Typography } from '@mui/material';
 import { SwapHoriz } from '@mui/icons-material';
 import { useWalletConnection } from '../../utils/walletConnector';
@@ -64,8 +64,25 @@ const SwapTab: React.FC<SwapTabProps> = ({ onTransactionSuccess }) => {
     toToken
   } = swapLogic;
 
-  const fromTokenInfo = trancheTokens.find(t => t.address === selectedFromToken);
-  const toTokenInfo = trancheTokens.find(t => t.address === selectedToToken);
+  // Initialize token selection when tokens are available
+  useEffect(() => {
+    if (trancheTokens.length > 0) {
+      const validFromToken = trancheTokens.find(t => t.address?.toLowerCase() === selectedFromToken?.toLowerCase());
+      const validToToken = trancheTokens.find(t => t.address?.toLowerCase() === selectedToToken?.toLowerCase());
+
+      // If selected tokens are not valid (e.g., old addresses), reset them
+      if (!validFromToken) {
+        setSelectedFromToken(trancheTokens[0]?.address || '');
+      }
+      if (!validToToken || validToToken.address === selectedFromToken) {
+        const toTokenIndex = selectedFromToken === trancheTokens[0]?.address ? 1 : 0;
+        setSelectedToToken(trancheTokens[toTokenIndex]?.address || '');
+      }
+    }
+  }, [trancheTokens, selectedFromToken, selectedToToken, setSelectedFromToken, setSelectedToToken]);
+
+  const fromTokenInfo = trancheTokens.find(t => t.address?.toLowerCase() === selectedFromToken?.toLowerCase());
+  const toTokenInfo = trancheTokens.find(t => t.address?.toLowerCase() === selectedToToken?.toLowerCase());
 
   return (
     <ContentCard title="Swap Tranches">

@@ -392,6 +392,7 @@ async function main(): Promise<void> {
       }
     }
 
+
     // Initialize Adapter Manager
     const adapterManager = await getDeployedContract("InsuranceAdapterManager", adapterManagerAddress);
     try {
@@ -406,7 +407,7 @@ async function main(): Promise<void> {
       }
     }
 
-    // Set tranches in Insurance Core and transfer ownership
+    // Transfer tranche ownership and set tranches in Insurance Core
     try {
       const currentAAA = await (insuranceCore as any).AAA();
       const currentAA = await (insuranceCore as any).AA();
@@ -416,18 +417,35 @@ async function main(): Promise<void> {
         const trancheAAA = await getDeployedContract("Tranche", deployments.TrancheAAA);
         const trancheAA = await getDeployedContract("Tranche", deployments.TrancheAA);
 
-        await (trancheAAA as any).transferOwnership(insuranceCoreAddress);
-        await (trancheAA as any).transferOwnership(insuranceCoreAddress);
+        // Transfer ownership first
+        const tx1 = await (trancheAAA as any).transferOwnership(insuranceCoreAddress);
+        await tx1.wait();
+        console.log("✅ TrancheAAA ownership transferred to Insurance Core");
 
-        console.log("⚙️ Setting tranches in Insurance Core...");
-        const tx = await (insuranceCore as any).setTranches(deployments.TrancheAAA, deployments.TrancheAA);
-        await tx.wait();
-        console.log("✅ Tranches set in Insurance Core");
+        const tx2 = await (trancheAA as any).transferOwnership(insuranceCoreAddress);
+        await tx2.wait();
+        console.log("✅ TrancheAA ownership transferred to Insurance Core");
+
+        // Then set tranches in Insurance Core
+        console.log("⚙️ Setting tranche addresses in Insurance Core...");
+        const tx3 = await (insuranceCore as any).setTranches(deployments.TrancheAAA, deployments.TrancheAA);
+        await tx3.wait();
+        console.log("✅ Tranche addresses set in Insurance Core");
+
+        // Verify the configuration
+        const verifyAAA = await (insuranceCore as any).AAA();
+        const verifyAA = await (insuranceCore as any).AA();
+        console.log("✅ Verified tranche addresses in Insurance Core:");
+        console.log(`  AAA: ${verifyAAA}`);
+        console.log(`  AA: ${verifyAA}`);
       } else {
         console.log("✅ Tranches already set in Insurance Core");
+        console.log(`  AAA: ${currentAAA}`);
+        console.log(`  AA: ${currentAA}`);
       }
     } catch (error: any) {
-      console.log("Note: Tranches might already be set or there was an issue setting them");
+      console.error("❌ Error setting up tranches:", error.message);
+      throw error; // Don't continue if tranche setup fails
     }
 
     // Add lending adapters to Adapter Manager
@@ -452,25 +470,18 @@ async function main(): Promise<void> {
     console.log("\n--- Creating Uniswap Pairs ---");
     const factory = await getDeployedContract("UniswapV2Factory", uniswapFactoryAddress);
 
-    // Check if AAA/USDC pair exists
-    const aaaUsdcPair = await (factory as any).getPair(deployments.TrancheAAA, deployments.MockUSDC);
-    if (aaaUsdcPair === "0x0000000000000000000000000000000000000000") {
-      console.log("Creating AAA/USDC pair...");
-      await waitForConfirmations((factory as any).createPair(deployments.TrancheAAA, deployments.MockUSDC));
-      console.log("Created AAA/USDC pair");
+    // Check if AAA/AA pair exists (refactored from separate USDC pairs)
+    const aaaAaPair = await (factory as any).getPair(deployments.TrancheAAA, deployments.TrancheAA);
+    if (aaaAaPair === "0x0000000000000000000000000000000000000000") {
+      console.log("Creating AAA/AA pair...");
+      await waitForConfirmations((factory as any).createPair(deployments.TrancheAAA, deployments.TrancheAA));
+      console.log("Created AAA/AA pair");
     } else {
-      console.log("✅ AAA/USDC pair already exists:", aaaUsdcPair);
+      console.log("✅ AAA/AA pair already exists:", aaaAaPair);
     }
 
-    // Check if AA/USDC pair exists
-    const aaUsdcPair = await (factory as any).getPair(deployments.TrancheAA, deployments.MockUSDC);
-    if (aaUsdcPair === "0x0000000000000000000000000000000000000000") {
-      console.log("Creating AA/USDC pair...");
-      await waitForConfirmations((factory as any).createPair(deployments.TrancheAA, deployments.MockUSDC));
-      console.log("Created AA/USDC pair");
-    } else {
-      console.log("✅ AA/USDC pair already exists:", aaUsdcPair);
-    }
+    // Get the pair address after creation
+    const aaaAaPairAddress = await (factory as any).getPair(deployments.TrancheAAA, deployments.TrancheAA);
 
     // Update frontend contracts.json
     console.log("\n--- Updating Frontend Configuration ---");
@@ -535,12 +546,8 @@ async function main(): Promise<void> {
         address: deployments.InsuranceClaimManager,
         abi: claimManagerArtifact.interface.fragments
       },
-      AAAUSDCPair: {
-        address: aaaUsdcPair,
-        abi: pairArtifact.interface.fragments
-      },
-      AAUSDCPair: {
-        address: aaUsdcPair,
+      AAAAPair: {
+        address: aaaAaPairAddress,
         abi: pairArtifact.interface.fragments
       }
     };
@@ -558,8 +565,7 @@ async function main(): Promise<void> {
     for (const key in deployments) {
       console.log(`  ${key}: ${deployments[key]}`);
     }
-    console.log(`  AAAUSDCPair: ${aaaUsdcPair}`);
-    console.log(`  AAUSDCPair: ${aaUsdcPair}`);
+    console.log(`  AAAAPair: ${aaaAaPairAddress}`);
 
     console.log("\n🎯 Next steps:");
     console.log("1. Fund your account with test tokens if needed");

@@ -46,12 +46,7 @@ export const useTokenData = (
   // Get fallback decimals based on token type
   const getDecimalsFallback = (address: string | undefined): number => {
     if (!address) return 18;
-    const lowerAddress = address.toLowerCase();
-    // USDC typically uses 6 decimals
-    if (lowerAddress === '0xd17aef210dec93d3521950e18ab8783e4e488fd4') {
-      return 6;
-    }
-    // Default to 18 for other tokens
+    // All tokens now use 18 decimals (including USDC)
     return 18;
   };
 

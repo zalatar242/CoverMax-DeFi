@@ -127,6 +127,21 @@ export const useAddLiquidityLogic = ({
 
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 
+    // Calculate minimum amounts with 5% slippage tolerance
+    const minAmountToken = (liquidityAmountInWei * 95n) / 100n;
+    const minAmountUSDC = (liquidityAmountInWei * 95n) / 100n;
+
+    console.log('Adding liquidity with params:', {
+      tokenA: selectedToken,
+      tokenB: usdcConfig.address,
+      amountADesired: liquidityAmountInWei.toString(),
+      amountBDesired: liquidityAmountInWei.toString(),
+      amountAMin: minAmountToken.toString(),
+      amountBMin: minAmountUSDC.toString(),
+      to: userAddress,
+      deadline
+    });
+
     await handleAddTransaction(async () => {
       const hash = await writeContractAsync({
         address: routerConfig.address as `0x${string}`,
@@ -137,8 +152,8 @@ export const useAddLiquidityLogic = ({
           usdcConfig.address as `0x${string}`,
           liquidityAmountInWei,
           liquidityAmountInWei, // Assuming 1:1 for simplicity
-          0, // Min amounts
-          0,
+          minAmountToken,
+          minAmountUSDC,
           userAddress as `0x${string}`,
           deadline
         ]

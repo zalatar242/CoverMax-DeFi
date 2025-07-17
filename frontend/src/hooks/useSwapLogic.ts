@@ -23,8 +23,8 @@ export const useSwapLogic = ({
 
   const { writeContractAsync } = useWriteContract();
 
-  const fromToken = fromTokenData[selectedFromToken];
-  const toToken = toTokenData[selectedToToken];
+  const fromToken = fromTokenData[selectedFromToken?.toLowerCase()];
+  const toToken = toTokenData[selectedToToken?.toLowerCase()];
 
   const {
     amount: swapAmount,
@@ -34,7 +34,7 @@ export const useSwapLogic = ({
     validateAmount: validateSwapAmount,
     reset: resetSwapAmount,
     amountInWei: swapAmountInWei
-  } = useAmountForm(fromToken?.balance || 0n, 2);
+  } = useAmountForm(fromToken?.balance || 0n, 2, fromToken?.decimals || 18);
 
   // Approval transaction
   const {
@@ -80,9 +80,12 @@ export const useSwapLogic = ({
   }, [fromToken, routerConfig, selectedFromToken, swapAmountInWei, handleApproveTransaction, writeContractAsync]);
 
   const handleSwap = useCallback(async () => {
-    if (!routerConfig || !userAddress) return;
+    if (!routerConfig || !userAddress || !selectedFromToken || !selectedToToken) return;
 
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
+    
+    // Calculate minimum output with 2% slippage
+    const minAmountOut = (swapAmountInWei * 98n) / 100n;
 
     await handleSwapTransaction(async () => {
       const hash = await writeContractAsync({
@@ -91,11 +94,13 @@ export const useSwapLogic = ({
         functionName: 'swapExactTokensForTokens',
         args: [
           swapAmountInWei,
-          0n, // Min output amount
+          minAmountOut,
           [selectedFromToken as `0x${string}`, selectedToToken as `0x${string}`],
           userAddress as `0x${string}`,
           deadline
-        ]
+        ],
+        gas: 300000n, // Explicit gas limit
+        gasPrice: 1000000000n // 1 gwei
       });
       return hash;
     });
@@ -121,9 +126,10 @@ export const useSwapLogic = ({
     swapAmount &&
     selectedFromToken &&
     selectedToToken &&
+    validateSwapAmount(swapAmount) &&
     !needsApproval &&
     !isSwapping,
-    [swapAmount, selectedFromToken, selectedToToken, needsApproval, isSwapping]
+    [swapAmount, selectedFromToken, selectedToToken, validateSwapAmount, needsApproval, isSwapping]
   );
 
   return {

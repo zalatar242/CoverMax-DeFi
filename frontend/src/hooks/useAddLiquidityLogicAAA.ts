@@ -246,6 +246,21 @@ export const useAddLiquidityLogicAAA = ({
 
     const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
 
+    // Calculate minimum amounts with 5% slippage tolerance
+    const minAmountA = (amountAInWei * 95n) / 100n;
+    const minAmountB = (amountBInWei * 95n) / 100n;
+
+    console.log('Adding liquidity with params:', {
+      tokenA: tokenAConfig.address,
+      tokenB: tokenBConfig.address,
+      amountADesired: amountAInWei.toString(),
+      amountBDesired: amountBInWei.toString(),
+      amountAMin: minAmountA.toString(),
+      amountBMin: minAmountB.toString(),
+      to: userAddress,
+      deadline
+    });
+
     await handleAddTransaction(async () => {
       const hash = await writeContractAsync({
         address: routerConfig.address as `0x${string}`,
@@ -256,8 +271,8 @@ export const useAddLiquidityLogicAAA = ({
           tokenBConfig.address as `0x${string}`,
           amountAInWei,
           amountBInWei,
-          0, // Min amounts
-          0,
+          minAmountA,
+          minAmountB,
           userAddress as `0x${string}`,
           deadline
         ]

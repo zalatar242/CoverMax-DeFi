@@ -12,7 +12,7 @@ interface UseAmountFormReturn {
   amountInWei: bigint;
 }
 
-export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2): UseAmountFormReturn => {
+export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2, decimals: number = 18): UseAmountFormReturn => {
   const [amount, setAmount] = useState<string>('');
   const [error, setError] = useState<string>('');
 
@@ -24,7 +24,7 @@ export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2
 
   const handleMaxAmount = () => {
     if (!maxAmount) return;
-    const formattedMax = Number(formatUnits(maxAmount, 18)); // All tokens use 18 decimals
+    const formattedMax = Number(formatUnits(maxAmount, decimals));
     const roundedAmount = Math.floor(formattedMax / minDivisibleBy) * minDivisibleBy;
     setAmount(roundedAmount.toString());
   };
@@ -43,7 +43,7 @@ export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2
       } else if (!validateAmount(value)) {
         setError('Amount must be even to ensure equal distribution between AAA and AA tranches');
       } else {
-        const valueInWei = BigInt(Math.floor(parseFloat(value) * 1e18)); // Convert to wei (18 decimals)
+        const valueInWei = BigInt(Math.floor(parseFloat(value) * Math.pow(10, decimals)));
         if (maxAmount !== 0n && valueInWei > maxAmount) {
           setError('Amount exceeds your available balance');
         } else {
@@ -72,6 +72,6 @@ export const useAmountForm = (maxAmount: bigint = 0n, minDivisibleBy: number = 2
     handleMaxAmount,
     validateAmount,
     reset,
-    amountInWei: amount ? BigInt(Math.floor(parseFloat(amount) * 1e18)) : 0n // Convert to wei (18 decimals)
+    amountInWei: amount ? BigInt(Math.floor(parseFloat(amount) * Math.pow(10, decimals))) : 0n
   };
 };
