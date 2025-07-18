@@ -2745,7 +2745,7 @@
         ]
       },
       "UniswapV2Factory": {
-        "address": "0xa27148A5c4DbFaCA4794434E8BE4DDa3d3c7655D",
+        "address": "0x08D7e5EC7011C21B611061841B185800f39fDA9A",
         "abi": [
           {
             "type": "constructor",
@@ -3003,7 +3003,7 @@
         ]
       },
       "UniswapV2Router02": {
-        "address": "0xE87018F009De7d897A7AF36443Ba7Af25b73C449",
+        "address": "0xB5406FDEFADeD979b5eb1fC29D8125E66dd20196",
         "abi": [
           {
             "type": "constructor",
@@ -4245,7 +4245,7 @@
         ]
       },
       "AAAAPair": {
-        "address": "0xc5e33B88cc7C58DF0F1874D4305B642a1bF9Fbd3",
+        "address": "0x0000000000000000000000000000000000000000",
         "abi": [
           {
             "type": "constructor",

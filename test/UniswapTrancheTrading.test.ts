@@ -199,53 +199,34 @@ describe("Uniswap Tranche Token Trading", function () {
   });
 
   describe("Swap Tranche Tokens", function () {
+    let pairAAAAA: UniswapV2Pair;
+
     beforeEach(async function () {
-      // Create pairs and add liquidity
-      await uniswapFactory.createPair(await trancheAAA.getAddress(), await usdc.getAddress());
-      await uniswapFactory.createPair(await trancheAA.getAddress(), await usdc.getAddress());
+      // Create AAA/AA direct trading pair
+      await uniswapFactory.createPair(await trancheAAA.getAddress(), await trancheAA.getAddress());
 
-      pairAAAUSDC = await ethers.getContractAt(
+      pairAAAAA = await ethers.getContractAt(
         "UniswapV2Pair",
-        await uniswapFactory.getPair(await trancheAAA.getAddress(), await usdc.getAddress())
-      );
-      pairAAUSDC = await ethers.getContractAt(
-        "UniswapV2Pair",
-        await uniswapFactory.getPair(await trancheAA.getAddress(), await usdc.getAddress())
+        await uniswapFactory.getPair(await trancheAAA.getAddress(), await trancheAA.getAddress())
       );
 
-      // Add liquidity to both pools
+      // Add liquidity to AAA/AA pool
       const deadline = (await getCurrentTime()) + 3600;
 
-      // AAA/USDC pool (1:1 ratio)
+      // AAA/AA pool (2:1 ratio - AAA is safer so worth more AA tokens)
       await trancheAAA.connect(liquidityProvider).approve(
-        await uniswapRouter.getAddress(),
-        parseUnits("10000", 6)
-      );
-      await usdc.connect(liquidityProvider).approve(
         await uniswapRouter.getAddress(),
         parseUnits("20000", 6)
       );
-      await uniswapRouter.connect(liquidityProvider).addLiquidity(
-        await trancheAAA.getAddress(),
-        await usdc.getAddress(),
-        parseUnits("10000", 6),
-        parseUnits("10000", 6),
-        0,
-        0,
-        liquidityProvider.address,
-        deadline
-      );
-
-      // AA/USDC pool (1:2 ratio - reflecting higher risk)
       await trancheAA.connect(liquidityProvider).approve(
         await uniswapRouter.getAddress(),
-        parseUnits("5000", 6)
+        parseUnits("40000", 6)
       );
       await uniswapRouter.connect(liquidityProvider).addLiquidity(
+        await trancheAAA.getAddress(),
         await trancheAA.getAddress(),
-        await usdc.getAddress(),
-        parseUnits("5000", 6),
-        parseUnits("10000", 6),
+        parseUnits("20000", 6),
+        parseUnits("40000", 6),
         0,
         0,
         liquidityProvider.address,
@@ -253,57 +234,65 @@ describe("Uniswap Tranche Token Trading", function () {
       );
     });
 
-    it("Should swap AAA tokens for USDC", async function () {
+    it("Should swap AAA tokens for AA tokens", async function () {
       const amountIn = parseUnits("100", 6);
-      const path = [await trancheAAA.getAddress(), await usdc.getAddress()];
+      const path = [await trancheAAA.getAddress(), await trancheAA.getAddress()];
 
       await trancheAAA.connect(user1).approve(
         await uniswapRouter.getAddress(),
         amountIn
       );
 
-      const usdcBalanceBefore = await usdc.balanceOf(user1.address);
+      const aaBalanceBefore = await trancheAA.balanceOf(user1.address);
       const deadline = (await getCurrentTime()) + 3600;
 
       await uniswapRouter.connect(user1).swapExactTokensForTokens(
         amountIn,
-        0, // Accept any amount of USDC
+        0, // Accept any amount of AA
         path,
         user1.address,
         deadline
       );
 
-      const usdcBalanceAfter = await usdc.balanceOf(user1.address);
-      expect(usdcBalanceAfter).to.be.gt(usdcBalanceBefore);
+      const aaBalanceAfter = await trancheAA.balanceOf(user1.address);
+      expect(aaBalanceAfter).to.be.gt(aaBalanceBefore);
+
+      // Since AAA is safer (2:1 ratio), 100 AAA should get ~200 AA tokens
+      const received = aaBalanceAfter - aaBalanceBefore;
+      expect(received).to.be.gt(parseUnits("190", 6)); // Account for slippage
     });
 
-    it("Should swap AA tokens for USDC", async function () {
-      const amountIn = parseUnits("100", 6);
-      const path = [await trancheAA.getAddress(), await usdc.getAddress()];
+    it("Should swap AA tokens for AAA tokens", async function () {
+      const amountIn = parseUnits("200", 6);
+      const path = [await trancheAA.getAddress(), await trancheAAA.getAddress()];
 
       await trancheAA.connect(user2).approve(
         await uniswapRouter.getAddress(),
         amountIn
       );
 
-      const usdcBalanceBefore = await usdc.balanceOf(user2.address);
+      const aaaBalanceBefore = await trancheAAA.balanceOf(user2.address);
       const deadline = (await getCurrentTime()) + 3600;
 
       await uniswapRouter.connect(user2).swapExactTokensForTokens(
         amountIn,
-        0, // Accept any amount of USDC
+        0, // Accept any amount of AAA
         path,
         user2.address,
         deadline
       );
 
-      const usdcBalanceAfter = await usdc.balanceOf(user2.address);
-      expect(usdcBalanceAfter).to.be.gt(usdcBalanceBefore);
+      const aaaBalanceAfter = await trancheAAA.balanceOf(user2.address);
+      expect(aaaBalanceAfter).to.be.gt(aaaBalanceBefore);
+
+      // Since AA is riskier (1:2 ratio), 200 AA should get ~100 AAA tokens
+      const received = aaaBalanceAfter - aaaBalanceBefore;
+      expect(received).to.be.gt(parseUnits("95", 6)); // Account for slippage
     });
 
     it("Should handle slippage protection correctly", async function () {
       const amountIn = parseUnits("100", 6);
-      const path = [await trancheAAA.getAddress(), await usdc.getAddress()];
+      const path = [await trancheAAA.getAddress(), await trancheAA.getAddress()];
 
       // Get expected output
       const amounts = await uniswapRouter.getAmountsOut(amountIn, path);
