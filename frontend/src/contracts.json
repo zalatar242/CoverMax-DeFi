@@ -3003,7 +3003,7 @@
         ]
       },
       "UniswapV2Router02": {
-        "address": "0x0152c308424Ef706C036bbc6248014f946bfF550",
+        "address": "0xE87018F009De7d897A7AF36443Ba7Af25b73C449",
         "abi": [
           {
             "type": "constructor",
@@ -3149,90 +3149,6 @@
           },
           {
             "type": "function",
-            "inputs": [
-              {
-                "name": "token",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountTokenDesired",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountTokenMin",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountETHMin",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "to",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "deadline",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "name": "addLiquidityETH",
-            "constant": false,
-            "outputs": [
-              {
-                "name": "amountToken",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "amountETH",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "liquidity",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "stateMutability": "payable",
-            "payable": true,
-            "gas": null
-          },
-          {
-            "type": "function",
             "inputs": [],
             "name": "factory",
             "constant": true,
@@ -3247,6 +3163,50 @@
               }
             ],
             "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "amountIn",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "reserveIn",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "reserveOut",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "getAmountOut",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "amountOut",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "pure",
             "payable": false,
             "gas": null
           },
@@ -3296,7 +3256,87 @@
                 }
               }
             ],
-            "stateMutability": "pure",
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "tokenA",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "tokenB",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "getPair",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "pair",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
+            "payable": false,
+            "gas": null
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "tokenA",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "tokenB",
+                "type": "address",
+                "baseType": "address",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "name": "getReserves",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "reserveA",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              },
+              {
+                "name": "reserveB",
+                "type": "uint256",
+                "baseType": "uint256",
+                "components": null,
+                "arrayLength": null,
+                "arrayChildren": null
+              }
+            ],
+            "stateMutability": "view",
             "payable": false,
             "gas": null
           },
@@ -3382,72 +3422,6 @@
             ],
             "stateMutability": "nonpayable",
             "payable": false,
-            "gas": null
-          },
-          {
-            "type": "function",
-            "inputs": [
-              {
-                "name": "amountOutMin",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "path",
-                "type": "address[]",
-                "baseType": "array",
-                "components": null,
-                "arrayLength": -1,
-                "arrayChildren": {
-                  "name": "",
-                  "type": "address",
-                  "baseType": "address",
-                  "components": null,
-                  "arrayLength": null,
-                  "arrayChildren": null
-                }
-              },
-              {
-                "name": "to",
-                "type": "address",
-                "baseType": "address",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              },
-              {
-                "name": "deadline",
-                "type": "uint256",
-                "baseType": "uint256",
-                "components": null,
-                "arrayLength": null,
-                "arrayChildren": null
-              }
-            ],
-            "name": "swapExactETHForTokens",
-            "constant": false,
-            "outputs": [
-              {
-                "name": "amounts",
-                "type": "uint256[]",
-                "baseType": "array",
-                "components": null,
-                "arrayLength": -1,
-                "arrayChildren": {
-                  "name": "",
-                  "type": "uint256",
-                  "baseType": "uint256",
-                  "components": null,
-                  "arrayLength": null,
-                  "arrayChildren": null
-                }
-              }
-            ],
-            "stateMutability": "payable",
-            "payable": true,
             "gas": null
           },
           {
