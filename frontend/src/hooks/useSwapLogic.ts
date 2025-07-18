@@ -107,8 +107,7 @@ export const useSwapLogic = ({
           userAddress as `0x${string}`,
           deadline
         ],
-        gas: 300000n, // Explicit gas limit
-        gasPrice: 1000000000n // 1 gwei
+        gas: 300000n // Explicit gas limit - let wallet/RPC determine gas price automatically
       });
       return hash;
     });
