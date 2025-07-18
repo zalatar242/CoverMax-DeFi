@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
+import { TimeCalculator } from "./utils/TimeCalculator";
 
 // Load environment variables
 dotenv.config();
@@ -76,6 +77,105 @@ async function main() {
   const trancheAAAddress = await trancheAA.getAddress();
   console.log("✅ TrancheAA deployed at:", trancheAAAddress);
 
+  // Deploy Insurance System Components
+  console.log("\n--- Deploying Insurance System ---");
+  
+  // Deploy Calculator
+  console.log("Deploying InsuranceCalculator...");
+  const InsuranceCalculator = await ethers.getContractFactory("InsuranceCalculator");
+  const calculator = await InsuranceCalculator.deploy();
+  await calculator.waitForDeployment();
+  const calculatorAddress = await calculator.getAddress();
+  console.log("✅ InsuranceCalculator deployed at:", calculatorAddress);
+
+  // Deploy Adapter Manager
+  console.log("Deploying InsuranceAdapterManager...");
+  const InsuranceAdapterManager = await ethers.getContractFactory("InsuranceAdapterManager");
+  const adapterManager = await InsuranceAdapterManager.deploy();
+  await adapterManager.waitForDeployment();
+  const adapterManagerAddress = await adapterManager.getAddress();
+  console.log("✅ InsuranceAdapterManager deployed at:", adapterManagerAddress);
+
+  // Deploy Time Manager
+  console.log("Deploying InsuranceTimeManager...");
+  const InsuranceTimeManager = await ethers.getContractFactory("InsuranceTimeManager");
+  const timeManager = await InsuranceTimeManager.deploy();
+  await timeManager.waitForDeployment();
+  const timeManagerAddress = await timeManager.getAddress();
+  console.log("✅ InsuranceTimeManager deployed at:", timeManagerAddress);
+
+  // Deploy Claim Manager
+  console.log("Deploying InsuranceClaimManager...");
+  const InsuranceClaimManager = await ethers.getContractFactory("InsuranceClaimManager");
+  const claimManager = await InsuranceClaimManager.deploy();
+  await claimManager.waitForDeployment();
+  const claimManagerAddress = await claimManager.getAddress();
+  console.log("✅ InsuranceClaimManager deployed at:", claimManagerAddress);
+
+  // Deploy Insurance Core
+  console.log("Deploying InsuranceCore...");
+  const InsuranceCore = await ethers.getContractFactory("InsuranceCore");
+  const insuranceCore = await InsuranceCore.deploy();
+  await insuranceCore.waitForDeployment();
+  const insuranceCoreAddress = await insuranceCore.getAddress();
+  console.log("✅ InsuranceCore deployed at:", insuranceCoreAddress);
+
+  // Deploy Mock Lending Protocols
+  console.log("\n--- Deploying Mock Lending Protocols ---");
+  
+  // Deploy MockAToken
+  console.log("Deploying MockAToken...");
+  const MockAToken = await ethers.getContractFactory("MockAToken");
+  const aToken = await MockAToken.deploy(usdcAddress);
+  await aToken.waitForDeployment();
+  const aTokenAddress = await aToken.getAddress();
+  console.log("✅ MockAToken deployed at:", aTokenAddress);
+
+  // Deploy MockAavePool
+  console.log("Deploying MockAavePool...");
+  const MockAavePool = await ethers.getContractFactory("MockAavePool");
+  const aavePool = await MockAavePool.deploy(usdcAddress);
+  await aavePool.waitForDeployment();
+  const aavePoolAddress = await aavePool.getAddress();
+  console.log("✅ MockAavePool deployed at:", aavePoolAddress);
+
+  // Set aToken mapping in MockAavePool
+  console.log("Setting aToken for USDC in MockAavePool...");
+  await aavePool.setAToken(usdcAddress, aTokenAddress);
+  console.log("✅ aToken mapping set");
+
+  // Deploy MockAavePoolDataProvider
+  console.log("Deploying MockAavePoolDataProvider...");
+  const MockAavePoolDataProvider = await ethers.getContractFactory("MockAavePoolDataProvider");
+  const aaveDataProvider = await MockAavePoolDataProvider.deploy(usdcAddress, aTokenAddress);
+  await aaveDataProvider.waitForDeployment();
+  const aaveDataProviderAddress = await aaveDataProvider.getAddress();
+  console.log("✅ MockAavePoolDataProvider deployed at:", aaveDataProviderAddress);
+
+  // Deploy AaveLendingAdapter
+  console.log("Deploying AaveLendingAdapter...");
+  const AaveLendingAdapter = await ethers.getContractFactory("AaveLendingAdapter");
+  const aaveAdapter = await AaveLendingAdapter.deploy(aavePoolAddress, aaveDataProviderAddress);
+  await aaveAdapter.waitForDeployment();
+  const aaveAdapterAddress = await aaveAdapter.getAddress();
+  console.log("✅ AaveLendingAdapter deployed at:", aaveAdapterAddress);
+
+  // Deploy MockMToken (Moonwell)
+  console.log("Deploying MockMToken...");
+  const MockMToken = await ethers.getContractFactory("MockMToken");
+  const mToken = await MockMToken.deploy(usdcAddress);
+  await mToken.waitForDeployment();
+  const mTokenAddress = await mToken.getAddress();
+  console.log("✅ MockMToken deployed at:", mTokenAddress);
+
+  // Deploy MoonwellLendingAdapter
+  console.log("Deploying MoonwellLendingAdapter...");
+  const MoonwellLendingAdapter = await ethers.getContractFactory("MoonwellLendingAdapter");
+  const moonwellAdapter = await MoonwellLendingAdapter.deploy(mTokenAddress);
+  await moonwellAdapter.waitForDeployment();
+  const moonwellAdapterAddress = await moonwellAdapter.getAddress();
+  console.log("✅ MoonwellLendingAdapter deployed at:", moonwellAdapterAddress);
+
   // Create Uniswap pair for AAA/AA
   console.log("Creating AAA/AA pair...");
   const tx = await factory.createPair(trancheAAAAddress, trancheAAAddress);
@@ -101,6 +201,72 @@ async function main() {
     await trancheAA.mint(deployer.address, ethers.parseEther("50000"));
     console.log(`✅ Additional test tokens minted to your account: ${deployer.address}`);
   }
+
+  // Initialize Insurance System
+  console.log("\n--- Initializing Insurance System ---");
+  
+  // Initialize Time Manager
+  console.log("Initializing Time Manager...");
+  await timeManager.initialize(insuranceCoreAddress, claimManagerAddress);
+  console.log("✅ Time Manager initialized");
+
+  // Initialize Claim Manager
+  console.log("Initializing Claim Manager...");
+  await claimManager.initialize(
+    insuranceCoreAddress,
+    trancheAAAAddress,
+    trancheAAAddress,
+    usdcAddress,
+    adapterManagerAddress,
+    calculatorAddress,
+    timeManagerAddress
+  );
+  console.log("✅ Claim Manager initialized");
+
+  // Initialize Insurance Core
+  console.log("Initializing Insurance Core...");
+  await insuranceCore.initialize(
+    usdcAddress,
+    adapterManagerAddress,
+    timeManagerAddress,
+    claimManagerAddress
+  );
+  console.log("✅ Insurance Core initialized");
+
+  // Initialize Adapter Manager
+  console.log("Initializing Adapter Manager...");
+  await adapterManager.initialize(insuranceCoreAddress, usdcAddress);
+  console.log("✅ Adapter Manager initialized");
+
+  // Transfer tranche ownership to Insurance Core
+  console.log("Transferring tranche ownership to Insurance Core...");
+  await trancheAAA.transferOwnership(insuranceCoreAddress);
+  await trancheAA.transferOwnership(insuranceCoreAddress);
+  console.log("✅ Tranche ownership transferred");
+
+  // Set tranches in Insurance Core
+  console.log("Setting tranches in Insurance Core...");
+  await insuranceCore.setTranches(trancheAAAAddress, trancheAAAddress);
+  console.log("✅ Tranches set in Insurance Core");
+
+  // Set time periods in Time Manager
+  console.log("Setting time periods in Time Manager...");
+  const timePeriods = TimeCalculator.calculateTimePeriods();
+  const { S, T1, T2, T3 } = timePeriods;
+  await timeManager.setTimePeriods(S, T1, T2, T3);
+  console.log("✅ Time periods set in Time Manager");
+  console.log(`  S (Issuance end): ${new Date(S * 1000).toISOString()}`);
+  console.log(`  T1 (Insurance end): ${new Date(T1 * 1000).toISOString()}`);
+  console.log(`  T2 (AAA claims start): ${new Date(T2 * 1000).toISOString()}`);
+  console.log(`  T3 (Final claims end): ${new Date(T3 * 1000).toISOString()}`);
+
+  // Add lending adapters to Adapter Manager
+  console.log("Adding lending adapters to Adapter Manager...");
+  await adapterManager.addLendingAdapter(aaveAdapterAddress);
+  console.log("✅ Aave Lending Adapter added");
+  
+  await adapterManager.addLendingAdapter(moonwellAdapterAddress);
+  console.log("✅ Moonwell Lending Adapter added");
 
   // Add some initial liquidity to the pair
   console.log("Adding initial liquidity...");
@@ -133,7 +299,8 @@ async function main() {
     usdcAddress,
     trancheAAAAddress,
     trancheAAAddress,
-    pairAddress
+    pairAddress,
+    insuranceCoreAddress
   });
 
   console.log("\n=== Deployment Summary ===");
@@ -143,6 +310,7 @@ async function main() {
   console.log("TrancheAAA:", trancheAAAAddress);
   console.log("TrancheAA:", trancheAAAddress);
   console.log("AAA/AA Pair:", pairAddress);
+  console.log("InsuranceCore:", insuranceCoreAddress);
   console.log("✅ Frontend contracts.json updated successfully!");
 }
 
@@ -153,6 +321,7 @@ async function updateFrontendContracts(contracts: {
   trancheAAAAddress: string;
   trancheAAAddress: string;
   pairAddress: string;
+  insuranceCoreAddress: string;
 }) {
   const contractsPath = path.join(__dirname, "../frontend/src/contracts.json");
 
@@ -281,6 +450,112 @@ async function updateFrontendContracts(contracts: {
         {"name": "liquidity", "type": "uint256"}
       ],
       "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "inputs": [
+        {"name": "amountOut", "type": "uint256"},
+        {"name": "reserveIn", "type": "uint256"},
+        {"name": "reserveOut", "type": "uint256"}
+      ],
+      "name": "getAmountIn",
+      "constant": true,
+      "outputs": [{"name": "amountIn", "type": "uint256"}],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "inputs": [
+        {"name": "amountIn", "type": "uint256"},
+        {"name": "reserveIn", "type": "uint256"},
+        {"name": "reserveOut", "type": "uint256"}
+      ],
+      "name": "getAmountOut",
+      "constant": true,
+      "outputs": [{"name": "amountOut", "type": "uint256"}],
+      "stateMutability": "pure"
+    },
+    {
+      "type": "function",
+      "inputs": [
+        {"name": "amountIn", "type": "uint256"},
+        {"name": "path", "type": "address[]"}
+      ],
+      "name": "getAmountsOut",
+      "constant": true,
+      "outputs": [{"name": "amounts", "type": "uint256[]"}],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "inputs": [
+        {"name": "tokenA", "type": "address"},
+        {"name": "tokenB", "type": "address"},
+        {"name": "liquidity", "type": "uint256"},
+        {"name": "amountAMin", "type": "uint256"},
+        {"name": "amountBMin", "type": "uint256"},
+        {"name": "to", "type": "address"},
+        {"name": "deadline", "type": "uint256"}
+      ],
+      "name": "removeLiquidity",
+      "constant": false,
+      "outputs": [
+        {"name": "amountA", "type": "uint256"},
+        {"name": "amountB", "type": "uint256"}
+      ],
+      "stateMutability": "nonpayable"
+    }
+  ];
+
+  const factoryABI = [
+    {
+      "type": "function",
+      "inputs": [
+        {"name": "tokenA", "type": "address"},
+        {"name": "tokenB", "type": "address"}
+      ],
+      "name": "getPair",
+      "constant": true,
+      "outputs": [{"name": "pair", "type": "address"}],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "inputs": [
+        {"name": "tokenA", "type": "address"},
+        {"name": "tokenB", "type": "address"}
+      ],
+      "name": "createPair",
+      "constant": false,
+      "outputs": [{"name": "pair", "type": "address"}],
+      "stateMutability": "nonpayable"
+    }
+  ];
+
+  const insuranceABI = [
+    {
+      "type": "function",
+      "inputs": [{"name": "amount", "type": "uint256"}],
+      "name": "splitRisk",
+      "constant": false,
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "inputs": [],
+      "name": "AAA",
+      "constant": true,
+      "outputs": [{"name": "", "type": "address"}],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "inputs": [],
+      "name": "AA",
+      "constant": true,
+      "outputs": [{"name": "", "type": "address"}],
+      "stateMutability": "view"
     }
   ];
 
@@ -304,11 +579,15 @@ async function updateFrontendContracts(contracts: {
     },
     "UniswapV2Factory": {
       "address": contracts.factoryAddress,
-      "abi": []
+      "abi": factoryABI
     },
     "AAAAPair": {
       "address": contracts.pairAddress,
       "abi": []
+    },
+    "Insurance": {
+      "address": contracts.insuranceCoreAddress,
+      "abi": insuranceABI
     }
   };
 

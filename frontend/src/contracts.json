@@ -6222,7 +6222,7 @@
     },
     "localhost": {
       "USDC": {
-        "address": "0x99bbA657f2BbC93c02D617f8bA121cB8Fc104Acf",
+        "address": "0xD0141E899a65C95a556fE2B27e5982A6DE7fDD7A",
         "abi": [
           {
             "type": "function",
@@ -6406,7 +6406,7 @@
         ]
       },
       "TrancheAAA": {
-        "address": "0x0E801D84Fa97b50751Dbf25036d067dCf18858bF",
+        "address": "0x07882Ae1ecB7429a84f1D53048d35c4bB2056877",
         "abi": [
           {
             "type": "function",
@@ -6590,7 +6590,7 @@
         ]
       },
       "TrancheAA": {
-        "address": "0x8f86403A4DE0BB5791fa46B8e795C547942fE4Cf",
+        "address": "0x22753E4264FDDc6181dc7cce468904A80a363E44",
         "abi": [
           {
             "type": "function",
@@ -6774,7 +6774,7 @@
         ]
       },
       "UniswapV2Router02": {
-        "address": "0x4826533B4897376654Bb4d4AD88B7faFD0C98528",
+        "address": "0x34B40BA116d5Dec75548a9e9A8f15411461E8c70",
         "abi": [
           {
             "type": "function",
@@ -6863,16 +6863,225 @@
               }
             ],
             "stateMutability": "nonpayable"
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              },
+              {
+                "name": "reserveIn",
+                "type": "uint256"
+              },
+              {
+                "name": "reserveOut",
+                "type": "uint256"
+              }
+            ],
+            "name": "getAmountIn",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              }
+            ],
+            "stateMutability": "pure"
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "reserveIn",
+                "type": "uint256"
+              },
+              {
+                "name": "reserveOut",
+                "type": "uint256"
+              }
+            ],
+            "name": "getAmountOut",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "amountOut",
+                "type": "uint256"
+              }
+            ],
+            "stateMutability": "pure"
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "amountIn",
+                "type": "uint256"
+              },
+              {
+                "name": "path",
+                "type": "address[]"
+              }
+            ],
+            "name": "getAmountsOut",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "amounts",
+                "type": "uint256[]"
+              }
+            ],
+            "stateMutability": "view"
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "tokenA",
+                "type": "address"
+              },
+              {
+                "name": "tokenB",
+                "type": "address"
+              },
+              {
+                "name": "liquidity",
+                "type": "uint256"
+              },
+              {
+                "name": "amountAMin",
+                "type": "uint256"
+              },
+              {
+                "name": "amountBMin",
+                "type": "uint256"
+              },
+              {
+                "name": "to",
+                "type": "address"
+              },
+              {
+                "name": "deadline",
+                "type": "uint256"
+              }
+            ],
+            "name": "removeLiquidity",
+            "constant": false,
+            "outputs": [
+              {
+                "name": "amountA",
+                "type": "uint256"
+              },
+              {
+                "name": "amountB",
+                "type": "uint256"
+              }
+            ],
+            "stateMutability": "nonpayable"
           }
         ]
       },
       "UniswapV2Factory": {
-        "address": "0x70e0bA845a1A0F2DA3359C97E0285013525FFC49",
-        "abi": []
+        "address": "0xc96304e3c037f81dA488ed9dEa1D8F2a48278a75",
+        "abi": [
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "tokenA",
+                "type": "address"
+              },
+              {
+                "name": "tokenB",
+                "type": "address"
+              }
+            ],
+            "name": "getPair",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "pair",
+                "type": "address"
+              }
+            ],
+            "stateMutability": "view"
+          },
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "tokenA",
+                "type": "address"
+              },
+              {
+                "name": "tokenB",
+                "type": "address"
+              }
+            ],
+            "name": "createPair",
+            "constant": false,
+            "outputs": [
+              {
+                "name": "pair",
+                "type": "address"
+              }
+            ],
+            "stateMutability": "nonpayable"
+          }
+        ]
       },
       "AAAAPair": {
-        "address": "0x1eA968a3e70Cf2e9B1e70c1A4DE197c2E4794f25",
+        "address": "0x4741C3d015A6D1E2045aa6Fe27DCE5d5B52daa01",
         "abi": []
+      },
+      "Insurance": {
+        "address": "0x3155755b79aA083bd953911C92705B7aA82a18F9",
+        "abi": [
+          {
+            "type": "function",
+            "inputs": [
+              {
+                "name": "amount",
+                "type": "uint256"
+              }
+            ],
+            "name": "splitRisk",
+            "constant": false,
+            "outputs": [],
+            "stateMutability": "nonpayable"
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "AAA",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address"
+              }
+            ],
+            "stateMutability": "view"
+          },
+          {
+            "type": "function",
+            "inputs": [],
+            "name": "AA",
+            "constant": true,
+            "outputs": [
+              {
+                "name": "",
+                "type": "address"
+              }
+            ],
+            "stateMutability": "view"
+          }
+        ]
       }
     }
   }
