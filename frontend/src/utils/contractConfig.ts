@@ -10,12 +10,22 @@ const NETWORK_CONFIG = {
       symbol: 'DOT',
       decimals: 18
     }
+  },
+  localhost: {
+    name: 'Localhost Hardhat',
+    chainId: 31337,
+    rpcUrl: 'http://localhost:8545',
+    nativeCurrency: {
+      symbol: 'ETH',
+      decimals: 18
+    }
   }
 };
 
 // Network key mapping
 const NETWORK_KEYS: Record<number, string> = {
-  420420422: 'passetHub'
+  420420422: 'passetHub',
+  31337: 'localhost'
 };
 
 const getContractConfig = (contractName: string, currentNetwork: string) => {
