@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Button, Stack, CircularProgress, Typography } from '@mui/material';
+import { Button, Stack, CircularProgress, Typography, Box, TextField, InputAdornment } from '@mui/material';
 import { SwapHoriz } from '@mui/icons-material';
 import { useWalletConnection } from '../../utils/walletConnector';
 import { useMainConfig, useTranchesConfig } from '../../utils/contractConfig';
@@ -61,7 +61,11 @@ const SwapTab: React.FC<SwapTabProps> = ({ onTransactionSuccess }) => {
     approveSuccess,
     swapSuccess,
     fromToken,
-    toToken
+    toToken,
+    expectedOutputAmount,
+    minOutputAmount,
+    slippagePercentage,
+    setSlippagePercentage
   } = swapLogic;
 
   // Initialize token selection when tokens are available
@@ -123,6 +127,39 @@ const SwapTab: React.FC<SwapTabProps> = ({ onTransactionSuccess }) => {
               </Typography>
             </>
           )}
+
+          {/* Expected Output Display */}
+          {expectedOutputAmount > 0n && toTokenInfo && (
+            <Box sx={{ mt: 2, p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Expected Output: {formatUnits(expectedOutputAmount, toTokenInfo.decimals || 18)} {toTokenInfo.symbol}
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Minimum Received (after slippage): {formatUnits(minOutputAmount, toTokenInfo.decimals || 18)} {toTokenInfo.symbol}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Slippage Settings */}
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              size="small"
+              label="Slippage Tolerance"
+              value={slippagePercentage}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value) && value >= 0 && value <= 50) {
+                  setSlippagePercentage(value);
+                }
+              }}
+              type="number"
+              InputProps={{
+                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+              }}
+              helperText="Adjust slippage tolerance (0-50%)"
+              sx={{ width: '200px' }}
+            />
+          </Box>
         </div>
 
         <Stack direction="row" spacing={2}>
