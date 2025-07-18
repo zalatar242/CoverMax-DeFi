@@ -483,6 +483,67 @@ async function main(): Promise<void> {
     // Get the pair address after creation
     const aaaAaPairAddress = await (factory as any).getPair(deployments.TrancheAAA, deployments.TrancheAA);
 
+    // Add liquidity to AAA/AA pair
+    console.log("\n--- Adding Liquidity to AAA/AA Pair ---");
+    const router = await getDeployedContract("UniswapV2Router02", uniswapRouterAddress);
+    const trancheAAA = await getDeployedContract("Tranche", deployments.TrancheAAA);
+    const trancheAA = await getDeployedContract("Tranche", deployments.TrancheAA);
+
+    // Mint initial supply for liquidity provision (50,000 tokens each)
+    const liquidityAmount = ethers.parseEther("50000"); // 50k tokens
+
+    try {
+      console.log("⚙️ Minting tokens for liquidity provision...");
+
+      // Mint AAA tokens to deployer
+      const mintAAAXtx = await (trancheAAA as any).mint(deployerAddress, liquidityAmount);
+      await mintAAAXtx.wait();
+      console.log(`✅ Minted ${ethers.formatEther(liquidityAmount)} AAA tokens to deployer`);
+
+      // Mint AA tokens to deployer
+      const mintAAtx = await (trancheAA as any).mint(deployerAddress, liquidityAmount);
+      await mintAAtx.wait();
+      console.log(`✅ Minted ${ethers.formatEther(liquidityAmount)} AA tokens to deployer`);
+
+      // Approve router to spend tokens
+      console.log("⚙️ Approving router to spend tokens...");
+      const approveAAAtx = await (trancheAAA as any).approve(uniswapRouterAddress, liquidityAmount);
+      await approveAAAtx.wait();
+      console.log("✅ Approved router to spend AAA tokens");
+
+      const approveAAtx = await (trancheAA as any).approve(uniswapRouterAddress, liquidityAmount);
+      await approveAAtx.wait();
+      console.log("✅ Approved router to spend AA tokens");
+
+      // Add liquidity using router
+      console.log("⚙️ Adding liquidity to AAA/AA pair...");
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
+
+      const addLiquidityTx = await (router as any).addLiquidity(
+        deployments.TrancheAAA,    // tokenA
+        deployments.TrancheAA,     // tokenB
+        liquidityAmount,           // amountADesired
+        liquidityAmount,           // amountBDesired
+        ethers.parseEther("49000"), // amountAMin (allow 2% slippage)
+        ethers.parseEther("49000"), // amountBMin (allow 2% slippage)
+        deployerAddress,           // to
+        deadline                   // deadline
+      );
+      await addLiquidityTx.wait();
+      console.log(`✅ Successfully added ${ethers.formatEther(liquidityAmount)} AAA and ${ethers.formatEther(liquidityAmount)} AA tokens as liquidity`);
+
+      // Verify liquidity was added
+      const pair = await getDeployedContract("UniswapV2Pair", aaaAaPairAddress);
+      const reserves = await (pair as any).getReserves();
+      console.log("✅ Pool reserves after liquidity addition:");
+      console.log(`  Reserve0: ${ethers.formatEther(reserves[0])}`);
+      console.log(`  Reserve1: ${ethers.formatEther(reserves[1])}`);
+
+    } catch (error: any) {
+      console.error("❌ Error adding liquidity:", error.message);
+      console.log("⚠️ Continuing deployment without liquidity provision");
+    }
+
     // Update frontend contracts.json
     console.log("\n--- Updating Frontend Configuration ---");
     const contractsPath = join(__dirname, "../frontend/src/contracts.json");
