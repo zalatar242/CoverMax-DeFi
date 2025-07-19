@@ -1,13 +1,151 @@
 import { ethers } from "hardhat";
-import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import { ContractTransactionResponse } from "ethers";
 
-// Load environment variables
-dotenv.config();
+const ADDRESSES_FILE = path.join(__dirname, "../../config/addresses.ts");
+const CONTRACTS_FILE = path.join(__dirname, "../../frontend/src/contracts.json");
 
-async function main() {
-  console.log("🚀 Deploying contracts to local hardhat node...");
+export async function waitForConfirmations(tx: Promise<ContractTransactionResponse> | ContractTransactionResponse) {
+  const resolvedTx = await tx;
+  await resolvedTx.wait(2); // Wait for 2 confirmations
+  return resolvedTx;
+}
 
-  // Use private key from .env if provided, otherwise use default hardhat account
+export function loadDeployments(): { [key: string]: string } {
+  if (!fs.existsSync(ADDRESSES_FILE)) {
+    return {};
+  }
+
+  const content = fs.readFileSync(ADDRESSES_FILE, "utf8");
+  const addressMatch = content.match(/export const addresses = ({[\s\S]*?});/);
+
+  if (!addressMatch) {
+    return {};
+  }
+
+  try {
+    const jsonString = addressMatch[1]
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Add quotes to keys
+      .replace(/'/g, '"'); // Replace single quotes with double quotes
+    const addressObj = JSON.parse(jsonString);
+    return {
+      "MockUSDC": addressObj.USDC_ADDRESS,
+      "MockAToken": addressObj.AAVE_ATOKEN,
+      "MockAavePool": addressObj.AAVE_V3_POOL,
+      "MockAavePoolDataProvider": addressObj.AAVE_DATA_PROVIDER,
+      "AaveLendingAdapter": addressObj.AAVE_LENDING_ADAPTER,
+      "MockMToken": addressObj.MOONWELL_MTOKEN,
+      "MoonwellLendingAdapter": addressObj.MOONWELL_LENDING_ADAPTER,
+      "UniswapV2Factory": addressObj.UNISWAP_FACTORY,
+      "UniswapV2Router02": addressObj.UNISWAP_ROUTER,
+      "TrancheAAA": addressObj.TRANCHE_AAA,
+      "TrancheAA": addressObj.TRANCHE_AA,
+      "InsuranceCalculator": addressObj.INSURANCE_CALCULATOR,
+      "InsuranceAdapterManager": addressObj.INSURANCE_ADAPTER_MANAGER,
+      "InsuranceTimeManager": addressObj.INSURANCE_TIME_MANAGER,
+      "InsuranceClaimManager": addressObj.INSURANCE_CLAIM_MANAGER,
+      "InsuranceCore": addressObj.INSURANCE_CORE
+    };
+  } catch {
+    return {};
+  }
+}
+
+export function saveDeployments(deployments: { [key: string]: string }): void {
+  const addresses = {
+    UNISWAP_FACTORY: deployments.UniswapV2Factory || "",
+    UNISWAP_ROUTER: deployments.UniswapV2Router02 || "",
+    USDC_ADDRESS: deployments.MockUSDC || "",
+    AAVE_ATOKEN: deployments.MockAToken || "",
+    AAVE_V3_POOL: deployments.MockAavePool || "",
+    AAVE_DATA_PROVIDER: deployments.MockAavePoolDataProvider || "",
+    AAVE_LENDING_ADAPTER: deployments.AaveLendingAdapter || "",
+    MOONWELL_MTOKEN: deployments.MockMToken || "",
+    MOONWELL_LENDING_ADAPTER: deployments.MoonwellLendingAdapter || "",
+    TRANCHE_AAA: deployments.TrancheAAA || "",
+    TRANCHE_AA: deployments.TrancheAA || "",
+    INSURANCE_CALCULATOR: deployments.InsuranceCalculator || "",
+    INSURANCE_ADAPTER_MANAGER: deployments.InsuranceAdapterManager || "",
+    INSURANCE_TIME_MANAGER: deployments.InsuranceTimeManager || "",
+    INSURANCE_CLAIM_MANAGER: deployments.InsuranceClaimManager || "",
+    INSURANCE_CORE: deployments.InsuranceCore || ""
+  };
+
+  // Remove empty addresses
+  Object.keys(addresses).forEach(key => {
+    if (!addresses[key as keyof typeof addresses]) {
+      delete addresses[key as keyof typeof addresses];
+    }
+  });
+
+  const content = `// Contract addresses for PassETHub\nexport const addresses = ${JSON.stringify(addresses, null, 2)};\n`;
+  fs.writeFileSync(ADDRESSES_FILE, content);
+}
+
+export function updateSingleAddress(contractName: string, address: string): void {
+  const deployments = loadDeployments();
+  deployments[contractName] = address;
+  saveDeployments(deployments);
+}
+
+export async function getDeployedContract(name: string, address: string) {
+  const factory = await ethers.getContractFactory(name);
+  return factory.attach(address);
+}
+
+export async function deployIfNeeded(
+  name: string,
+  factoryGetter: () => Promise<any>,
+  ...args: any[]
+): Promise<string> {
+  const deployments = loadDeployments();
+  if (deployments[name]) {
+    console.log(`✅ ${name} already deployed at ${deployments[name]}`);
+    return deployments[name];
+  }
+
+  console.log(`🚀 Deploying ${name}...`);
+  const factory = await factoryGetter();
+  const contract = await factory.deploy(...args);
+  await contract.waitForDeployment();
+
+  const deployedAddress = await contract.getAddress();
+  if (!deployedAddress) {
+    console.error(`❌ Deployment failed for ${name}: no address found. Contract object:`, contract);
+    throw new Error(`Deployment failed for ${name}: no address found.`);
+  }
+
+  deployments[name] = deployedAddress;
+
+  // Update addresses.ts (this now serves as our deployment tracking)
+  updateSingleAddress(name, deployedAddress);
+
+  console.log(`✅ Deployed ${name} at ${deployedAddress}`);
+  return deployedAddress;
+}
+
+export async function deployAlways(
+  name: string,
+  factoryGetter: () => Promise<any>,
+  ...args: any[]
+): Promise<string> {
+  console.log(`🚀 Deploying ${name}...`);
+  const factory = await factoryGetter();
+  const contract = await factory.deploy(...args);
+  await contract.waitForDeployment();
+
+  const deployedAddress = await contract.getAddress();
+  if (!deployedAddress) {
+    console.error(`❌ Deployment failed for ${name}: no address found. Contract object:`, contract);
+    throw new Error(`Deployment failed for ${name}: no address found.`);
+  }
+
+  console.log(`✅ Deployed ${name} at ${deployedAddress}`);
+  return deployedAddress;
+}
+
+export async function setupDeployer() {
   let deployer;
   const [defaultAccount] = await ethers.getSigners();
 
@@ -36,114 +174,10 @@ async function main() {
   const balance = await ethers.provider.getBalance(deployer.address);
   console.log("Account balance:", ethers.formatEther(balance), "ETH");
 
-  // Deploy Uniswap Factory
-  console.log("Deploying UniswapV2Factory...");
-  const UniswapV2Factory = await ethers.getContractFactory("UniswapV2Factory");
-  const factory = await UniswapV2Factory.deploy(deployer.address);
-  await factory.waitForDeployment();
-  const factoryAddress = await factory.getAddress();
-  console.log("✅ UniswapV2Factory deployed at:", factoryAddress);
-
-  // Deploy Uniswap Router
-  console.log("Deploying UniswapV2Router02...");
-  const UniswapV2Router02 = await ethers.getContractFactory("UniswapV2Router02");
-  const router = await UniswapV2Router02.deploy(factoryAddress, "0x0000000000000000000000000000000000000000");
-  await router.waitForDeployment();
-  const routerAddress = await router.getAddress();
-  console.log("✅ UniswapV2Router02 deployed at:", routerAddress);
-
-  // Deploy MockUSDC
-  console.log("Deploying MockUSDC...");
-  const MockUSDC = await ethers.getContractFactory("MockUSDC");
-  const usdc = await MockUSDC.deploy();
-  await usdc.waitForDeployment();
-  const usdcAddress = await usdc.getAddress();
-  console.log("✅ MockUSDC deployed at:", usdcAddress);
-
-  // Deploy Tranche tokens
-  console.log("Deploying TrancheAAA...");
-  const Tranche = await ethers.getContractFactory("Tranche");
-  const trancheAAA = await Tranche.deploy("Tranche AAA", "TAAA");
-  await trancheAAA.waitForDeployment();
-  const trancheAAAAddress = await trancheAAA.getAddress();
-  console.log("✅ TrancheAAA deployed at:", trancheAAAAddress);
-
-  console.log("Deploying TrancheAA...");
-  const trancheAA = await Tranche.deploy("Tranche AA", "TAA");
-  await trancheAA.waitForDeployment();
-  const trancheAAAddress = await trancheAA.getAddress();
-  console.log("✅ TrancheAA deployed at:", trancheAAAddress);
-
-  // Create Uniswap pair for AAA/AA
-  console.log("Creating AAA/AA pair...");
-  const tx = await factory.createPair(trancheAAAAddress, trancheAAAddress);
-  await tx.wait();
-  console.log("✅ AAA/AA pair created");
-
-  // Mint some tokens for testing
-  console.log("Minting test tokens...");
-
-    // For adding liquidity, we need to mint to the account that will actually deploy (defaultAccount)
-    // since that's where the deployment transactions are coming from
-    const liquidityProvider = defaultAccount;
-
-  await usdc.mint(liquidityProvider.address, ethers.parseEther("1000000"));
-  await trancheAAA.mint(liquidityProvider.address, ethers.parseEther("1000000"));
-  await trancheAA.mint(liquidityProvider.address, ethers.parseEther("1000000"));
-  console.log(`✅ Test tokens minted to liquidity provider: ${liquidityProvider.address}`);
-
-  // If using private key, also mint to your address for testing
-  if (process.env.PRIVATE_KEY) {
-    await usdc.mint(deployer.address, ethers.parseEther("100000")); // MockUSDC uses 18 decimals
-    await trancheAAA.mint(deployer.address, ethers.parseEther("50000"));
-    await trancheAA.mint(deployer.address, ethers.parseEther("50000"));
-    console.log(`✅ Additional test tokens minted to your account: ${deployer.address}`);
-  }
-
-    // Add some initial liquidity to the pair
-    console.log("Adding initial liquidity...");
-    console.log("Pair address:", aaaAaPairAddress);
-
-    // Approve router to spend tokens from the liquidity provider account
-    await (trancheAAA as any).connect(liquidityProvider).approve(uniswapRouterAddress, ethers.parseEther("100000"));
-    await (trancheAA as any).connect(liquidityProvider).approve(uniswapRouterAddress, ethers.parseEther("100000"));
-
-    // Add liquidity using the liquidity provider account
-    const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
-    await (router as any).connect(liquidityProvider).addLiquidity(
-      deployments.TrancheAAA,
-      deployments.TrancheAA,
-      ethers.parseEther("10000"), // 10k AAA
-      ethers.parseEther("10000"), // 10k AA
-      0,
-      0,
-      liquidityProvider.address,
-      deadline
-    );
-    console.log("✅ Initial liquidity added");
-
-  // Update frontend contracts.json file
-  console.log("\n--- Updating Frontend Configuration ---");
-  await updateFrontendContracts({
-    factoryAddress,
-    routerAddress,
-    usdcAddress,
-    trancheAAAAddress,
-    trancheAAAddress,
-    pairAddress
-  });
-
-  console.log("\n=== Deployment Summary ===");
-  console.log("UniswapV2Factory:", factoryAddress);
-  console.log("UniswapV2Router02:", routerAddress);
-  console.log("MockUSDC:", usdcAddress);
-  console.log("TrancheAAA:", trancheAAAAddress);
-  console.log("TrancheAA:", trancheAAAddress);
-  console.log("AAA/AA Pair:", pairAddress);
-  console.log("✅ Frontend contracts.json updated successfully!");
+  return { deployer, defaultAccount };
 }
 
-async function updateFrontendContracts(contracts: {
+export async function updateFrontendContracts(contracts: {
   factoryAddress: string;
   routerAddress: string;
   usdcAddress: string;
@@ -151,12 +185,10 @@ async function updateFrontendContracts(contracts: {
   trancheAAAddress: string;
   pairAddress: string;
 }) {
-  const contractsPath = path.join(__dirname, "../frontend/src/contracts.json");
-
   // Read existing contracts.json
   let contractsJson: any = { networks: {} };
-  if (fs.existsSync(contractsPath)) {
-    contractsJson = JSON.parse(fs.readFileSync(contractsPath, 'utf8'));
+  if (fs.existsSync(CONTRACTS_FILE)) {
+    contractsJson = JSON.parse(fs.readFileSync(CONTRACTS_FILE, 'utf8'));
   }
 
   // Get contract artifacts for ABIs (simplified ABIs for essential functions)
@@ -310,13 +342,6 @@ async function updateFrontendContracts(contracts: {
   };
 
   // Write updated contracts.json
-  fs.writeFileSync(contractsPath, JSON.stringify(contractsJson, null, 2));
+  fs.writeFileSync(CONTRACTS_FILE, JSON.stringify(contractsJson, null, 2));
   console.log("✅ Updated frontend/src/contracts.json with new addresses");
 }
-
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
