@@ -483,27 +483,40 @@ async function main(): Promise<void> {
     // Get the pair address after creation
     const aaaAaPairAddress = await (factory as any).getPair(deployments.TrancheAAA, deployments.TrancheAA);
 
-    // Add liquidity to AAA/AA pair
+    // Add liquidity to AAA/AA pair by depositing USDC first
     console.log("\n--- Adding Liquidity to AAA/AA Pair ---");
     const router = await getDeployedContract("UniswapV2Router02", uniswapRouterAddress);
     const trancheAAA = await getDeployedContract("Tranche", deployments.TrancheAAA);
     const trancheAA = await getDeployedContract("Tranche", deployments.TrancheAA);
+    const usdc = await getDeployedContract("MockUSDC", deployments.MockUSDC);
 
-    // Mint initial supply for liquidity provision (50,000 tokens each)
-    const liquidityAmount = ethers.parseEther("50000"); // 50k tokens
+    const depositAmount = ethers.parseEther("100000"); // 100k USDC
+    const liquidityAmount = ethers.parseEther("50000"); // 50k tokens for liquidity
 
     try {
-      console.log("⚙️ Minting tokens for liquidity provision...");
+      console.log("⚙️ Minting USDC and depositing to get AAA/AA tokens...");
 
-      // Mint AAA tokens to deployer
-      const mintAAAXtx = await (trancheAAA as any).mint(deployerAddress, liquidityAmount);
-      await mintAAAXtx.wait();
-      console.log(`✅ Minted ${ethers.formatEther(liquidityAmount)} AAA tokens to deployer`);
+      // First mint USDC to deployer
+      const mintUSDCtx = await (usdc as any).mint(deployerAddress, depositAmount);
+      await mintUSDCtx.wait();
+      console.log(`✅ Minted ${ethers.formatEther(depositAmount)} USDC to deployer`);
 
-      // Mint AA tokens to deployer
-      const mintAAtx = await (trancheAA as any).mint(deployerAddress, liquidityAmount);
-      await mintAAtx.wait();
-      console.log(`✅ Minted ${ethers.formatEther(liquidityAmount)} AA tokens to deployer`);
+      // Approve Insurance Core to spend USDC
+      const approveUSDCtx = await (usdc as any).approve(insuranceCoreAddress, depositAmount);
+      await approveUSDCtx.wait();
+      console.log("✅ Approved Insurance Core to spend USDC");
+
+      // Deposit USDC to get AAA and AA tokens
+      console.log("⚙️ Depositing USDC to Insurance Core...");
+      const depositTx = await (insuranceCore as any).splitRisk(depositAmount);
+      await depositTx.wait();
+      console.log(`✅ Deposited ${ethers.formatEther(depositAmount)} USDC and received AAA/AA tokens`);
+
+      // Check balances
+      const aaaBalance = await (trancheAAA as any).balanceOf(deployerAddress);
+      const aaBalance = await (trancheAA as any).balanceOf(deployerAddress);
+      console.log(`AAA balance: ${ethers.formatEther(aaaBalance)}`);
+      console.log(`AA balance: ${ethers.formatEther(aaBalance)}`);
 
       // Approve router to spend tokens
       console.log("⚙️ Approving router to spend tokens...");
