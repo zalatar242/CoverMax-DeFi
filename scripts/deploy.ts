@@ -483,6 +483,80 @@ async function main(): Promise<void> {
     // Get the pair address after creation
     const aaaAaPairAddress = await (factory as any).getPair(deployments.TrancheAAA, deployments.TrancheAA);
 
+    // Add liquidity to AAA/AA pair by depositing USDC first
+    console.log("\n--- Adding Liquidity to AAA/AA Pair ---");
+    const router = await getDeployedContract("UniswapV2Router02", uniswapRouterAddress);
+    const trancheAAA = await getDeployedContract("Tranche", deployments.TrancheAAA);
+    const trancheAA = await getDeployedContract("Tranche", deployments.TrancheAA);
+    const usdc = await getDeployedContract("MockUSDC", deployments.MockUSDC);
+
+    const depositAmount = ethers.parseEther("100000"); // 100k USDC
+    const liquidityAmount = ethers.parseEther("50000"); // 50k tokens for liquidity
+
+    try {
+      console.log("⚙️ Minting USDC and depositing to get AAA/AA tokens...");
+
+      // First mint USDC to deployer
+      const mintUSDCtx = await (usdc as any).mint(deployerAddress, depositAmount);
+      await mintUSDCtx.wait();
+      console.log(`✅ Minted ${ethers.formatEther(depositAmount)} USDC to deployer`);
+
+      // Approve Insurance Core to spend USDC
+      const approveUSDCtx = await (usdc as any).approve(insuranceCoreAddress, depositAmount);
+      await approveUSDCtx.wait();
+      console.log("✅ Approved Insurance Core to spend USDC");
+
+      // Deposit USDC to get AAA and AA tokens
+      console.log("⚙️ Depositing USDC to Insurance Core...");
+      const depositTx = await (insuranceCore as any).splitRisk(depositAmount);
+      await depositTx.wait();
+      console.log(`✅ Deposited ${ethers.formatEther(depositAmount)} USDC and received AAA/AA tokens`);
+
+      // Check balances
+      const aaaBalance = await (trancheAAA as any).balanceOf(deployerAddress);
+      const aaBalance = await (trancheAA as any).balanceOf(deployerAddress);
+      console.log(`AAA balance: ${ethers.formatEther(aaaBalance)}`);
+      console.log(`AA balance: ${ethers.formatEther(aaBalance)}`);
+
+      // Approve router to spend tokens
+      console.log("⚙️ Approving router to spend tokens...");
+      const approveAAAtx = await (trancheAAA as any).approve(uniswapRouterAddress, liquidityAmount);
+      await approveAAAtx.wait();
+      console.log("✅ Approved router to spend AAA tokens");
+
+      const approveAAtx = await (trancheAA as any).approve(uniswapRouterAddress, liquidityAmount);
+      await approveAAtx.wait();
+      console.log("✅ Approved router to spend AA tokens");
+
+      // Add liquidity using router
+      console.log("⚙️ Adding liquidity to AAA/AA pair...");
+      const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from now
+
+      const addLiquidityTx = await (router as any).addLiquidity(
+        deployments.TrancheAAA,    // tokenA
+        deployments.TrancheAA,     // tokenB
+        liquidityAmount,           // amountADesired
+        liquidityAmount,           // amountBDesired
+        ethers.parseEther("49000"), // amountAMin (allow 2% slippage)
+        ethers.parseEther("49000"), // amountBMin (allow 2% slippage)
+        deployerAddress,           // to
+        deadline                   // deadline
+      );
+      await addLiquidityTx.wait();
+      console.log(`✅ Successfully added ${ethers.formatEther(liquidityAmount)} AAA and ${ethers.formatEther(liquidityAmount)} AA tokens as liquidity`);
+
+      // Verify liquidity was added
+      const pair = await getDeployedContract("UniswapV2Pair", aaaAaPairAddress);
+      const reserves = await (pair as any).getReserves();
+      console.log("✅ Pool reserves after liquidity addition:");
+      console.log(`  Reserve0: ${ethers.formatEther(reserves[0])}`);
+      console.log(`  Reserve1: ${ethers.formatEther(reserves[1])}`);
+
+    } catch (error: any) {
+      console.error("❌ Error adding liquidity:", error.message);
+      console.log("⚠️ Continuing deployment without liquidity provision");
+    }
+
     // Update frontend contracts.json
     console.log("\n--- Updating Frontend Configuration ---");
     const contractsPath = join(__dirname, "../frontend/src/contracts.json");
